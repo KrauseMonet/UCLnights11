@@ -1,7 +1,8 @@
-"""Read a local .env into the environment, never overriding a variable already set.
+"""Read a local .env.local and .env into the environment, never overriding a variable
+already set (so .env.local wins over .env).
 
-`neon deploy` writes DATABASE_URL there; Vercel sets its variables itself and ships no
-.env, so in production this does nothing. Deliberately tiny instead of a dependency:
+`neon deploy` writes DATABASE_URL and DATABASE_URL_UNPOOLED to .env.local; Vercel sets
+its variables itself and ships neither file, so in production this does nothing. Deliberately tiny instead of a dependency:
 KEY=VALUE lines, optional quotes, # comments.
 """
 
@@ -13,7 +14,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 
 
-def load_dotenv(path: Path = ROOT / ".env") -> None:
+def load_dotenv() -> None:
+    for name in (".env.local", ".env"):
+        _load(ROOT / name)
+
+
+def _load(path: Path) -> None:
     try:
         lines = path.read_text(encoding="utf-8").splitlines()
     except OSError:

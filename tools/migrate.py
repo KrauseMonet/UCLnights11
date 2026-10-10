@@ -1,6 +1,6 @@
 """Apply the SQL files in migrations/ that the database has not seen, in order.
 
-    uv run python -m tools.migrate           # against DATABASE_URL (DIRECT_URL if set)
+    uv run python -m tools.migrate           # against Neon's direct endpoint if known, else DATABASE_URL
     uv run python -m tools.migrate --status  # list applied and pending, change nothing
 
 Each file runs in its own transaction together with the row that records it, so a
@@ -52,10 +52,12 @@ def main() -> None:
     ap.add_argument("--status", action="store_true")
     args = ap.parse_args()
     load_dotenv()
-    # Neon's pooled endpoint is for the app; DDL goes over the direct one when it is given.
-    url = os.environ.get("DIRECT_URL") or os.environ.get("DATABASE_URL")
+    # Neon's pooled endpoint is for the app; DDL goes over the direct one when it is given
+    # (`neon deploy` names it DATABASE_URL_UNPOOLED).
+    url = (os.environ.get("DATABASE_URL_UNPOOLED") or os.environ.get("DIRECT_URL")
+           or os.environ.get("DATABASE_URL"))
     if not url:
-        sys.exit("DATABASE_URL is not set (neon deploy writes it to .env)")
+        sys.exit("DATABASE_URL is not set (neon deploy writes it to .env.local)")
     names = migrate(url, args.status)
     verb = "pending" if args.status else "applied"
     print(f"{len(names)} {verb}" + "".join(f"\n  {n}" for n in names))

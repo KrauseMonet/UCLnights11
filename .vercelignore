@@ -26,3 +26,4 @@ package.json
 package-lock.json
 skills-lock.json
 .neon
+.env.*

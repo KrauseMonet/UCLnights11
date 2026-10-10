@@ -12,7 +12,7 @@ seen to fail, and nothing in the deck is invented.
 Python 3.11 via `uv`. The deck is a committed JSON file built from committed inputs and
 the solo game keeps no state. **Accounts and rooms live in Neon Postgres** (project
 `steep-cake-84438492`, branch `production`): `DATABASE_URL` and `SESSION_SECRET` must be
-set, locally in `.env` (gitignored; `neon deploy` writes `DATABASE_URL` there) and in
+set, locally in `.env.local` or `.env` (both gitignored; `neon deploy` writes `DATABASE_URL` and `DATABASE_URL_UNPOOLED` to `.env.local`) and in
 Vercel's environment. Without them the solo game runs exactly as before and the friends
 routes answer 503. Tests start a throwaway Postgres from the `pgserver` dev dependency,
 so the suite needs no database of yours.
@@ -30,7 +30,7 @@ uv run python -m game --validate        # engine vs real Champions League result
 uv run python -m game --play 42         # an automatic draft and tournament
 uv run python -m tools.fetch_crests     # crests from Wikipedia/Commons -> assets/crests
 uv run python -m tools.build_crests     # -> web/static/crests/*.webp (needs Pillow)
-uv run python -m tools.migrate          # apply migrations/*.sql to DATABASE_URL (DIRECT_URL if set)
+uv run python -m tools.migrate          # apply migrations/*.sql (over DATABASE_URL_UNPOOLED when set)
 uv run python -m tools.migrate --status # list pending, change nothing
 uv run uvicorn web.app:app --port 8030  # the site
 PYTHONDONTWRITEBYTECODE=1 uv run pytest -q

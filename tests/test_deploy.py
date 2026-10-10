@@ -49,3 +49,9 @@ def test_the_function_ships_what_accounts_need_and_none_of_the_neon_tooling():
     assert any(line.startswith("psycopg") for line in (ROOT / "requirements.txt").read_text().splitlines())
     ignore = (ROOT / ".vercelignore").read_text().splitlines()
     assert {"node_modules/", "package.json", "neon.ts", "migrations/"} <= set(ignore)
+
+
+def test_local_database_addresses_never_reach_git_or_the_deploy():
+    # `neon deploy` writes .env.local; the repo is public.
+    assert ".env.*" in (ROOT / ".gitignore").read_text().splitlines()
+    assert ".env.*" in (ROOT / ".vercelignore").read_text().splitlines()

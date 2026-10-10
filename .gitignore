@@ -8,3 +8,6 @@ __pycache__/
 /data/wiki/
 .vercel
 node_modules/
+# Database addresses and secrets: `neon deploy` writes .env.local.
+.env.*
+.neon

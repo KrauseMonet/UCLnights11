@@ -21,7 +21,7 @@ so the suite needs no database of yours.
 look the direct endpoint up through Google and pass the address, which keeps the hostname
 for TLS: `dig +short @8.8.8.8 <host>`, then `PGHOSTADDR=<ip> uv run python -m tools.migrate`.
 Production's endpoint is in `aws-ap-southeast-1`; the function runs in `bom1`. Vercel's
-own DNS is unaffected. Both migrations were applied to Neon `production` on 2026-10-10.
+own DNS is unaffected. Migrations 001–004 are applied to Neon `production` (003 and 004 on 2026-10-10, before the code that reads them).
 
 ```bash
 export PATH="$HOME/.local/bin:$PATH"
@@ -156,10 +156,11 @@ tuned.
 - **AC Milan 2011–12 is left out of the deck but not in the archive's list of gaps**
   (`deck.json` `gaps` has the twelve unreadable squads only), so C15's "explained, not
   silent" misses it there; the About and FAQ pages name it.
-- **The service worker has not run anywhere yet.** The suite checks it is served from the root
-  uncached and parses; the desktop app's browser pane refuses to register any worker, so its
-  caching is unverified until it runs on the deployed site (check DevTools > Application there).
-  A worker change needs `VERSION` bumped in `sw.js` to clear old caches.
+- **The service worker is checked by hand, not by the suite** (which checks only that it is
+  served from the root uncached). On production on 2026-10-10 it registered at scope `/` and
+  cached the offline page, crests, fonts, the hashed css/js and `/`, and nothing under `/api/`.
+  It won't register on localhost, by design. A worker change needs `VERSION` bumped in `sw.js`
+  to clear old caches.
 - **Crests shown out of era** (the current crest for an earlier season, because no dated
   historical file exists): Juventus before 2017 (oval), Manchester City before 2016,
   Chelsea before 2005, Ajax 1991–2025 (the 1928 crest is shown), Tottenham before 2006,

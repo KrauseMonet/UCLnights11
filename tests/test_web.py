@@ -99,3 +99,15 @@ def test_every_fixture_carries_its_match_stats():
         assert sum(st["possession"]) == 100
         assert st["on_target"][0] >= f["hg"] and st["on_target"][1] >= f["ag"]
         assert all(c <= p for c, p in zip(st["completed"], st["passes"]))
+
+
+def test_only_your_matches_carry_the_shot_timeline():
+    s = client.post("/api/draft", json={"seed": 3}).json()
+    while not s["complete"]:
+        i = next(c["i"] for c in s["deal"]["cards"] if c["takeable"])
+        s = client.post(f"/api/draft/{s['state']}/pick", json={"index": i}).json()
+    t = client.get(f"/api/tournament/{s['state']}").json()
+    for f in t["your_matches"]:
+        assert len(f["shots"]) == sum(f["stats"]["shots"])
+        assert [x[0] for x in f["shots"] if x[3]] == sorted(g["minute"] for g in f["goals"])
+    assert all("shots" not in leg for r in t["knockout"] for tie in r["ties"] for leg in tie["legs"])

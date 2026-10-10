@@ -147,6 +147,14 @@ validator prints what they produce with no "real" column.
   within 55-95%.
 - **Saves** are the opponent's shots on target that were not goals, all the keeper's.
 - A side's totals are its players' lines added up, so the two cannot disagree.
+- **Watching a match live** (C30): every shot has a minute, so the page can replay a
+  match's statistics as it plays. Goals keep their minutes; every other shot gets a
+  minute spread over the time played (to 120 after extra time), from a third random
+  stream, so neither a result nor a statistic changes. Passes build evenly through the
+  match and possession drifts round its final figure until the whistle, since the
+  engine keeps their totals, not their moments; at full time every number is the real
+  one. A goal stops the clock for 1.7 s while the card fills with the scorer's colours.
+  Only your own matches carry the timeline.
 
 ## 7. The tournament
 

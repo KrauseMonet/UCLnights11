@@ -124,6 +124,17 @@ class SideStats:
         return sum(p.saves for p in self.players)
 
 
+@dataclass(frozen=True)
+class Shot:
+    """One shot, for replaying a match as it happens (C30). A goal is a shot on target
+    at its goal's minute; every other shot is given a minute of its own."""
+
+    minute: int
+    side: int               # 0 = home, 1 = away
+    on_target: bool
+    goal: bool
+
+
 @dataclass
 class Result:
     home_goals: int = 0
@@ -132,6 +143,7 @@ class Result:
     extra_time: bool = False
     pens: tuple[int, int] | None = None
     stats: tuple[SideStats, SideStats] | None = None
+    shots: list[Shot] = field(default_factory=list)     # in minute order
 
     @property
     def winner(self) -> int | None:
@@ -220,16 +232,36 @@ def _clamp(x: float, lo_hi: tuple[float, float]) -> float:
     return min(max(x, lo_hi[0]), lo_hi[1])
 
 
-def _stats_rng(home: Sequence[Card], away: Sequence[Card], neutral: bool, r: Result) -> random.Random:
-    """A stream of its own, seeded by everything that makes this match this match.
-    Python seeds a Random from a string through SHA-512, so it is the same in every
-    process, and nothing is drawn from the tournament's stream."""
-    key = "|".join([
+def _match_key(home: Sequence[Card], away: Sequence[Card], neutral: bool, r: Result) -> str:
+    return "|".join([
         ",".join(c.id for c in home), ",".join(c.id for c in away), str(neutral),
         f"{r.home_goals}-{r.away_goals}-{r.extra_time}-{r.pens}",
         ";".join(f"{g.minute}.{g.side}.{g.scorer.id}" for g in r.goals),
     ])
-    return random.Random(f"stats|{key}")
+
+
+def _stats_rng(home: Sequence[Card], away: Sequence[Card], neutral: bool, r: Result) -> random.Random:
+    """A stream of its own, seeded by everything that makes this match this match.
+    Python seeds a Random from a string through SHA-512, so it is the same in every
+    process, and nothing is drawn from the tournament's stream."""
+    return random.Random(f"stats|{_match_key(home, away, neutral, r)}")
+
+
+def shot_timeline(home: Sequence[Card], away: Sequence[Card], neutral: bool, r: Result) -> list[Shot]:
+    """When each shot came, for watching a match unfold (C30). Drawn from a third
+    stream, so neither the result nor a single statistic changes: goals keep their
+    minutes, and the other shots are spread over the time played (to 120 after extra
+    time). A side's shots, on target and goals at the whistle are its statistics."""
+    rng = random.Random(f"timeline|{_match_key(home, away, neutral, r)}")
+    end = 120 if r.extra_time else 90
+    out = [Shot(g.minute, g.side, True, True) for g in r.goals]
+    for side, st in enumerate(r.stats):
+        goals = sum(1 for g in r.goals if g.side == side)
+        saved, off = st.on_target - goals, st.shots - st.on_target
+        out += [Shot(rng.randint(1, end), side, True, False) for _ in range(saved)]
+        out += [Shot(rng.randint(1, end), side, False, False) for _ in range(off)]
+    out.sort(key=lambda x: (x.minute, x.side, not x.goal))
+    return out
 
 
 def _side_stats(rng: random.Random, xi: Sequence[Card], possession: float, lam: float,
@@ -356,4 +388,6 @@ def play(
             r.pens = shootout(rng, home, away)
     r.goals.sort(key=lambda g: (g.minute, g.side))
     r.stats = match_stats(home, away, lh, la, r, neutral)
+    if r.stats is not None:
+        r.shots = shot_timeline(home, away, neutral, r)
     return r

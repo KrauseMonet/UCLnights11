@@ -145,3 +145,44 @@ def test_extra_time_means_more_of_everything():
               if r.extra_time for s in [r.stats[0]]][:300]
     assert statistics.mean(s.passes for s in longer) > 1.2 * statistics.mean(s.passes for s in normal)
     assert statistics.mean(s.shots for s in longer) > 1.15 * statistics.mean(s.shots for s in normal)
+
+
+# -- the shot timeline (C30) ----------------------------------------------------
+
+def test_the_timeline_replays_to_exactly_the_statistics():
+    rng = random.Random(17)
+    late = 0
+    for i in range(300):
+        h, a = strong_and_weak() if i % 2 else (eleven(), eleven())
+        r = match.play(rng, h, a, LEAGUE, extra_time_if_level=i % 3 == 0)
+        end = 120 if r.extra_time else 90
+        assert [x.minute for x in r.shots] == sorted(x.minute for x in r.shots)
+        assert all(1 <= x.minute <= end for x in r.shots)
+        for side, st in enumerate(r.stats):
+            mine = [x for x in r.shots if x.side == side]
+            assert len(mine) == st.shots and sum(x.on_target for x in mine) == st.on_target
+            assert sorted(x.minute for x in mine if x.goal) == sorted(g.minute for g in r.goals if g.side == side)
+            assert all(x.on_target for x in mine if x.goal)
+        late += sum(1 for x in r.shots if x.minute > 90 and not x.goal)
+    assert late, "shots in extra time are spread into it, not squeezed into ninety minutes"
+
+
+# The statistics of 30 matches, as the site showed them before the shot timeline (C30)
+# existed: checked equal by fingerprinting 20 tournaments' every result and statistic
+# before and after. A DELIBERATE change to the statistics model changes this; update it
+# then, and only then.
+STATS_PINNED = "4e68156386128f2d63fd57ee09633b68defde89df1cbbb3118e9c37ae5cd7a5f"
+
+
+def test_the_statistics_are_still_the_ones_the_site_showed():
+    # Switching the timeline off and comparing (the first version of this test) can't
+    # see a stray draw placed inside the statistics themselves; only a pinned record can.
+    import hashlib
+    import json
+    h, a = eleven(90), eleven(72)
+    rows = []
+    for i in range(30):
+        r = match.play(random.Random(i), h, a, LEAGUE, extra_time_if_level=i % 2 == 0)
+        rows.append([[s.possession, [(p.shots, p.on_target, p.passes, p.completed, p.saves) for p in s.players]]
+                     for s in r.stats])
+    assert hashlib.sha256(json.dumps(rows).encode()).hexdigest() == STATS_PINNED

@@ -131,9 +131,11 @@ def side_out(side: Side) -> dict:
     return out
 
 
-def fixture_out(f: Fixture) -> dict:
+def fixture_out(f: Fixture, timeline: bool = False) -> dict:
+    """``timeline`` adds every shot's minute, [minute, side, on target, goal], for a match
+    the page plays live (C30); only your own matches carry it, to keep the reply small."""
     r = f.result
-    return {
+    out = {
         "stage": f.stage, "label": f.label, "group": f.group,
         "home": side_out(f.home), "away": side_out(f.away),
         "hg": r.home_goals, "ag": r.away_goals, "extra_time": r.extra_time,
@@ -142,6 +144,9 @@ def fixture_out(f: Fixture) -> dict:
                    "assist": g.assist.name if g.assist else None} for g in r.goals],
         "stats": stats_out(r),
     }
+    if timeline:
+        out["shots"] = [[x.minute, x.side, int(x.on_target), int(x.goal)] for x in r.shots]
+    return out
 
 
 def stats_out(r) -> dict | None:
@@ -289,7 +294,7 @@ def tournament_out(t: Tournament) -> dict:
         "you": None if you is None else {
             **side_out(you), "formation": you.formation.label, "code": you.formation.code,
             "xi": [card_out(c) for c in you.xi]},
-        "your_matches": [fixture_out(f) for f in t.fixtures if you in (f.home, f.away)],
+        "your_matches": [fixture_out(f, timeline=True) for f in t.fixtures if you in (f.home, f.away)],
         "groups": groups, "knockout": knockout,
         "champion": side_out(t.champion), "reached": t.reached(you) if you else None,
         "journey": journey_out(journeys.journey(t, you)) if you else None,

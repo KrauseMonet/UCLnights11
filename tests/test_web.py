@@ -50,3 +50,39 @@ def test_a_tournament_before_the_eleven_is_complete_is_refused():
 
 def test_garbage_state_is_a_400():
     assert client.get("/api/draft/not-a-state").status_code == 400
+
+
+# -- memory mode ------------------------------------------------------------
+
+def test_a_memory_draft_sends_no_ratings_and_lists_each_line_by_name():
+    s = client.post("/api/draft?memory=1", json={"seed": 11}).json()
+    for _ in range(4):
+        cards = s["deal"]["cards"]
+        assert s["memory"] and all(c["rating"] is None for c in cards + s["picks"])
+        for pos in ("GK", "DF", "MF", "FW"):
+            names = [c["name"] for c in cards if c["pos"] == pos]
+            assert names == sorted(names), pos
+        i = next(c["i"] for c in cards if c["takeable"])
+        s = client.post(f"/api/draft/{s['state']}/pick?memory=1", json={"index": i}).json()
+    assert len(s["picks"]) == 4
+
+
+def test_memory_mode_lists_a_squad_out_of_rating_order():
+    # The deck lists a squad best first; listing it that way in Memory mode would give
+    # the ratings away. Seed 11's first squad is one where the two orders differ.
+    shown = client.post("/api/draft", json={"seed": 11}).json()["deal"]["cards"]
+    hidden = client.post("/api/draft?memory=1", json={"seed": 11}).json()["deal"]["cards"]
+    assert [c["i"] for c in shown] == list(range(len(shown)))
+    assert [c["i"] for c in hidden] != [c["i"] for c in shown]
+
+
+def test_a_memory_pick_takes_the_player_it_names():
+    s = client.post("/api/draft?memory=1", json={"seed": 11}).json()
+    card = [c for c in s["deal"]["cards"] if c["takeable"]][-1]
+    after = client.post(f"/api/draft/{s['state']}/pick?memory=1", json={"index": card["i"]}).json()
+    assert after["picks"][0]["id"] == card["id"]
+
+
+def test_the_same_draft_without_memory_shows_ratings():
+    s = client.post("/api/draft", json={"seed": 11}).json()
+    assert not s["memory"] and all(isinstance(c["rating"], int) for c in s["deal"]["cards"])

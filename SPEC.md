@@ -94,6 +94,12 @@ if it is stale.
   shown; redraws are counted.
 - The whole draft is `SEED-FORMATION-moves` (moves are card indices or `r`) and is
   replayed from scratch on every request. The server stores nothing.
+- **Memory mode** hides the ratings while drafting. It is a way of showing a draft, not
+  part of it: the state string is the same, and `?memory=1` rides beside it on every
+  call. The API then sends no rating for any dealt or picked card and lists each line of
+  a deal by name, because the deck lists a squad best first and the order alone would
+  give the ratings away. Every dealt card carries `i`, its index in the deal, which is
+  what a pick names whatever the order shown. The tournament shows the ratings.
 
 ## 6. The match engine
 
@@ -151,6 +157,8 @@ Means are calibrated by construction; draw rate, result split and spread are
   their own pace; a move carries the move count the player's screen had seen and is
   refused if the draft has moved on. Picks are not exclusive between friends: two
   people can both take Messi 2011–12.
+- **Memory mode** (§5) is the host's choice, made in the lobby and fixed once the draft
+  starts; in a memory room the API leaves the ratings out of every seat's draft.
 - **The host can finish the drafts** of anyone who has wandered off: each unfinished
   eleven takes the highest-rated takeable player of each remaining deal.
 - **The tournament** starts when the last eleven is full. Places no person took go to
@@ -159,9 +167,13 @@ Means are calibrated by construction; draw rate, result split and spread are
   level aggregate) and a one-match final on neutral ground. It is a pure function of
   (seed, size, the seats' draft states) and is recomputed on every request, never
   stored; a room of one in 32 plays exactly the solo tournament of the same seed.
-- **Stored:** `accounts`, `rooms` (code, size, seed, host, status, a version that
+- **Stored:** `accounts`, `rooms` (code, size, seed, host, status, memory, a version that
   rises on every write) and `room_seats` (who, seat, formation, draft state string).
   Lobbies nobody started are swept after three days.
+- **A dropped connection is not the end of a room.** The page polls; only a 404 means
+  the room is gone. Any other failure keeps the screen, says it is reconnecting and tries
+  again with a growing pause (2.5 s doubling to 20 s). A move whose reply was lost is
+  settled by the next poll; sent again, its stale move count is refused.
 
 ## 9. Not in scope yet
 

@@ -18,7 +18,7 @@ from pathlib import Path
 
 import psycopg
 from fastapi import FastAPI, HTTPException, Request, Response
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, Response as PlainResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
@@ -28,7 +28,7 @@ from game.draft import IllegalMove, Pick, Reroll, Session, decode, encode, repla
 from game.formations import DEFAULT, FORMATIONS
 from game.tournament import (CUP_STAGES, Fixture, Side, Tournament, leaders, league_of,
                              play_room, play_tournament)
-from web import accounts, auth, db, rooms
+from web import accounts, admin, auth, db, failures, rooms
 from web.env import load_dotenv
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -95,14 +95,28 @@ def club_season_out(cs: ClubSeason, cards: list[dict] | None = None) -> dict:
     return out
 
 
-def session_out(state: str, s: Session) -> dict:
+LINE_ORDER = ("GK", "DF", "MF", "FW")
+
+
+def session_out(state: str, s: Session, memory: bool = False) -> dict:
+    """A draft as the drafter sees it. Every dealt card carries ``i``, its index in the
+    deal, which is what a pick names. In Memory mode the ratings are removed here, not
+    hidden by the page, and the deal is listed by name: the deck lists a squad best
+    first, so the order alone would give the ratings away."""
     deal = None
     if s.deal is not None:
-        deal = club_season_out(s.deal, [card_out(c, why_not(c, s.formation, s.picks)) for c in s.deal.cards])
+        cards = [{**card_out(c, why_not(c, s.formation, s.picks)), "i": i} for i, c in enumerate(s.deal.cards)]
+        if memory:
+            cards.sort(key=lambda c: (LINE_ORDER.index(c["pos"]), c["name"]))
+        deal = club_season_out(s.deal, cards)
+    picks = [card_out(c) for c in s.picks]
+    if memory:
+        for c in [*picks, *(deal["cards"] if deal else [])]:
+            c["rating"] = None
     return {
-        "state": state, "seed": s.seed,
+        "state": state, "seed": s.seed, "memory": memory,
         "formation": {"code": s.formation.code, "label": s.formation.label, "lines": s.formation.lines},
-        "picks": [card_out(c) for c in s.picks],
+        "picks": picks,
         "deal": deal, "rerolls_left": s.rerolls_left, "complete": s.complete,
     }
 
@@ -181,6 +195,14 @@ def _replay(state: str) -> Session:
         raise HTTPException(400, str(e)) from None
 
 
+@app.get("/api/health")
+def health() -> dict:
+    """For the keep-warm ping (.github/workflows/keep-warm.yml). It loads the deck, which
+    is what a cold start is slow at, and never touches the database: a ping every few
+    minutes must not keep Neon's compute awake."""
+    return {"ok": True, "club_seasons": len(load_deck().club_seasons), "accounts": db.configured()}
+
+
 @app.get("/api/meta")
 def meta() -> dict:
     deck = load_deck()
@@ -243,16 +265,18 @@ class StartIn(BaseModel):
     seed: int | None = None
 
 
+# Memory mode is how a solo draft is shown, not part of it: the state string is the same
+# either way, so `?memory=1` rides alongside it on every call.
 @app.post("/api/draft")
-def start(body: StartIn) -> dict:
+def start(body: StartIn, memory: bool = False) -> dict:
     seed = body.seed if body.seed is not None else random.SystemRandom().randrange(1, 10**9)
     state = encode(seed, body.formation, [])
-    return session_out(state, _replay(state))
+    return session_out(state, _replay(state), memory)
 
 
 @app.get("/api/draft/{state}")
-def get_draft(state: str) -> dict:
-    return session_out(state, _replay(state))
+def get_draft(state: str, memory: bool = False) -> dict:
+    return session_out(state, _replay(state), memory)
 
 
 class PickIn(BaseModel):
@@ -260,17 +284,17 @@ class PickIn(BaseModel):
 
 
 @app.post("/api/draft/{state}/pick")
-def pick(state: str, body: PickIn) -> dict:
+def pick(state: str, body: PickIn, memory: bool = False) -> dict:
     seed, formation, moves = _decode(state)
     new = encode(seed, formation, moves + [Pick(body.index)])
-    return session_out(new, _replay(new))
+    return session_out(new, _replay(new), memory)
 
 
 @app.post("/api/draft/{state}/reroll")
-def reroll(state: str) -> dict:
+def reroll(state: str, memory: bool = False) -> dict:
     seed, formation, moves = _decode(state)
     new = encode(seed, formation, moves + [Reroll()])
-    return session_out(new, _replay(new))
+    return session_out(new, _replay(new), memory)
 
 
 @app.get("/api/tournament/{state}")
@@ -302,7 +326,14 @@ def _set_session(request: Request, response: Response, account: accounts.Account
     response.set_cookie(auth.COOKIE_NAME, auth.make_session_cookie(account.account_id),
                         max_age=auth.SESSION_MAX_AGE_S, httponly=True, samesite="lax",
                         secure=https, path="/")
-    return {"account": {"id": account.account_id, "username": account.username}}
+    return {"account": account_out(account)}
+
+
+def account_out(a: accounts.Account) -> dict:
+    out = {"id": a.account_id, "username": a.username}
+    if admin.is_admin(a):
+        out["admin"] = True
+    return out
 
 
 class RegisterIn(BaseModel):
@@ -324,7 +355,7 @@ def me(request: Request) -> dict:
         return {"account": None}
     with db.connection() as conn:
         a = _account(conn, request)
-    return {"account": {"id": a.account_id, "username": a.username} if a else None}
+    return {"account": account_out(a) if a else None}
 
 
 @app.post("/api/auth/register")
@@ -359,9 +390,10 @@ def room_out(room: rooms.Room, me: accounts.Account | None) -> dict:
     mine = room.seat_of(me.account_id) if me else None
     draft = None
     if mine is not None and room.status == "drafting":
-        draft = session_out(mine.state, _replay(mine.state))
+        draft = session_out(mine.state, _replay(mine.state), room.memory)
     return {
         "code": room.code, "size": room.size, "format": ROOM_FORMATS[room.size],
+        "memory": room.memory,
         "stages": CUP_STAGES.get(room.size, ["Group stage", *CUP_STAGES[16]]),
         "status": room.status, "version": room.version,
         "is_host": me is not None and room.host_id == me.account_id,
@@ -380,6 +412,11 @@ def room_out(room: rooms.Room, me: accounts.Account | None) -> dict:
 class RoomIn(BaseModel):
     size: int
     formation: str = DEFAULT
+    memory: bool = False
+
+
+class MemoryIn(BaseModel):
+    memory: bool
 
 
 class FormationIn(BaseModel):
@@ -406,7 +443,7 @@ def _room_reply(conn, request: Request, code: str) -> dict:
 @app.post("/api/rooms")
 def create_room(body: RoomIn, request: Request) -> dict:
     with db.connection() as conn:
-        code = rooms.create_room(conn, _signed_in(conn, request), body.size, body.formation)
+        code = rooms.create_room(conn, _signed_in(conn, request), body.size, body.formation, body.memory)
         return _room_reply(conn, request, code)
 
 
@@ -447,6 +484,13 @@ def kick(code: str, body: KickIn, request: Request) -> dict:
 def room_formation(code: str, body: FormationIn, request: Request) -> dict:
     with db.connection() as conn:
         rooms.set_formation(conn, _signed_in(conn, request), code, body.formation)
+        return _room_reply(conn, request, code)
+
+
+@app.post("/api/rooms/{code}/memory")
+def room_memory(code: str, body: MemoryIn, request: Request) -> dict:
+    with db.connection() as conn:
+        rooms.set_memory(conn, _signed_in(conn, request), code, body.memory)
         return _room_reply(conn, request, code)
 
 
@@ -526,12 +570,103 @@ def room_tournament(code: str, request: Request) -> dict:
             "players": players_out(t)}
 
 
+# -- what browsers saw go wrong ----------------------------------------------
+
+class FailureIn(BaseModel):
+    kind: str
+    detail: str
+    page: str = ""
+
+
+@app.post("/api/client-failures", status_code=204)
+def client_failure(body: FailureIn) -> PlainResponse:
+    """Always 204: a report that can't be kept is lost quietly, never an error the page
+    would then try to report."""
+    if db.configured():
+        try:
+            with db.connection() as conn:
+                failures.record(conn, body.kind, body.detail, body.page)
+        except psycopg.Error:
+            pass
+    return PlainResponse(status_code=204)
+
+
+# -- admin ------------------------------------------------------------------
+
+def _admin(conn, request: Request) -> accounts.Account:
+    """404, not 403, for anyone who isn't an admin: the routes don't confirm they exist."""
+    me = _account(conn, request) if request.cookies.get(auth.COOKIE_NAME) else None
+    if not admin.is_admin(me):
+        raise HTTPException(404, "Not Found")
+    return me
+
+
+class PasswordIn(BaseModel):
+    password: str
+
+
+@app.get("/api/admin/overview")
+def admin_overview(request: Request) -> dict:
+    with db.connection() as conn:
+        _admin(conn, request)
+        return admin.overview(conn)
+
+
+@app.get("/api/admin/accounts")
+def admin_accounts(request: Request, q: str = "") -> dict:
+    with db.connection() as conn:
+        _admin(conn, request)
+        return {"accounts": admin.search_accounts(conn, q)}
+
+
+@app.post("/api/admin/accounts/{account_id}/password")
+def admin_password(account_id: int, body: PasswordIn, request: Request) -> dict:
+    with db.connection() as conn:
+        _admin(conn, request)
+        admin.set_password(conn, account_id, body.password)
+    return {"ok": True}
+
+
+@app.delete("/api/admin/accounts/{account_id}")
+def admin_delete_account(account_id: int, request: Request) -> dict:
+    with db.connection() as conn:
+        admin.delete_account(conn, account_id, _admin(conn, request))
+    return {"ok": True}
+
+
+@app.get("/api/admin/rooms")
+def admin_rooms(request: Request) -> dict:
+    with db.connection() as conn:
+        _admin(conn, request)
+        return {"rooms": admin.list_rooms(conn)}
+
+
+@app.delete("/api/admin/rooms/{code}")
+def admin_delete_room(code: str, request: Request) -> dict:
+    with db.connection() as conn:
+        _admin(conn, request)
+        admin.delete_room(conn, code)
+    return {"ok": True}
+
+
+# -- pages ------------------------------------------------------------------
+
 def _page(name: str):
     def serve() -> FileResponse:
         return FileResponse(STATIC / f"{name}.html")
     return serve
 
 
-for _path, _name in (("/", "index"), ("/draft", "draft"), ("/cup", "cup"), ("/archive", "archive"),
-                     ("/friends", "friends"), ("/room", "room")):
+PAGES = (("/", "index"), ("/draft", "draft"), ("/cup", "cup"), ("/archive", "archive"),
+         ("/friends", "friends"), ("/room", "room"), ("/about", "about"), ("/faq", "faq"),
+         ("/privacy", "privacy"), ("/terms", "terms"), ("/offline", "offline"), ("/admin", "admin"))
+for _path, _name in PAGES:
     app.add_api_route(_path, _page(_name), methods=["GET"], include_in_schema=False)
+
+
+# The service worker is served from the root so its scope is the whole site; vercel.json
+# routes it the same way and never lets it be cached.
+@app.get("/sw.js", include_in_schema=False)
+def service_worker() -> FileResponse:
+    return FileResponse(STATIC / "sw.js", media_type="text/javascript",
+                        headers={"cache-control": "no-cache", "service-worker-allowed": "/"})

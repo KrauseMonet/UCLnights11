@@ -1,4 +1,4 @@
-"""Rooms: friends draft their own elevens and play one tournament together (SPEC §9).
+"""Rooms: friends draft their own elevens and play one tournament together (SPEC §8).
 
 A room moves lobby -> drafting -> complete. In the lobby people join with the room's
 code and choose a formation; the host starts the draft; each seat then drafts on its
@@ -84,6 +84,7 @@ class Room:
     host_id: int
     status: str
     version: int
+    memory: bool
     seats: list[Seat]
 
     def seat_of(self, account_id: int | None) -> Seat | None:
@@ -108,7 +109,7 @@ def human_side(seat: Seat, session: Session) -> Side:
 def load_room(conn, code: str, lock: bool = False) -> Room:
     code = code.strip().upper()
     row = conn.execute(
-        "select code, size, seed, host_id, status, version from rooms where code = %s"
+        "select code, size, seed, host_id, status, version, memory from rooms where code = %s"
         + (" for update" if lock else ""), (code,)).fetchone()
     if row is None:
         raise NotFound("no room with that code")
@@ -143,7 +144,8 @@ def _check_formation(formation: str) -> str:
     return formation
 
 
-def create_room(conn, account: Account, size: int, formation: str = DEFAULT) -> str:
+def create_room(conn, account: Account, size: int, formation: str = DEFAULT,
+                memory: bool = False) -> str:
     if size not in ROOM_SIZES:
         raise RoomError(f"a room holds {', '.join(map(str, ROOM_SIZES))} sides")
     _check_formation(formation)
@@ -153,9 +155,9 @@ def create_room(conn, account: Account, size: int, formation: str = DEFAULT) -> 
     seed = random.SystemRandom().randrange(1, 2**31 - 1)
     for _ in range(20):
         code = "".join(secrets.choice(CODE_ALPHABET) for _ in range(CODE_LENGTH))
-        row = conn.execute("insert into rooms (code, size, seed, host_id) values (%s, %s, %s, %s)"
+        row = conn.execute("insert into rooms (code, size, seed, host_id, memory) values (%s, %s, %s, %s, %s)"
                            " on conflict (code) do nothing returning code",
-                           (code, size, seed, account.account_id)).fetchone()
+                           (code, size, seed, account.account_id, memory)).fetchone()
         if row:
             conn.execute("insert into room_seats (room_code, account_id, seat, formation)"
                          " values (%s, %s, 0, %s)", (code, account.account_id, formation))
@@ -224,6 +226,18 @@ def set_formation(conn, account: Account, code: str, formation: str) -> None:
     _touch(conn, room)
 
 
+def set_memory(conn, account: Account, code: str, memory: bool) -> None:
+    """Memory mode is the host's call, and only before the draft: switching it
+    halfway would show some picks with ratings and others without."""
+    room = load_room(conn, code, lock=True)
+    if room.host_id != account.account_id:
+        raise Forbidden("only the host can choose whether ratings are shown")
+    if room.status != "lobby":
+        raise Conflict("ratings are settled once the draft starts")
+    conn.execute("update rooms set memory = %s where code = %s", (memory, room.code))
+    _touch(conn, room)
+
+
 def start_room(conn, account: Account, code: str) -> None:
     room = load_room(conn, code, lock=True)
     if room.host_id != account.account_id:
@@ -271,6 +285,18 @@ def autopick(deck: Deck, state: str) -> str:
         moves.append(Pick(best))
         s = replay(deck, seed, formation, moves)
     return encode(seed, formation, moves)
+
+
+def seat_removed(conn, code: str) -> None:
+    """After a seat is taken out of a started room (an account deleted by an admin): the
+    room completes if every eleven left in it is full, as it would have when the last
+    pick landed."""
+    try:
+        room = load_room(conn, code, lock=True)
+    except NotFound:
+        return
+    done = room.status == "drafting" and room.seats and all(s.complete for s in room.seats)
+    _touch(conn, room, "complete" if done else None)
 
 
 def finish_drafts(conn, deck: Deck, account: Account, code: str) -> None:

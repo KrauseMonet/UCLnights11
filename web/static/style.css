@@ -42,6 +42,7 @@ button{font:inherit;cursor:pointer}
 .mono{font-family:var(--mono)}
 .label{font:600 10.5px/1 var(--mono);letter-spacing:.22em;text-transform:uppercase;color:var(--ink-3)}
 [hidden]{display:none!important}
+.nowrap{white-space:nowrap}
 
 /* --- nav --- */
 .topnav{position:sticky;top:0;z-index:40;background:rgba(5,11,28,.84);
@@ -159,9 +160,10 @@ button{font:inherit;cursor:pointer}
 .progress .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--gold),var(--gold-2));transition:width .4s}
 .draft-grid{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:20px;align-items:start}
 .panel{border:1px solid var(--line);border-radius:18px;background:var(--panel);overflow:hidden}
-.panel-h{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;
+.panel-h{display:flex;align-items:center;justify-content:space-between;gap:6px 14px;flex-wrap:wrap;padding:14px 18px;
   border-bottom:1px solid var(--line);background:rgba(255,255,255,.025)}
 .panel-h .label b{color:var(--gold);font-weight:700}
+.deal,.draft-top{scroll-margin-top:76px}
 .deal .band{padding:22px 24px 24px;min-height:178px;display:flex;flex-direction:column;justify-content:flex-end}
 .deal .crest{position:absolute;right:22px;top:22px}
 .deal-year{font:400 clamp(54px,7vw,76px)/.9 var(--display);color:#fff;letter-spacing:.01em}
@@ -177,7 +179,7 @@ button{font:inherit;cursor:pointer}
 .row .who b{display:block;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .row .who small{color:var(--ink-3);font-size:12.5px}
 .row.off{opacity:.42}
-.row .why{font:600 10px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);text-align:right}
+.row .why{font:600 10px/1.3 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);text-align:right;max-width:120px}
 .take{font:700 10.5px var(--mono);letter-spacing:.12em;text-transform:uppercase;padding:8px 14px;border-radius:8px;
   border:1px solid rgba(245,184,61,.6);background:transparent;color:var(--gold-2);transition:background .15s,color .15s}
 .take:hover{background:var(--gold);color:#1a1204}
@@ -296,8 +298,19 @@ button{font:inherit;cursor:pointer}
   border-radius:8px;padding:5px 10px;font:600 11px var(--mono);letter-spacing:.1em;z-index:2}
 
 /* --- account: the nav control and the sign-in dialog --- */
-.nav-acct{display:flex;align-items:center;gap:10px;font-size:14px;white-space:nowrap}
+.nav-acct{position:relative;display:flex;align-items:center;gap:10px;font-size:14px;white-space:nowrap}
 .who-me{font-weight:750;color:var(--gold-2);max-width:140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.acct-btn{display:flex;align-items:center;gap:8px;background:none;border:1px solid transparent;border-radius:999px;padding:3px 10px 3px 3px;color:var(--ink)}
+.acct-btn:hover,.acct-btn[aria-expanded="true"]{border-color:var(--line-strong);background:rgba(255,255,255,.04)}
+.acct-init{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;flex:none;
+  background:radial-gradient(circle at 35% 30%,var(--gold-2),var(--gold) 70%,#b9861e);color:#1a1204;font:400 15px/1 var(--display)}
+.acct-menu{position:absolute;right:0;top:calc(100% + 8px);min-width:200px;padding:6px;border-radius:12px;z-index:50;
+  border:1px solid var(--line-strong);background:var(--panel-2);box-shadow:0 20px 40px rgba(0,0,0,.5);display:grid}
+.acct-menu .acct-who{padding:8px 10px 10px;color:var(--ink-3);font-size:13px;border-bottom:1px solid var(--line);margin-bottom:4px;white-space:normal}
+.acct-menu .acct-who b{color:var(--ink)}
+.acct-menu a,.acct-menu button{display:block;text-align:left;background:none;border:0;padding:9px 10px;border-radius:8px;color:var(--ink-2);
+  font:600 14px var(--sans);text-decoration:none}
+.acct-menu a:hover,.acct-menu button:hover{background:rgba(255,255,255,.06);color:var(--ink)}
 .linkish{background:none;border:0;padding:0;color:var(--ink-3);font:600 10.5px var(--mono);letter-spacing:.12em;text-transform:uppercase}
 .linkish:hover{color:var(--ink)}
 .modal{position:fixed;inset:0;z-index:70;display:grid;place-items:center;padding:16px;background:rgba(2,6,16,.7);
@@ -335,6 +348,8 @@ button{font:inherit;cursor:pointer}
 .fmt:hover{border-color:var(--ink-3)}
 .fmt[aria-checked="true"]{border-color:var(--gold);background:rgba(245,184,61,.10)}
 .fmt[aria-checked="true"] b{color:var(--gold)}
+.fmtdesc{display:none;margin:0;padding:0 18px 16px;color:var(--ink-2);font-size:14px}
+.fmtdesc b{color:var(--ink)}
 .room-form{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:0 18px 18px}
 .panel-h + .room-form{padding-top:18px}
 .note{color:var(--ink-3);font-size:13.5px;margin:0;flex-basis:100%}
@@ -363,7 +378,8 @@ button{font:inherit;cursor:pointer}
 .seatcard.me{border-color:var(--line-strong);border-left-color:var(--team)}
 .seatcard .who{min-width:0;flex:1}
 .seatcard .who b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14.5px}
-.seatcard .who small{color:var(--ink-3);font:600 10.5px var(--mono);letter-spacing:.06em}
+.seatcard .who small{display:block;color:var(--ink-3);font:600 10.5px var(--mono);letter-spacing:.06em;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .seatcard .host{font:700 8.5px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--gold);vertical-align:2px;margin-left:4px}
 .seatcard.done small{color:var(--mint)}
 .seatcard.ghosted{border-style:dashed;border-left:1px dashed var(--line-strong);background:none}
@@ -377,6 +393,17 @@ button{font:inherit;cursor:pointer}
 .h2.tight{margin:0;font-size:36px}
 .crest.mono{background:radial-gradient(circle at 35% 30%,var(--team-ink),var(--team) 72%,var(--team-deep));
   color:#0b1430;font:400 calc(var(--s,36px) * .5)/1 var(--display)}
+
+.conn{margin:10px 0 0;padding:9px 14px;border-radius:10px;border:1px solid rgba(255,106,77,.45);background:rgba(255,106,77,.08);
+  color:#ffc2b5;font:600 12px var(--mono);letter-spacing:.06em}
+
+/* --- the line count above a deal, and the Memory tag --- */
+.linechips{display:flex;gap:6px;flex-wrap:wrap;flex-basis:100%}
+.linechip{display:inline-flex;align-items:center;gap:6px;padding:4px 9px 4px 4px;border-radius:999px;border:1px solid var(--line);
+  font:700 11px var(--mono);color:var(--ink-2);background:rgba(255,255,255,.03)}
+.linechip.full{opacity:.5}
+.memtag{color:var(--mint)}
+.hint{color:var(--ink-3);font-size:13px}
 
 /* --- a room's results --- */
 .friends-table{width:100%;border-collapse:collapse;font-size:14px}
@@ -396,9 +423,43 @@ button{font:inherit;cursor:pointer}
 .rounds.r3{grid-template-columns:repeat(3,minmax(0,1fr))}
 .panel-h select{background:var(--bg-2);color:var(--ink);border:1px solid var(--line-strong);border-radius:8px;padding:5px 8px;font:600 12px var(--sans);max-width:60%}
 
+/* --- the info pages: about, faq, privacy, terms --- */
+.prose{max-width:720px;padding:20px 0 0}
+.prose .arch-h em{font-style:normal;color:var(--gold)}
+.prose .lede{font-size:18px;line-height:1.6;color:var(--ink-2);margin:0 0 10px}
+.prose h2{font:400 26px/1.1 var(--display);text-transform:uppercase;letter-spacing:.01em;margin:38px 0 10px;scroll-margin-top:80px}
+.prose p,.prose li{color:var(--ink-2);font-size:16px}
+.prose p{margin:0 0 14px}
+.prose ul{margin:0 0 14px;padding-left:22px;display:grid;gap:6px}
+.prose b{color:var(--ink)}
+.prose a{color:var(--gold-2)}
+.prose code{font:600 13px var(--mono);background:rgba(255,255,255,.06);padding:2px 6px;border-radius:5px;color:var(--ink)}
+
+/* --- admin --- */
+.admin-stats{justify-content:flex-start;flex-wrap:wrap;gap:22px 48px;padding:0 0 22px;text-align:left}
+.bars{display:grid;grid-template-columns:repeat(14,minmax(0,1fr));gap:8px;align-items:end;height:150px;padding:18px}
+.bar-col{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:4px;font:600 10px var(--mono);color:var(--ink-3)}
+.bar-col i{display:block;width:100%;min-height:2px;border-radius:4px 4px 0 0;background:linear-gradient(180deg,var(--gold-2),var(--gold))}
+.bar-col span{color:var(--ink-2)}
+.admin-row{flex-wrap:wrap}
+.admin-row > span:nth-child(2){flex:1;min-width:160px}
+.admin-acts{display:flex;gap:6px;margin-left:auto}
+.btn.danger:hover{border-color:var(--red);color:var(--red)}
+.admin-fail{margin-top:20px}
+.join input#aq{font:500 15px var(--sans);letter-spacing:normal;text-transform:none}
+.admin-row small{display:block}
+.admin-table{width:100%;border-collapse:collapse;font-size:13px}
+.admin-table td{padding:9px 12px;border-top:1px solid var(--line);vertical-align:top}
+.admin-table .num{font:400 20px/1 var(--display);width:44px;text-align:right}
+.admin-table .detail{font:500 12px var(--mono);color:var(--ink-2);word-break:break-word}
+.admin-table .detail small{display:block;color:var(--ink-3);margin-top:3px}
+
 /* --- footer, toast --- */
 .foot{border-top:1px solid var(--line);color:var(--ink-3);font-size:12.5px;padding:26px;text-align:center}
 .foot p{max-width:760px;margin:0 auto 6px}
+.foot-links{display:flex;justify-content:center;flex-wrap:wrap;gap:6px 18px;margin-top:12px}
+.foot-links a{color:var(--ink-2);text-decoration:none;font:600 10.5px var(--mono);letter-spacing:.14em;text-transform:uppercase}
+.foot-links a:hover{color:var(--gold-2)}
 .toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);background:var(--panel-3);border:1px solid var(--line-strong);
   padding:11px 16px;border-radius:10px;opacity:0;transition:.25s;pointer-events:none;z-index:80}
 .toast.show{opacity:1;transform:translate(-50%,0)}
@@ -420,6 +481,7 @@ button{font:inherit;cursor:pointer}
   .topnav-in{padding:0 16px;gap:14px}
   .nav-stat{display:none}
   .navlinks a{padding:8px 9px}
+  .topnav-in{gap:10px}
   .brand img{height:28px}
   .steps{grid-template-columns:1fr}
   .home-stats{gap:24px}
@@ -437,13 +499,33 @@ button{font:inherit;cursor:pointer}
   .fan-1{left:calc(50% - 78px)}
   .fan-card .crest{width:38px;height:38px;right:9px;top:9px}
   .tiles,.rounds,.rounds.r2,.rounds.r3{grid-template-columns:1fr}
-  .fmts{grid-template-columns:repeat(2,minmax(0,1fr));padding:14px}
-  .who-me{max-width:80px}
+  /* Five numbers in a row; the chosen one is described underneath. */
+  .fmts{grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;padding:14px}
+  .fmt{align-items:center;padding:10px 4px}
+  .fmt b{font-size:30px}
+  .fmt span,.fmt small{display:none}
+  .fmtdesc{display:block;padding:0 14px 14px}
+  .who-me{display:none}
+  .acct-btn{padding:3px}
   .nav-acct .btn.small{padding:7px 10px}
-  .room-strip{grid-template-columns:1fr 1fr}
+  /* One row that scrolls sideways, so a room of eight doesn't push the deal off the screen. */
+  .room-strip{display:flex;overflow-x:auto;scroll-snap-type:x proximity;margin:14px -16px;padding:0 16px 4px;scrollbar-width:none}
+  .room-strip::-webkit-scrollbar{display:none}
+  .room-strip .seatcard{flex:0 0 auto;width:172px;scroll-snap-align:start;padding:10px 12px;gap:10px}
+  .room-strip .seatcard small{white-space:nowrap}
+  .room-top{padding-top:20px;align-items:flex-start}
+  .room-top .room-acts{width:100%}
+  .row{padding:10px 14px;gap:10px}
+  .row .why{max-width:84px;font-size:9px;letter-spacing:.04em}
+  .draft-top{gap:10px 16px;margin:18px 0 14px}
+  .draft-top h1,.h2.tight{font-size:32px}
   .friends-table .rec small{display:none}
-  .matchcard{grid-template-columns:1fr auto 1fr}
-  .matchcard .side{padding:16px 8px}
+  /* Three even columns: with `auto` in the middle, a long stage name took the width and
+     squeezed both sides into slivers. */
+  .matchcard{grid-template-columns:minmax(0,1fr) minmax(0,1.1fr) minmax(0,1fr)}
+  .matchcard .side{padding:16px 6px}
+  .matchcard .side small{letter-spacing:.04em;white-space:nowrap}
+  .stage-tag{font-size:9.5px;letter-spacing:.1em;line-height:1.45}
   .matchcard .side .crest{width:52px;height:52px}
   .matchcard .side b{font-size:12px}
   .matchcard .mid{min-width:0;padding:12px 10px}

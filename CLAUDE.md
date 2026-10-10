@@ -38,7 +38,10 @@ uv run python -m tools.fetch_crests     # crests from Wikipedia/Commons -> asset
 uv run python -m tools.build_crests     # -> web/static/crests/*.webp (needs Pillow)
 uv run python -m tools.migrate          # apply migrations/*.sql (over DATABASE_URL_UNPOOLED when set)
 uv run python -m tools.migrate --status # list pending, change nothing
-uv run uvicorn web.app:app --port 8030  # the site
+uv run uvicorn web.app:app --port 8030  # the site (solo game; rooms use .env.local's database, i.e. PRODUCTION)
+uv run python -m tools.devserver        # the site on :8031 with a throwaway Postgres: rooms without touching Neon
+uv run python -m tools.stamp_assets     # content-hash every page's css/js references (--check: a deploy gate)
+uv run python -m tools.failures         # what browsers reported going wrong, commonest first
 PYTHONDONTWRITEBYTECODE=1 uv run pytest -q
 ```
 
@@ -46,9 +49,11 @@ PYTHONDONTWRITEBYTECODE=1 uv run pytest -q
 Neon agent skills in `.claude/skills/` came from `neon config init` and `neon skills`. All of
 it is local tooling and `.vercelignore` keeps it out of the deploy.
 
-**Gates before any deploy:** `tools.migrate --status` shows nothing pending on Neon, `etl.deck --check`, `tools.build_crests --check` and
-`tools.build_brand --check` (all exit 1 when stale), the test suite, and bump `?v=N` in every
-page when a stylesheet or script changes. The og:image addresses in every page name the
+**Gates before any deploy:** `tools.migrate --status` shows nothing pending on Neon, `etl.deck --check`, `tools.build_crests --check`,
+`tools.build_brand --check` and `tools.stamp_assets --check` (all exit 1 when stale), and the test suite
+(which also fails on a stale stamp). **Migrations go to Neon before the code that needs them**:
+the room routes read `rooms.memory` (003). **Vercel env:** `ADMIN_ACCOUNT_IDS` (comma-separated
+account ids) names the admins; unset, there are none and `/admin` shows "Not here". The og:image addresses in every page name the
 production origin (`https://uclnights11.vercel.app`); change them when the custom domain lands.
 
 **Repo and hosting:** public GitHub repo `KrauseMonet/UCLnights11`, pushed over a deploy key
@@ -129,6 +134,10 @@ tuned.
 | C20 | **Every seat drafts its own eleven, at its own pace, from one shared seed** — not the cricket site's turn-based shared pool. A 32-person turn-by-turn draft is 352 turns of waiting; parallel drafts from one shuffle keep it fair (everyone sees the same squads in the same order) without anyone waiting on anyone. Picks are not exclusive between friends. The host's "finish their drafts" (best takeable player each deal) is the escape hatch for a friend who wanders off, in place of the cricket site's turn timer. |
 | C21 | **Rooms of 2, 4, 8 and 16 are straight knockouts; 32 is the solo format**, and empty places are filled by `draw_opposition` exactly as solo fills them. Refactoring `play_tournament` to share the knockout code was checked by fingerprinting six seeds' full tournaments before and after: identical, so no shared solo link changed. A test pins that a room of one in 32 IS the solo tournament. The room rules (completion only when the last eleven is full, stale-move refusal, host-only start, full-room refusal, membership on moves, one season per club among fillers) were each deleted once and their test seen to fail. |
 | C15 | **Four pages: home, draft, tournament, archive.** The archive is new to this site: every club-season with its crest, its star and a drawer holding the full rated squad, plus the list of quarter-finalists Wikipedia cannot supply a squad for, so their absence is explained rather than silent. On the tournament page the groups, bracket and scorers stay hidden until your own run has been watched. |
+| C22 | **A room survives a dropped connection (2026-10-10), after a real one was lost.** Production room 4X2943: three picks, the tab hidden ~20 s (a phone), two more polls, then "Back to friends"; every request in the logs was a 200. Reproduced locally by failing one poll: `room.js` treated ANY failed request as "Not here" and wiped the screen, and the polls that then succeeded never repainted it, because the version had not changed and the deal's state was still marked as shown. Now only a 404 ends a room; anything else keeps the screen, shows "Reconnecting…" and backs off 2.5 s doubling to 20 s. One poll runs at a time (a timer, a tab waking and a failed move could each start their own, and every chain then kept itself going). `api()` carries the HTTP status (0 = no reply) and retries a GET once on 0/502/503/504, never a write (the cricket site's A169). A pick whose reply was lost is settled by the next poll; sent again, its stale `expect` is a 409. All three cases were driven in the browser by replacing `fetch`. The same pass fixed the phone layout: the nav overflowed 100 px (the account control is now one button and a menu, and the logo becomes the emblem under 480 px), the seat strip is one sideways-scrolling row, the deal scrolls back into view after a pick, a line-count bar sits above the deal, and the cup's match card no longer squeezes both sides into slivers. Built with `tools.devserver`, which starts its own Postgres because `.env.local` points at production. |
+| C23 | **Memory mode hides the ratings while drafting, at the user's request (2026-10-10), and the API enforces it rather than the page.** A view of a draft, not part of it: the state string is unchanged and `?memory=1` rides alongside. In memory mode `session_out` nulls every rating and **lists each line by name**, because the deck lists a squad best first (etl.deck sorts by rating) and the order alone would give the ratings away. Each dealt card carries `i`, its index in the deal, which is what a pick names. Solo: chosen on home, remembered in localStorage. Rooms: the host's choice in the lobby (migration 003 `rooms.memory`), refused after the start; server-side matters there because friends compete. The tournament reveals the ratings. Each rule (nulling, name order, `i`, the room flag, host-only, lobby-only) was broken once and its test seen to fail. |
+| C24 | **The basics from the cricket site (2026-10-10):** content-hashed asset URLs (`tools.stamp_assets`, its A106; the hand-bumped `?v=11` is gone and a stale stamp fails a test), About/FAQ/Privacy/Terms pages linked from the footer, browser failure reports (`/api/client-failures`, migration 004, its A180: no account, IP or query string, 30 days, 2,000 an hour), `/api/health` plus a GitHub cron pinging it every 5 minutes (it never opens the database, so it cannot keep Neon awake; a test fails if it does), an installable app (manifest, `sw.js` with A132's rules: never cache `/api`, pages network-first, hashed assets cache-first; not registered on localhost, where it would hide edits) and an admin page (its A154: `ADMIN_ACCOUNT_IDS`, a 404 to everyone else; overview, account search, set a password, delete an account, list and delete rooms). **Deleting an account would cascade to every room it hosts**, so `admin.delete_account` first passes each to the next seat and afterwards completes a drafting room whose remaining elevens are full. The failure-kind check is guarded twice (Python and the table's CHECK), so its test calls `record()` directly; through the endpoint the quiet 204 hid either. |
+| C25 | **The archive page drew nothing in production, with every test green.** `archive.js` and `common.js` both declared a top-level `const LINES`; classic scripts share one global scope, so `archive.js` threw a SyntaxError on load. Found by reading the browser console while checking the new pages. `test_no_page_script_redeclares_a_name_common_js_declares` now compares every page script's top-level names with `common.js`'s, and fails with the duplicate put back. |
 
 ## Known limits
 
@@ -142,8 +151,15 @@ tuned.
   never draftable, and are left rather than special-cased.
 - Positions are Wikipedia's four lines; wingers are forwards or midfielders as the
   article says. `|POS` in a ratings file corrects an obvious one.
-- The static assets are cache-busted by hand (`?v=N` in every page). A content-hash
-  stamping tool is the next step before deploying.
+- **No self-service account deletion.** The privacy page sends people to a GitHub issue;
+  an admin deletes from `/admin`. A contact address would be better than a public issue.
+- **AC Milan 2011–12 is left out of the deck but not in the archive's list of gaps**
+  (`deck.json` `gaps` has the twelve unreadable squads only), so C15's "explained, not
+  silent" misses it there; the About and FAQ pages name it.
+- **The service worker has not run anywhere yet.** The suite checks it is served from the root
+  uncached and parses; the desktop app's browser pane refuses to register any worker, so its
+  caching is unverified until it runs on the deployed site (check DevTools > Application there).
+  A worker change needs `VERSION` bumped in `sw.js` to clear old caches.
 - **Crests shown out of era** (the current crest for an earlier season, because no dated
   historical file exists): Juventus before 2017 (oval), Manchester City before 2016,
   Chelsea before 2005, Ajax 1991–2025 (the 1928 crest is shown), Tottenham before 2006,

@@ -55,3 +55,58 @@ def test_local_database_addresses_never_reach_git_or_the_deploy():
     # `neon deploy` writes .env.local; the repo is public.
     assert ".env.*" in (ROOT / ".gitignore").read_text().splitlines()
     assert ".env.*" in (ROOT / ".vercelignore").read_text().splitlines()
+
+
+def test_every_page_loads_the_scripts_and_styles_it_was_stamped_with():
+    # tools.stamp_assets --check, as a test: a page pinned to an old hash would pair new
+    # html with an old script, the cricket site's A106.
+    from tools.stamp_assets import stale_pages
+    assert [p.name for p in stale_pages()] == []
+
+
+def test_the_service_worker_is_served_from_the_root_and_never_cached():
+    sw = next(r for r in VERCEL["routes"] if r["src"] == "/sw.js")
+    assert sw["headers"]["cache-control"] == "no-cache"
+    assert sw["headers"]["service-worker-allowed"] == "/"
+    from fastapi.testclient import TestClient
+    r = TestClient(app).get("/sw.js")
+    assert r.status_code == 200 and "/api/" in r.text and r.headers["cache-control"] == "no-cache"
+
+
+def test_every_page_links_the_manifest():
+    for page in (ROOT / "web" / "static").glob("*.html"):
+        assert 'rel="manifest" href="/static/manifest.webmanifest"' in page.read_text(), page.name
+    manifest = json.loads((ROOT / "web" / "static" / "manifest.webmanifest").read_text())
+    for icon in manifest["icons"]:
+        assert (ROOT / "web" / icon["src"].lstrip("/")).is_file(), icon["src"]
+
+
+def test_the_footer_links_only_to_pages_that_exist():
+    pages = {r.path for r in app.routes if getattr(r, "name", "") == "serve"}
+    common = (ROOT / "web" / "static" / "common.js").read_text()
+    footer = common[common.index('class="foot-links"'):]
+    footer = footer[:footer.index("</nav>")]
+    links = re.findall(r'href="(/[a-z]*)"', footer)
+    assert links and set(links) <= pages
+
+
+def top_level_names(path):
+    """Names a classic script declares at the top level: they share one global scope with
+    every other script on the page, so a second `const` of the same name stops the whole
+    script loading."""
+    pat = re.compile(r"^(?:const|let|var|function|async function|class)\s+([A-Za-z_$][\w$]*)", re.M)
+    return set(pat.findall(path.read_text()))
+
+
+def test_no_page_script_redeclares_a_name_common_js_declares():
+    # archive.js and common.js both declared LINES; the archive page threw a SyntaxError
+    # on load and drew nothing, in production, with every test green.
+    static = ROOT / "web" / "static"
+    shared = top_level_names(static / "common.js")
+    for page in static.glob("*.html"):
+        scripts = re.findall(r'<script src="/static/([\w.-]+\.js)', page.read_text())
+        if "common.js" not in scripts:
+            continue
+        for name in scripts:
+            if name != "common.js":
+                assert not shared & top_level_names(static / name), (page.name, name, shared & top_level_names(static / name))

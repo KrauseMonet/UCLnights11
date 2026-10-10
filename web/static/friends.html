@@ -7,13 +7,14 @@
 <meta name="description" content="Draft against your friends from every Champions League quarter-finalist since 1994–95, then play one tournament together: a final, a 4-, 8- or 16-team cup, or the full 32.">
 <link rel="icon" type="image/png" sizes="32x32" href="/static/brand/favicon-32.png">
 <link rel="apple-touch-icon" href="/static/brand/apple-touch-icon.png">
+<link rel="manifest" href="/static/manifest.webmanifest">
 <meta name="theme-color" content="#050b1c">
 <meta property="og:site_name" content="UCLnights11">
 <meta property="og:type" content="website">
 <meta property="og:image" content="https://uclnights11.vercel.app/static/brand/og-image.png">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preload" href="/static/fonts/Anton.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/static/style.css?v=11">
+<link rel="stylesheet" href="/static/style.css?v=b034afc590">
 </head>
 <body>
 <main class="sheet">
@@ -31,9 +32,14 @@
     <section class="panel">
       <div class="panel-h"><span class="label">Start a room</span><span class="label" id="fmtnote"></span></div>
       <div class="fmts" id="formats" role="radiogroup" aria-label="Format"></div>
+      <p class="fmtdesc" id="fmtdesc"></p>
       <div class="room-form">
         <span class="label">Your formation</span>
         <div class="chips" id="formations" role="radiogroup" aria-label="Formation"></div>
+      </div>
+      <div class="room-form">
+        <span class="label">Ratings</span>
+        <div class="chips" id="ratings" role="radiogroup" aria-label="Ratings while you draft"></div>
       </div>
       <div class="room-form"><button class="btn primary" id="create">Create room</button></div>
     </section>
@@ -52,7 +58,7 @@
     </div>
   </div>
 </main>
-<script src="/static/common.js?v=11"></script>
-<script src="/static/friends.js?v=11"></script>
+<script src="/static/common.js?v=a2e7746176"></script>
+<script src="/static/friends.js?v=cf77c30f92"></script>
 </body>
 </html>

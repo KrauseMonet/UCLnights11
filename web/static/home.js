@@ -2,6 +2,7 @@
 
 shell("home");
 let FORMATION = store.get("formation") || "433";
+let MEMORY = store.get("memory") === "1";
 
 function renderFormations() {
   const box = $("formations");
@@ -13,6 +14,19 @@ function renderFormations() {
     FORMATION = b.dataset.f;
     store.set("formation", FORMATION);
     renderFormations();
+  };
+}
+
+function renderMemory() {
+  const box = $("memory");
+  box.innerHTML = [[false, "Shown"], [true, "Hidden · Memory"]].map(([m, label]) =>
+    `<button class="chip" role="radio" aria-checked="${m === MEMORY}" data-m="${m ? 1 : 0}">${label}</button>`).join("");
+  box.onclick = (e) => {
+    const b = e.target.closest("button");
+    if (!b) return;
+    MEMORY = b.dataset.m === "1";
+    store.set("memory", MEMORY ? "1" : "0");
+    renderMemory();
   };
 }
 
@@ -28,12 +42,14 @@ function fanCard(cs, i) {
 $("start").onclick = async (e) => {
   e.target.disabled = true;
   try {
-    const s = await api("/api/draft", { method: "POST", body: JSON.stringify({ formation: FORMATION }) });
-    location.href = `/draft#${s.state}`;
+    const q = MEMORY ? "?memory=1" : "";
+    const s = await api(`/api/draft${q}`, { method: "POST", body: JSON.stringify({ formation: FORMATION }) });
+    location.href = `/draft${q}#${s.state}`;
   } catch (err) { toast(err.message); e.target.disabled = false; }
 };
 
 (async function boot() {
+  renderMemory();
   try { await loadMeta(); } catch { toast("Could not reach the server"); return; }
   if (!META.formations.some((f) => f.code === FORMATION)) FORMATION = META.default_formation;
   renderFormations();

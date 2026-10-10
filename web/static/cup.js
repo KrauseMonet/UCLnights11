@@ -69,7 +69,7 @@ function endActions() {
   $("actions").innerHTML = CUP.room
     ? `<a class="btn primary" href="/friends">Play another room</a><button class="btn ghost" id="copy">Copy link</button>`
     : `<a class="btn primary" href="/">Draft again</a><button class="btn ghost" id="copy">Copy link</button>`;
-  $("copy").onclick = () => navigator.clipboard.writeText(location.href).then(() => toast("Link copied"), () => toast(location.href));
+  $("copy").onclick = () => copyText(location.href, "Link copied");
 }
 
 function championBlock() {
@@ -77,7 +77,7 @@ function championBlock() {
   $("match").innerHTML = `<div class="champ-block band" style="${teamStyle(c)}">
       <div class="trophy">🏆</div>${sideCrest(c, 104)}
       <div class="label" style="color:var(--team-ink)">Champions</div>
-      <div class="fan-year" style="font-size:40px">${c.you ? "Your XI" : esc(c.name)}</div></div>`;
+      <div class="fan-year" style="font-size:40px;text-align:center">${c.you ? "Your XI" : esc(c.name).replace(/ (\d{4}–\d{2})$/, ' <span class="nowrap">$1</span>')}</div></div>`;
 }
 
 function reveal(n) {

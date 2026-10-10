@@ -1,7 +1,6 @@
 "use strict";
 
 shell("archive");
-const LINES = { GK: "Goalkeepers", DF: "Defenders", MF: "Midfielders", FW: "Forwards" };
 
 function tile(s) {
   return `<button class="tile" data-key="${s.key}" style="${teamStyle(s)}">

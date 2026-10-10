@@ -39,7 +39,7 @@ def draft_to_the_end(c, code, stop_after=None):
         if stop_after is not None and made == stop_after:
             break
         d = room["draft"]
-        i = next(i for i, x in enumerate(d["deal"]["cards"]) if x["takeable"])
+        i = next(x["i"] for x in d["deal"]["cards"] if x["takeable"])
         r = c.post(f"/api/rooms/{code}/pick", json={"index": i, "expect": expect(d)})
         assert r.status_code == 200, r.text
         room = r.json()
@@ -248,3 +248,42 @@ def test_my_rooms_lists_the_rooms_i_sit_in():
     guest.post(f"/api/rooms/{code}/join")
     mine = guest.get("/api/rooms").json()["rooms"]
     assert mine[0]["code"] == code and mine[0]["players"] == 2 and not mine[0]["host"]
+
+
+# -- memory mode ------------------------------------------------------------
+
+def ratings_in(draft):
+    return [c["rating"] for c in draft["picks"] + draft["deal"]["cards"]]
+
+
+def test_a_memory_room_sends_no_ratings_while_drafting_and_shows_them_after():
+    host, guest = player(), player()
+    code = host.post("/api/rooms", json={"size": 4, "memory": True}).json()["code"]
+    guest.post(f"/api/rooms/{code}/join")
+    room = host.post(f"/api/rooms/{code}/start").json()
+    assert room["memory"]
+    room = draft_to_the_end(guest, code, stop_after=3)
+    d = room["draft"]
+    assert len(d["picks"]) == 3 and set(ratings_in(d)) == {None}
+    draft_to_the_end(host, code)
+    draft_to_the_end(guest, code)
+    t = host.get(f"/api/rooms/{code}/tournament").json()
+    assert all(isinstance(c["rating"], int) for c in t["you"]["xi"])   # the reveal
+
+
+def test_an_ordinary_room_still_shows_ratings():
+    host = player()
+    code = host.post("/api/rooms", json={"size": 2}).json()["code"]
+    d = host.post(f"/api/rooms/{code}/start").json()["draft"]
+    assert all(isinstance(r, int) for r in ratings_in(d))
+
+
+def test_only_the_host_sets_memory_mode_and_only_in_the_lobby():
+    host, guest = player(), player()
+    code = host.post("/api/rooms", json={"size": 4}).json()["code"]
+    guest.post(f"/api/rooms/{code}/join")
+    assert guest.post(f"/api/rooms/{code}/memory", json={"memory": True}).status_code == 403
+    assert host.post(f"/api/rooms/{code}/memory", json={"memory": True}).json()["memory"] is True
+    host.post(f"/api/rooms/{code}/start")
+    assert host.post(f"/api/rooms/{code}/memory", json={"memory": False}).status_code == 409
+    assert guest.get(f"/api/rooms/{code}").json()["memory"] is True

@@ -7,13 +7,14 @@
 <meta name="description" content="Every Champions League quarter-finalist since 1994–95. Take one player from each squad you're dealt, then play a 32-team tournament against the real sides.">
 <link rel="icon" type="image/png" sizes="32x32" href="/static/brand/favicon-32.png">
 <link rel="apple-touch-icon" href="/static/brand/apple-touch-icon.png">
+<link rel="manifest" href="/static/manifest.webmanifest">
 <meta name="theme-color" content="#050b1c">
 <meta property="og:site_name" content="UCLnights11">
 <meta property="og:type" content="website">
 <meta property="og:image" content="https://uclnights11.vercel.app/static/brand/og-image.png">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preload" href="/static/fonts/Anton.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/static/style.css?v=11">
+<link rel="stylesheet" href="/static/style.css?v=b034afc590">
 </head>
 <body>
 <main class="sheet">
@@ -32,6 +33,11 @@
       <div class="home-form">
         <span class="label">Formation</span>
         <div class="chips" id="formations" role="radiogroup" aria-label="Formation"></div>
+      </div>
+      <div class="home-form">
+        <span class="label">Ratings</span>
+        <div class="chips" id="memory" role="radiogroup" aria-label="Ratings while you draft"></div>
+        <span class="hint">Memory hides every rating until the tournament.</span>
       </div>
     </div>
     <div class="home-fan" id="fan" aria-label="Three of the squads in the deck"></div>
@@ -58,7 +64,7 @@
   <p class="sub" id="latest-sub">Every quarter-finalist is in the deck. <a href="/archive">See all of them</a>.</p>
   <div class="latest" id="latest"></div>
 </main>
-<script src="/static/common.js?v=11"></script>
-<script src="/static/home.js?v=11"></script>
+<script src="/static/common.js?v=a2e7746176"></script>
+<script src="/static/home.js?v=ed0e4840f6"></script>
 </body>
 </html>

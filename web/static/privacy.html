@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Privacy · UCLnights11</title>
+<meta name="description" content="What UCLnights11 keeps about you, and what it doesn't.">
+<link rel="icon" type="image/png" sizes="32x32" href="/static/brand/favicon-32.png">
+<link rel="apple-touch-icon" href="/static/brand/apple-touch-icon.png">
+<link rel="manifest" href="/static/manifest.webmanifest">
+<meta name="theme-color" content="#050b1c">
+<meta property="og:site_name" content="UCLnights11">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://uclnights11.vercel.app/static/brand/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preload" href="/static/fonts/Anton.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/static/style.css?v=b034afc590">
+</head>
+<body>
+<main class="sheet">
+<article class="prose">
+<div class="kicker">Privacy</div>
+<h1 class="arch-h">What we <em>keep</em></h1>
+<p class="lede">As little as the game needs. No ads, no analytics, no tracking cookies, and nothing loaded
+from anyone else's servers: the fonts and crests are served from this site.</p>
+
+<h2>Playing on your own</h2>
+<p>A solo draft keeps nothing on our side. The whole draft lives in the page's address, which is why a
+link to it works and a reload doesn't lose it.</p>
+
+<h2>Accounts</h2>
+<p>An account is only needed to play with friends. It holds:</p>
+<ul>
+  <li>your <b>username</b>, which other players in your rooms see;</li>
+  <li>your <b>email address</b>, used only to sign in. We send no email at all;</li>
+  <li>your <b>password</b>, stored only as a salted PBKDF2 hash, never as the password itself;</li>
+  <li>when the account was made.</li>
+</ul>
+
+<h2>Rooms</h2>
+<p>For each room: who is in it, their formation, and each player's draft so far. The tournament is worked
+out again from those every time it is shown, so results are not stored separately.</p>
+
+<h2>Cookies and your browser</h2>
+<p>One cookie, <code>ucl_auth</code>, and only once you sign in. It is signed so it can't be forged, can't be
+read by the page's scripts, and lasts 30 days or until you sign out.</p>
+<p>Your browser's local storage remembers a few choices on your own device: your formation, whether you like
+Memory mode, the room size you last picked, and how far you have watched each tournament. None of it is
+sent to us.</p>
+
+<h2>When a page breaks</h2>
+<p>If a page hits an error, your browser sends us the error message and the page's path (for example
+<code>/room</code>) so we can fix it. Nothing that identifies you is included, and reports are deleted after
+30 days.</p>
+
+<h2>Where it lives</h2>
+<p>The site runs on <b>Vercel</b> (its server code in Mumbai) and the accounts and rooms database on
+<b>Neon</b> (in Singapore). Like any host, Vercel keeps short-lived request logs, which include IP
+addresses, under its own policies.</p>
+
+<h2>Deleting your account</h2>
+<p>There is no button for it yet. Open an issue on the project's
+<a href="https://github.com/KrauseMonet/UCLnights11/issues">GitHub page</a> with your username (never your
+password or email), and the account and its seats in rooms will be removed.</p>
+</article>
+</main>
+<script src="/static/common.js?v=a2e7746176"></script>
+<script src="/static/info.js?v=65b69941c8"></script>
+</body>
+</html>

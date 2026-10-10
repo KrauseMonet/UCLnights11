@@ -1,0 +1,23 @@
+{
+  "name": "UCLnights11",
+  "short_name": "UCLnights11",
+  "description": "Draft an eleven from every European Cup quarter-finalist since 1994–95, then take it through a tournament against the real sides.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#050b1c",
+  "theme_color": "#050b1c",
+  "categories": ["games", "sports"],
+  "icons": [
+    { "src": "/static/brand/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/static/brand/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ],
+  "shortcuts": [
+    { "name": "Start a draft", "short_name": "Draft", "url": "/draft",
+      "icons": [{ "src": "/static/brand/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Play with friends", "short_name": "Friends", "url": "/friends",
+      "icons": [{ "src": "/static/brand/icon-192.png", "sizes": "192x192" }] }
+  ]
+}

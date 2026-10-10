@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin · UCLnights11</title>
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/png" sizes="32x32" href="/static/brand/favicon-32.png">
+<link rel="apple-touch-icon" href="/static/brand/apple-touch-icon.png">
+<link rel="manifest" href="/static/manifest.webmanifest">
+<meta name="theme-color" content="#050b1c">
+<meta property="og:site_name" content="UCLnights11">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://uclnights11.vercel.app/static/brand/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preload" href="/static/fonts/Anton.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/static/style.css?v=b034afc590">
+</head>
+<body>
+<main class="sheet">
+  <section class="friends-hero"><div class="kicker">Admin</div><h1 class="arch-h" id="adminh">Checking…</h1></section>
+  <div id="admin" hidden>
+    <div class="home-stats admin-stats" id="astats"></div>
+    <section class="panel"><div class="panel-h"><span class="label">Sign-ups, last 14 days</span></div>
+      <div class="bars" id="signups"></div></section>
+    <div class="friends-grid">
+      <section class="panel">
+        <div class="panel-h"><span class="label">Accounts</span><span class="label">newest first</span></div>
+        <form class="join" id="asearch" autocomplete="off">
+          <input id="aq" placeholder="username or email" aria-label="Search accounts" spellcheck="false">
+          <button class="btn ghost" type="submit">Search</button></form>
+        <div id="alist"></div>
+      </section>
+      <section class="panel">
+        <div class="panel-h"><span class="label">Rooms</span><span class="label">recently active</span></div>
+        <div id="rlist"></div>
+      </section>
+    </div>
+    <section class="panel admin-fail"><div class="panel-h"><span class="label">What browsers saw go wrong</span><span class="label">last 7 days</span></div>
+      <div id="flist"></div></section>
+  </div>
+</main>
+<script src="/static/common.js?v=a2e7746176"></script>
+<script src="/static/admin.js?v=6b9878401f"></script>
+</body>
+</html>

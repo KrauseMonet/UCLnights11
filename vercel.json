@@ -13,8 +13,12 @@
       "headers": { "cache-control": "public, max-age=2592000, stale-while-revalidate=604800" } },
     { "src": "/static/(.*\\.(?:css|js))", "dest": "/web/static/$1",
       "headers": { "cache-control": "public, max-age=31536000, immutable" } },
+    { "src": "/static/manifest\\.webmanifest", "dest": "/web/static/manifest.webmanifest",
+      "headers": { "content-type": "application/manifest+json", "cache-control": "public, max-age=3600" } },
     { "src": "/static/(.*)", "dest": "/web/static/$1" },
     { "src": "/favicon.ico", "dest": "/web/static/brand/favicon-32.png" },
+    { "src": "/sw.js", "dest": "/web/static/sw.js",
+      "headers": { "cache-control": "no-cache", "service-worker-allowed": "/", "content-type": "text/javascript; charset=utf-8" } },
 
     { "src": "/api/(.*)", "dest": "api/index.py" },
 
@@ -23,6 +27,12 @@
     { "src": "/cup", "dest": "/web/static/cup.html", "headers": { "cache-control": "public, max-age=0, must-revalidate" } },
     { "src": "/archive", "dest": "/web/static/archive.html", "headers": { "cache-control": "public, max-age=0, must-revalidate" } },
     { "src": "/friends", "dest": "/web/static/friends.html", "headers": { "cache-control": "public, max-age=0, must-revalidate" } },
-    { "src": "/room", "dest": "/web/static/room.html", "headers": { "cache-control": "public, max-age=0, must-revalidate" } }
+    { "src": "/room", "dest": "/web/static/room.html", "headers": { "cache-control": "public, max-age=0, must-revalidate" } },
+    { "src": "/about", "dest": "/web/static/about.html", "headers": { "cache-control": "public, max-age=0, must-revalidate" } },
+    { "src": "/faq", "dest": "/web/static/faq.html", "headers": { "cache-control": "public, max-age=0, must-revalidate" } },
+    { "src": "/privacy", "dest": "/web/static/privacy.html", "headers": { "cache-control": "public, max-age=0, must-revalidate" } },
+    { "src": "/terms", "dest": "/web/static/terms.html", "headers": { "cache-control": "public, max-age=0, must-revalidate" } },
+    { "src": "/offline", "dest": "/web/static/offline.html", "headers": { "cache-control": "public, max-age=0, must-revalidate" } },
+    { "src": "/admin", "dest": "/web/static/admin.html", "headers": { "cache-control": "public, max-age=0, must-revalidate" } }
   ]
 }

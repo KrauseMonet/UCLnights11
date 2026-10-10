@@ -2,16 +2,26 @@
 /* One room, from lobby to the last pick. The room is polled every few seconds; each
    reply carries a version that only ever goes up, so a slow reply that lands after a
    newer one is dropped instead of rolling the screen back. Your own deal is redrawn
-   only when your draft has actually moved, so a poll never interrupts a pick. */
+   only when your draft has actually moved, so a poll never interrupts a pick.
+
+   A failed poll is not the end of the room. Phones freeze a tab in the background and
+   the first request after waking often fails; the first version of this page treated
+   any failure as "Not here" and never repainted, which is how a real room was lost
+   (C22). Only a 404 means the room is gone; anything else keeps the screen, says it is
+   reconnecting, and tries again with a growing pause. */
 
 shell("friends");
 const CODE = location.hash.slice(1).toUpperCase();
 const POLL_MS = 2500;
+const MAX_BACKOFF_MS = 20000;
 const STATUS = { lobby: "Lobby", drafting: "Drafting", complete: "Finished" };
 let R = null;              // the room as last applied
 let shown = null;          // the draft state the deal on screen belongs to
 let busy = false;
 let timer = null;
+let inflight = null;       // the one poll in flight: a timer, a tab waking and a failed move can all ask at once
+let failures = 0;
+let dead = false;
 let wantsJoin = new URLSearchParams(location.search).has("join");
 
 const movesIn = (state) => { const p = state.split("-"); return p.length === 3 && p[2] ? p[2].split(".").length : 0; };
@@ -26,16 +36,43 @@ function apply(room) {
   maybeJoin();
 }
 
-async function poll() {
+function schedule(ms) {
   clearTimeout(timer);
-  try { apply(await api(`/api/rooms/${CODE}`)); }
-  catch (e) { return gone(e.message); }
-  if (!document.hidden) timer = setTimeout(poll, POLL_MS);
+  if (!dead && !document.hidden) timer = setTimeout(poll, ms);
+}
+
+function poll() {
+  if (dead) return Promise.resolve();
+  return inflight ||= pollOnce().finally(() => { inflight = null; });
+}
+
+async function pollOnce() {
+  clearTimeout(timer);
+  let room;
+  try { room = await api(`/api/rooms/${CODE}`); }
+  catch (e) {
+    if (e.status === 404) return gone(e.message);
+    failures += 1;
+    connection(e.message);
+    return schedule(Math.min(POLL_MS * 2 ** failures, MAX_BACKOFF_MS));
+  }
+  if (failures) { failures = 0; connection(null); }
+  apply(room);
+  schedule(POLL_MS);
+}
+
+/* The one line that says the room is still there but this browser can't reach it. */
+function connection(msg) {
+  const el = $("conn");
+  el.hidden = !msg;
+  if (msg) el.textContent = R ? `${msg}. Reconnecting…` : `${msg}. Trying again…`;
 }
 
 function gone(msg) {
+  dead = true;
   clearTimeout(timer);
-  $("top").innerHTML = `<div class="kicker">Room ${esc(CODE)}</div><h1 class="arch-h">Not here</h1><p class="sub">${esc(msg)}</p>`;
+  connection(null);
+  $("top").innerHTML = `<div><div class="kicker">Room ${esc(CODE)}</div><h1 class="arch-h">Not here</h1><p class="sub">${esc(msg)}</p></div>`;
   $("strip").innerHTML = "";
   $("view").innerHTML = `<a class="btn primary" href="/friends">Back to friends</a>`;
 }
@@ -44,7 +81,12 @@ async function act(path, body) {
   if (busy) return;
   busy = true;
   try { apply(await api(`/api/rooms/${CODE}/${path}`, { method: "POST", body: body ? JSON.stringify(body) : undefined })); }
-  catch (e) { toast(e.message); poll(); }
+  catch (e) {
+    // With no reply the move may still have landed; the poll shows which. A pick sent
+    // twice is refused by its `expect`, so asking again can't take a second player.
+    toast(e.status === 0 ? "Connection dropped. Checking whether that went through…" : e.message);
+    poll();
+  }
   finally { busy = false; }
 }
 
@@ -60,13 +102,13 @@ async function maybeJoin() {
 function render() {
   const you = R.seats.find((s) => s.you);
   $("top").innerHTML = `
-    <div><div class="kicker">${esc(R.format)} · ${esc(STATUS[R.status])}</div>
+    <div><div class="kicker">${esc(R.format)} · ${esc(STATUS[R.status])}${R.memory ? " · Memory" : ""}</div>
       <h1 class="room-code" aria-label="Room code ${esc(R.code)}">${esc(R.code)}</h1>
       <p class="sub">${R.seats.length} of ${R.size} players${R.fillers ? ` · ${R.fillers} place${R.fillers === 1 ? "" : "s"} for real sides` : ""}${you ? "" : " · watching"}</p></div>
     <div class="room-acts">${R.status === "lobby" ? `<button class="btn ghost small" id="invite">Copy invite link</button>` : ""}
       <a class="btn ghost small" href="/friends">All rooms</a></div>`;
   const inv = $("invite");
-  if (inv) inv.onclick = () => navigator.clipboard.writeText(inviteUrl()).then(() => toast("Invite link copied"), () => toast(inviteUrl()));
+  if (inv) inv.onclick = () => copyText(inviteUrl(), "Invite link copied");
   renderStrip();
   if (R.status === "lobby") renderLobby();
   else renderDrafting();
@@ -78,7 +120,7 @@ function renderStrip() {
     <div class="seatcard ${s.you ? "me" : ""} ${s.complete ? "done" : ""}" style="${teamStyle(s)}">
       ${sideCrest({ human: true, name: s.username, ...s }, 36)}
       <div class="who"><b>${esc(s.username)}${s.host ? ' <span class="host" title="Host">host</span>' : ""}</b>
-        <small>${esc(s.formation)}${R.status === "lobby" ? "" : s.complete ? " · eleven in" : ` · ${s.picks} / 11`}</small>
+        <small>${esc(s.formation)}${R.status === "lobby" ? "" : s.complete ? " · eleven in" : ` · ${s.picks}/11`}</small>
         ${R.status === "drafting" ? `<div class="mini"><i style="width:${(s.picks / 11) * 100}%"></i></div>` : ""}</div>
       ${kick && !s.you ? `<button class="kick" data-id="${s.id}" aria-label="Remove ${esc(s.username)}">✕</button>` : ""}
     </div>`).join("") + (R.fillers ? `<div class="seatcard ghosted"><span class="crest c36" aria-hidden="true">★</span>
@@ -106,6 +148,12 @@ function renderLobby() {
     <section class="panel">
       <div class="panel-h"><span class="label">Your formation</span><span class="label">fixed when the draft starts</span></div>
       <div class="room-form"><div class="chips" id="forms" role="radiogroup" aria-label="Formation"></div></div>
+      <div class="panel-h"><span class="label">Ratings</span><span class="label">${R.is_host ? "your call as host" : "the host's call"}</span></div>
+      <div class="room-form">${R.is_host
+        ? `<div class="chips" role="radiogroup" aria-label="Ratings">
+             <button class="chip" role="radio" aria-checked="${!R.memory}" data-m="0">Shown</button>
+             <button class="chip" role="radio" aria-checked="${R.memory}" data-m="1">Hidden · Memory</button></div>`
+        : `<p class="note">${R.memory ? "<b>Memory mode:</b> nobody sees a rating until the tournament." : "Ratings are shown while you draft."}</p>`}</div>
       <div class="room-form">${R.is_host
         ? `<button class="btn primary" id="startb">Start the draft</button>
            <p class="note">${real ? `${real} empty place${real === 1 ? "" : "s"} will go to real quarter-finalists, one season per club.` : "Every place is taken by a friend."}
@@ -117,6 +165,7 @@ function renderLobby() {
       <ol class="howto">
         <li>Everyone is dealt from the <b>same shuffle</b>, so you all see the same squads in the same order.</li>
         <li>Draft at your own pace: one player per squad, two rerolls, just like the solo game.</li>
+        ${R.memory ? "<li><b>Memory mode:</b> no ratings until the tournament. Pick on what you remember.</li>" : ""}
         <li>When the last eleven is in: ${esc(R.stages.join(" → "))}. ${R.size === 2 ? "Winner takes all." : "Ties are two legs; the final is one night on neutral ground."}</li>
       </ol>
       <div class="room-form"><button class="btn ghost small" id="leaveb">Leave room</button></div>
@@ -127,6 +176,7 @@ function renderLobby() {
     el.innerHTML = m.formations.map((f) => `<button class="chip" role="radio" aria-checked="${f.code === you.code}" data-c="${f.code}">${esc(f.label)}</button>`).join("");
     el.querySelectorAll(".chip").forEach((b) => b.onclick = () => { store.set("formation", b.dataset.c); act("formation", { formation: b.dataset.c }); });
   }).catch(() => {});
+  $("view").querySelectorAll("[data-m]").forEach((b) => b.onclick = () => act("memory", { memory: b.dataset.m === "1" }));
   if ($("startb")) $("startb").onclick = () => act("start");
   $("leaveb").onclick = async () => {
     if (!confirm("Leave this room?")) return;
@@ -156,12 +206,13 @@ function renderDrafting() {
     return;
   }
   const d = R.draft;
-  if (d.state === shown) return;                      // a poll; nothing of yours changed
+  if (d.state === shown && $("deal")) return;        // a poll; nothing of yours changed
   const fresh = shown !== null || !$("deal");
   if (!$("deal")) {
     $("view").innerHTML = `<div class="draft-top"><h2 class="h2 tight" id="formname"></h2>
-        <div class="progress"><span class="label">Pick <b id="pickno" style="color:var(--gold)">1</b> of 11</span>
-        <div class="bar"><i id="bar" style="width:0"></i></div></div></div>
+        <div class="progress"><span class="label">Pick <b id="pickno" style="color:var(--gold)">1</b> of 11${R.memory ? ` · <span class="memtag">Memory</span>` : ""}</span>
+        <div class="bar"><i id="bar" style="width:0"></i></div></div>
+        <div class="linechips" id="lines" aria-label="Places filled in each line"></div></div>
       <div class="draft-grid">
         <section class="panel deal" id="deal" aria-live="polite"></section>
         <aside class="panel"><div class="panel-h"><span class="label">Your XI</span><span class="label" id="xisub"></span></div>
@@ -171,20 +222,24 @@ function renderDrafting() {
   $("formname").textContent = d.formation.label;
   $("pickno").textContent = d.picks.length + 1;
   $("bar").style.width = `${(d.picks.length / 11) * 100}%`;
+  lineChips($("lines"), d.formation, d.picks);
   const expect = movesIn(d.state);
   renderDeal($("deal"), d.deal, {
     heading: "Dealt to the room", rerollsLeft: d.rerolls_left, fresh,
     onTake: (i) => act("pick", { index: i, expect }), onReroll: () => act("reroll", { expect }),
   });
   renderPitch($("pitch"), d.formation.code, d.picks, d.picks.length ? d.picks[d.picks.length - 1].id : null);
-  const avg = d.picks.length ? Math.round(d.picks.reduce((a, c) => a + c.rating, 0) / d.picks.length) : "–";
   $("xisub").textContent = `${d.picks.length} / 11`;
-  $("xifoot").innerHTML = `<div><b>${avg}</b>Average</div><div><b>${new Set(d.picks.map((c) => c.club)).size}</b>Clubs</div><div><b>${d.rerolls_left}</b>Rerolls left</div>`;
+  xiFoot($("xifoot"), d);
 }
 
 // ------------------------------------------------------------------ boot
 
-document.addEventListener("visibilitychange", () => { if (!document.hidden && R) poll(); });
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) clearTimeout(timer);
+  else if (R) poll();
+});
+window.addEventListener("online", () => { if (R) poll(); });
 
 (function boot() {
   if (!/^[A-Z0-9]{6}$/.test(CODE)) return gone("That isn't a room code. A code is six letters and numbers.");

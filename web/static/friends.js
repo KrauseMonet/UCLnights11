@@ -14,6 +14,8 @@ const FORMATS = [
 const STATUS = { lobby: "In the lobby", drafting: "Drafting", complete: "Finished" };
 let size = +(store.get("room-size") || 8);
 let formation = store.get("formation") || "433";
+let memory = store.get("memory") === "1";
+const RATINGS = [{ code: "0", label: "Shown" }, { code: "1", label: "Hidden · Memory" }];
 
 function chips(el, items, current, pick) {
   el.innerHTML = items.map((x) => `<button class="chip" role="radio" aria-checked="${x.code === current}" data-c="${x.code}">${esc(x.label)}</button>`).join("");
@@ -27,7 +29,9 @@ function renderFormats() {
   $("formats").querySelectorAll(".fmt").forEach((b) => b.onclick = () => {
     size = +b.dataset.s; store.set("room-size", size); renderFormats();
   });
+  const f = FORMATS.find((x) => x.size === size);
   $("fmtnote").textContent = `up to ${size} players`;
+  $("fmtdesc").innerHTML = `<b>${esc(f.name)}</b> · ${esc(f.rounds)}`;
 }
 
 async function renderMine() {
@@ -59,7 +63,7 @@ function render(me) {
 $("create").onclick = async () => {
   $("create").disabled = true;
   try {
-    const room = await api("/api/rooms", { method: "POST", body: JSON.stringify({ size, formation }) });
+    const room = await api("/api/rooms", { method: "POST", body: JSON.stringify({ size, formation, memory }) });
     location.href = `/room#${room.code}`;
   } catch (e) { toast(e.message); $("create").disabled = false; }
 };
@@ -76,5 +80,6 @@ $("code").oninput = () => { $("code").value = $("code").value.toUpperCase(); };
   renderFormats();
   const meta = await loadMeta().catch(() => null);
   if (meta) chips($("formations"), meta.formations, formation, (c) => { formation = c; store.set("formation", c); });
+  chips($("ratings"), RATINGS, memory ? "1" : "0", (c) => { memory = c === "1"; store.set("memory", c); });
   onAuth(render);
 })();

@@ -111,7 +111,8 @@ def fields_xi(counts: dict[str, int]) -> bool:
 
 
 def build() -> dict:
-    squads = json.loads(SQUADS.read_text())["squads"]
+    squads_doc = json.loads(SQUADS.read_text())
+    squads = squads_doc["squads"]
     with CLUBS.open(newline="", encoding="utf-8") as f:
         clubs = {row["title"]: row for row in csv.DictReader(f)}
     ratings = load_ratings()
@@ -168,7 +169,9 @@ def build() -> dict:
     if errors:
         raise BuildError("\n".join(errors))
     out.sort(key=lambda s: (s["season"], s["name"]))
-    return {"version": 1, "club_seasons": out, "skipped": skipped}
+    # The quarter-finalists Wikipedia supplies no readable squad for, so the archive page
+    # can say why they are missing; carried here so the server needs one data file.
+    return {"version": 1, "club_seasons": out, "skipped": skipped, "gaps": squads_doc.get("gaps", [])}
 
 
 def serialise(deck: dict) -> str:

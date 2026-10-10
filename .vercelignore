@@ -1,0 +1,20 @@
+.env
+.venv/
+.pytest_cache/
+__pycache__/
+.git/
+.claude/
+# `data/*`, not `data/`: an excluded directory is never descended into, so a negation
+# inside it would never be evaluated (learned the hard way on the cricket site, A107).
+data/*
+!data/deck.json
+assets/
+etl/
+tools/
+tests/
+uv.lock
+pyproject.toml
+.python-version
+CLAUDE.md
+SPEC.md
+CREDITS.md

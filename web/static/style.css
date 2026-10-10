@@ -49,8 +49,7 @@ button{font:inherit;cursor:pointer}
 .topnav-in{max-width:1180px;margin:0 auto;padding:0 26px;height:64px;display:flex;align-items:center;gap:26px}
 .brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink);
   font-weight:800;font-size:17px;letter-spacing:.02em;flex:none}
-.brand svg{width:30px;height:32px;filter:drop-shadow(0 3px 10px rgba(245,184,61,.35))}
-.brand b{color:var(--gold);font-weight:800}
+.brand img{height:32px;width:auto;display:block}
 .navlinks{display:flex;gap:2px}
 .navlinks a{padding:8px 12px;border-radius:8px;font-size:14px;font-weight:650;color:var(--ink-2);
   text-decoration:none;transition:color .15s,background .15s}
@@ -318,7 +317,7 @@ button{font:inherit;cursor:pointer}
   .topnav-in{padding:0 16px;gap:14px}
   .nav-stat{display:none}
   .navlinks a{padding:8px 9px}
-  .brand span{display:none}
+  .brand img{height:28px}
   .steps{grid-template-columns:1fr}
   .home-stats{gap:24px}
   .home-stats b{font-size:26px}

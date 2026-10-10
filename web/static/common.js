@@ -3,22 +3,17 @@
    (crest medallion, rating chip, team colours, the pitch) that make the pages one site. */
 
 const SITE_NAME = "UCLnights11";
-// The wordmark: "nights" in gold, the casing exactly as the name is written.
-const SITE_MARK = "UCL<b>nights</b>11";
+// The logo the user supplied, cut out by tools.build_brand.
+const SITE_LOGO = "/static/brand/logo.webp";
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-
-const BRAND_SVG = `<svg viewBox="0 0 30 32" aria-hidden="true"><defs><linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
-  <stop offset="0" stop-color="#ffd873"/><stop offset="1" stop-color="#f5b83d"/></linearGradient></defs>
-  <path d="M15 1 28 6v10c0 8-6 13-13 15C8 29 2 24 2 16V6z" fill="none" stroke="url(#bg)" stroke-width="2.2"/>
-  <path d="m15 8 2.2 4.6 5 .7-3.6 3.5.9 5-4.5-2.4-4.5 2.4.9-5L7.8 13.3l5-.7z" fill="url(#bg)"/></svg>`;
 
 function shell(active) {
   const nav = document.createElement("header");
   nav.className = "topnav";
   nav.innerHTML = `<div class="topnav-in">
-    <a class="brand" href="/">${BRAND_SVG}<span>${SITE_MARK}</span></a>
+    <a class="brand" href="/" aria-label="${esc(SITE_NAME)} home"><img src="${SITE_LOGO}" alt="${esc(SITE_NAME)}" width="129" height="32"></a>
     <nav class="navlinks">
       <a href="/draft" ${active === "draft" ? 'class="on"' : ""}>Draft</a>
       <a href="/archive" ${active === "archive" ? 'class="on"' : ""}>Archive</a>

@@ -171,7 +171,7 @@ def showcase() -> list[dict]:
 
 @lru_cache(maxsize=1)
 def _gaps() -> list[str]:
-    return json.loads((ROOT / "data" / "squads.json").read_text())["gaps"]
+    return json.loads((ROOT / "data" / "deck.json").read_text()).get("gaps", [])
 
 
 @app.get("/api/archive")

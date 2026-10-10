@@ -1,0 +1,26 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "version": 2,
+  "regions": ["bom1"],
+  "builds": [
+    { "src": "api/index.py", "use": "@vercel/python", "config": { "includeFiles": "data/deck.json" } },
+    { "src": "web/static/**", "use": "@vercel/static" }
+  ],
+  "routes": [
+    { "src": "/static/fonts/(.*)", "dest": "/web/static/fonts/$1",
+      "headers": { "cache-control": "public, max-age=31536000, immutable" } },
+    { "src": "/static/(crests|brand)/(.*)", "dest": "/web/static/$1/$2",
+      "headers": { "cache-control": "public, max-age=2592000, stale-while-revalidate=604800" } },
+    { "src": "/static/(.*\\.(?:css|js))", "dest": "/web/static/$1",
+      "headers": { "cache-control": "public, max-age=31536000, immutable" } },
+    { "src": "/static/(.*)", "dest": "/web/static/$1" },
+    { "src": "/favicon.ico", "dest": "/web/static/brand/favicon-32.png" },
+
+    { "src": "/api/(.*)", "dest": "api/index.py" },
+
+    { "src": "/", "dest": "/web/static/index.html", "headers": { "cache-control": "public, max-age=0, must-revalidate" } },
+    { "src": "/draft", "dest": "/web/static/draft.html", "headers": { "cache-control": "public, max-age=0, must-revalidate" } },
+    { "src": "/cup", "dest": "/web/static/cup.html", "headers": { "cache-control": "public, max-age=0, must-revalidate" } },
+    { "src": "/archive", "dest": "/web/static/archive.html", "headers": { "cache-control": "public, max-age=0, must-revalidate" } }
+  ]
+}

@@ -27,12 +27,13 @@ def validate(trials: int) -> None:
     league = league_of(deck)
     xis = [best_xi(cs)[1] for cs in deck.club_seasons]
     rng = random.Random(7)
-    home, away = [], []
+    home, away, sides = [], [], []
     for _ in range(trials):
         a, b = rng.sample(range(len(xis)), 2)
         r = match.play(rng, xis[a], xis[b], league)
         home.append(r.home_goals)
         away.append(r.away_goals)
+        sides += r.stats
     totals = [h + a for h, a in zip(home, away)]
     sim = {
         "home_goals": statistics.mean(home), "away_goals": statistics.mean(away),
@@ -47,6 +48,26 @@ def validate(trials: int) -> None:
     print(f"{'':12}{'engine':>9}{'real':>9}")
     for k in ("home_goals", "away_goals", "total_sd", "home_win", "draw", "away_win"):
         print(f"{k:12}{sim[k]:9.3f}{real[k]:9.3f}")
+    match_stats_report(sides)
+
+
+def match_stats_report(sides: list[match.SideStats]) -> None:
+    """What the declared statistics constants produce, per side per match. There is no
+    real column: these have no open source to be checked against (C26)."""
+    def row(name, xs, fmt="{:.2f}"):
+        print(f"{name:14}" + "".join(f"{fmt.format(v):>9}" for v in
+              (statistics.mean(xs), statistics.pstdev(xs), min(xs), max(xs))))
+    print(f"\nmatch statistics, per side ({len(sides)} sides); declared, no real column")
+    print(f"{'':14}{'mean':>9}{'sd':>9}{'min':>9}{'max':>9}")
+    row("shots", [s.shots for s in sides])
+    row("on target", [s.on_target for s in sides])
+    row("possession", [s.possession for s in sides])
+    row("passes", [s.passes for s in sides], "{:.0f}")
+    row("completed", [s.completed for s in sides], "{:.0f}")
+    row("pass accuracy", [s.completed / s.passes for s in sides if s.passes])
+    row("saves", [s.saves for s in sides])
+    goals = sum(p.on_target for s in sides for p in s.players if p.card.pos == "GK")
+    print(f"goalkeepers' shots on target: {goals}")
 
 
 def play(seed: int) -> None:

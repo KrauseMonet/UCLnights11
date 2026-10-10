@@ -98,15 +98,14 @@ def top_level_names(path):
     return set(pat.findall(path.read_text()))
 
 
-def test_no_page_script_redeclares_a_name_common_js_declares():
+def test_no_two_scripts_on_a_page_declare_the_same_top_level_name():
     # archive.js and common.js both declared LINES; the archive page threw a SyntaxError
-    # on load and drew nothing, in production, with every test green.
+    # on load and drew nothing, in production, with every test green. Every pair of
+    # scripts a page loads is checked, not just each against common.js.
     static = ROOT / "web" / "static"
-    shared = top_level_names(static / "common.js")
     for page in static.glob("*.html"):
         scripts = re.findall(r'<script src="/static/([\w.-]+\.js)', page.read_text())
-        if "common.js" not in scripts:
-            continue
-        for name in scripts:
-            if name != "common.js":
-                assert not shared & top_level_names(static / name), (page.name, name, shared & top_level_names(static / name))
+        names = [(s, top_level_names(static / s)) for s in scripts]
+        for i, (a, na) in enumerate(names):
+            for b, nb in names[i + 1:]:
+                assert not na & nb, (page.name, a, b, na & nb)

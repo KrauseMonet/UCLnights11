@@ -66,10 +66,20 @@ function renderSpectator(where) {
 }
 
 function endActions() {
+  const card = (CUP.journey ? `<button class="btn ghost" id="jcard">Journey card</button>` : "")
+    + `<a class="btn ghost" href="${CUP.room ? `/analysis?room=${esc(CUP.room.code)}` : `/analysis#${esc(CUP.state)}`}">Tournament analysis</a>`;
   $("actions").innerHTML = CUP.room
-    ? `<a class="btn primary" href="/friends">Play another room</a><button class="btn ghost" id="copy">Copy link</button>`
-    : `<a class="btn primary" href="/">Draft again</a><button class="btn ghost" id="copy">Copy link</button>`;
+    ? `<a class="btn primary" href="/friends">Play another room</a>${card}<button class="btn ghost" id="copy">Copy link</button>`
+    : `<a class="btn primary" href="/">Draft again</a>${card}<button class="btn ghost" id="copy">Copy link</button>`;
   $("copy").onclick = () => copyText(location.href, "Link copied");
+  if ($("jcard")) $("jcard").onclick = showJourney;
+}
+
+function showJourney() {
+  const y = CUP.you;
+  const side = { name: y.you ? "Your XI" : y.name, formation: y.formation, crest: y.crest, human: !!y.human,
+    avg: Math.round(y.xi.reduce((a, c) => a + c.rating, 0) / y.xi.length), team: y.team, deep: y.deep, ink: y.ink };
+  openJourney(CUP.journey, side, CUP.room ? `ROOM ${CUP.room.code}` : `SEED ${CUP.state.split("-")[0]}`);
 }
 
 function championBlock() {
@@ -101,7 +111,33 @@ function matchCard(f, score, clock) {
       <div class="score" id="sc">${score}</div><div class="clock" id="clk">${clock}</div></div>
     ${sideHtml(f.away)}
     <div class="timebar"><i id="tb"></i></div>
-    <div class="feed" id="feed"></div></div>`;
+    <div class="feed" id="feed"></div>
+    <div class="mstats-wrap" id="mstats"></div></div>`;
+}
+
+/* A broadcast-style stats panel: home on the left, away on the right, a split bar per
+   row. Shown at full time; the engine knows totals, not when each shot happened. */
+const STAT_ROWS = [
+  ["possession", "Possession", (v) => `${v}%`],
+  ["shots", "Shots"], ["on_target", "On target"],
+  ["passes", "Passes"], ["completed", "Passes completed"],
+  ["accuracy", "Pass accuracy", (v) => `${v}%`],
+  ["saves", "Saves"],
+];
+
+function statsHtml(f) {
+  const st = f.stats;
+  if (!st) return "";
+  const rows = { ...st, accuracy: [0, 1].map((i) => st.passes[i] ? Math.round((st.completed[i] / st.passes[i]) * 100) : 0) };
+  // Two sides in one colour (two reds, say) would make the bars unreadable; the away
+  // side then takes its lighter ink colour.
+  const away = f.away.team.toLowerCase() === f.home.team.toLowerCase() ? f.away.ink : f.away.team;
+  return `<div class="mstats" style="--home:${f.home.team};--away:${away}">${STAT_ROWS.map(([k, label, fmt = String]) => {
+    const [h, a] = rows[k], total = h + a, hw = total ? (h / total) * 100 : 50;
+    const lead = h > a ? "h" : a > h ? "a" : "";
+    return `<div class="mstat"><b class="${lead === "h" ? "lead" : ""}">${fmt(h)}</b><span>${label}</span><b class="${lead === "a" ? "lead" : ""}">${fmt(a)}</b>
+      <div class="split" aria-hidden="true"><i style="width:${hw}%"></i><i style="width:${100 - hw}%"></i></div></div>`;
+  }).join("")}</div>`;
 }
 
 function showPreview(f) {
@@ -129,6 +165,7 @@ function playNext() {
     $("sc").textContent = `${f.hg}–${f.ag}`;
     $("clk").textContent = f.pens ? `${f.pens[0]}–${f.pens[1]} on penalties` : f.extra_time ? "After extra time" : "Full time";
     $("tb").style.width = "100%";
+    $("mstats").innerHTML = statsHtml(f);
     CUP.revealed += 1;
     store.set(`cup:${CUP.state}`, CUP.revealed);
     $("actions").innerHTML = CUP.revealed < CUP.your_matches.length
@@ -158,8 +195,10 @@ function playNext() {
 
 function resRow(f) {
   const t = (s, side) => `<div class="t ${side}">${side === "h" ? `<span class="nm ${s.you ? "you-name" : ""}">${esc(sideName(s))}</span>${sideCrest(s, 22)}` : `${sideCrest(s, 22)}<span class="nm ${s.you ? "you-name" : ""}">${esc(sideName(s))}</span>`}</div>`;
-  return `<div class="res ${outcome(f)}"><div class="tag">${esc(f.stage === "Group stage" ? `Group ${f.group} · MD${f.label.slice(-1)}` : f.stage === "Final" ? "Final" : `${f.stage.replace("Quarter-finals", "QF").replace("Semi-finals", "SF")} · ${f.label.replace(" leg", "")}`)}</div>
-    ${t(f.home, "h")}<div class="sc">${f.hg}–${f.ag}${extraLine(f) ? `<small>${extraLine(f)}</small>` : ""}</div>${t(f.away, "a")}</div>`;
+  return `<details class="res-d"><summary class="res ${outcome(f)}"><div class="tag">${esc(f.stage === "Group stage" ? `Group ${f.group} · MD${f.label.slice(-1)}` : f.stage === "Final" ? "Final" : `${f.stage.replace("Quarter-finals", "QF").replace("Semi-finals", "SF")} · ${f.label.replace(" leg", "")}`)}</div>
+    ${t(f.home, "h")}<div class="sc">${f.hg}–${f.ag}${extraLine(f) ? `<small>${extraLine(f)}</small>` : ""}</div>${t(f.away, "a")}</summary>
+    ${f.goals.length ? `<div class="res-goals">${f.goals.map((g) => `<span class="${g.side ? "a" : "h"}">${esc(g.scorer)} ${g.minute}'</span>`).join("")}</div>` : ""}
+    ${statsHtml(f)}</details>`;
 }
 
 function groupHtml(g) {
@@ -189,7 +228,7 @@ function renderBody() {
   const done = CUP.revealed >= CUP.your_matches.length;
   const played = CUP.your_matches.slice(0, CUP.revealed);
   const left = [];
-  if (played.length) left.push(`<section class="panel"><div class="panel-h"><span class="label">Your results</span>
+  if (played.length) left.push(`<section class="panel"><div class="panel-h"><span class="label">Your results · tap a match for its stats</span>
     <span class="label">${played.filter((f) => outcome(f) === "w").length}W ${played.filter((f) => outcome(f) === "d").length}D ${played.filter((f) => outcome(f) === "l").length}L</span></div>
     ${played.map(resRow).join("")}</section>`);
   if (done && CUP.players) left.push(friendsHtml());
@@ -204,6 +243,7 @@ function renderBody() {
   if (done && others.length) right.push(`<section class="panel"><div class="panel-h"><span class="label">Their elevens</span>
     <select id="whose" aria-label="Whose eleven">${others.map((p, i) => `<option value="${i}">${esc(p.name)} · ${esc(p.formation)}</option>`).join("")}</select></div>
     <div class="pitch" id="theirpitch"></div></section>`);
+  if (done && CUP.journey) right.push(playersPanel(CUP.journey));
   if (done) {
     right.push(`<section class="panel"><div class="panel-h"><span class="label">Top scorers</span></div>${leaderList(CUP.golden_boot)}</section>`);
     right.push(`<section class="panel"><div class="panel-h"><span class="label">Most assists</span></div>${leaderList(CUP.assists)}</section>`);

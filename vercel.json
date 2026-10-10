@@ -33,6 +33,7 @@
     { "src": "/privacy", "dest": "/web/static/privacy.html", "headers": { "cache-control": "public, max-age=0, must-revalidate" } },
     { "src": "/terms", "dest": "/web/static/terms.html", "headers": { "cache-control": "public, max-age=0, must-revalidate" } },
     { "src": "/offline", "dest": "/web/static/offline.html", "headers": { "cache-control": "public, max-age=0, must-revalidate" } },
-    { "src": "/admin", "dest": "/web/static/admin.html", "headers": { "cache-control": "public, max-age=0, must-revalidate" } }
+    { "src": "/admin", "dest": "/web/static/admin.html", "headers": { "cache-control": "public, max-age=0, must-revalidate" } },
+    { "src": "/analysis", "dest": "/web/static/analysis.html", "headers": { "cache-control": "public, max-age=0, must-revalidate" } }
   ]
 }

@@ -86,3 +86,16 @@ def test_a_memory_pick_takes_the_player_it_names():
 def test_the_same_draft_without_memory_shows_ratings():
     s = client.post("/api/draft", json={"seed": 11}).json()
     assert not s["memory"] and all(isinstance(c["rating"], int) for c in s["deal"]["cards"])
+
+
+def test_every_fixture_carries_its_match_stats():
+    s = client.post("/api/draft", json={"seed": 3}).json()
+    while not s["complete"]:
+        i = next(c["i"] for c in s["deal"]["cards"] if c["takeable"])
+        s = client.post(f"/api/draft/{s['state']}/pick", json={"index": i}).json()
+    t = client.get(f"/api/tournament/{s['state']}").json()
+    for f in t["your_matches"]:
+        st = f["stats"]
+        assert sum(st["possession"]) == 100
+        assert st["on_target"][0] >= f["hg"] and st["on_target"][1] >= f["ag"]
+        assert all(c <= p for c, p in zip(st["completed"], st["passes"]))

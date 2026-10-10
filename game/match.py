@@ -16,6 +16,16 @@ calibration and the strength model cannot drift into each other.
 The constants are declared game design, like the ratings: ``K`` decides how
 much a rating gap matters, and ``game --validate`` reports what it does to the
 draw rate rather than tuning it to one.
+
+Every match also carries its statistics (``MatchStats``): possession, shots, shots
+on target, passes and passes completed, for each side and each player. They are
+drawn AFTER the result, from a random stream seeded by the match itself, so they
+never touch the tournament's stream and cannot change a single result (C26). The
+goals are part of them -- every goal is a shot on target by its scorer -- and the
+rest grows from the same expected goals that decided the score, so a side that
+dominated on paper usually dominated the numbers too. Unlike goals, these have no
+real yardstick: the constants are declared, at the user's direction, and
+``game --validate`` reports what they produce.
 """
 
 from __future__ import annotations
@@ -74,12 +84,54 @@ class Goal:
 
 
 @dataclass
+class PlayerLine:
+    """One player's match. ``saves`` is a goalkeeper's; everyone else's stays 0."""
+
+    card: Card
+    shots: int = 0
+    on_target: int = 0
+    passes: int = 0
+    completed: int = 0
+    saves: int = 0
+
+
+@dataclass
+class SideStats:
+    """A side's numbers. The totals are its players' lines added up, so the two can
+    never disagree."""
+
+    possession: float               # share of the ball, 0-1; the two sides sum to 1
+    players: list[PlayerLine]
+
+    @property
+    def shots(self) -> int:
+        return sum(p.shots for p in self.players)
+
+    @property
+    def on_target(self) -> int:
+        return sum(p.on_target for p in self.players)
+
+    @property
+    def passes(self) -> int:
+        return sum(p.passes for p in self.players)
+
+    @property
+    def completed(self) -> int:
+        return sum(p.completed for p in self.players)
+
+    @property
+    def saves(self) -> int:
+        return sum(p.saves for p in self.players)
+
+
+@dataclass
 class Result:
     home_goals: int = 0
     away_goals: int = 0
     goals: list[Goal] = field(default_factory=list)
     extra_time: bool = False
     pens: tuple[int, int] | None = None
+    stats: tuple[SideStats, SideStats] | None = None
 
     @property
     def winner(self) -> int | None:
@@ -127,6 +179,111 @@ def _goals(rng: random.Random, xi: Sequence[Card], n: int, side: int, lo: int, h
         assist = _pick(rng, xi, ASSIST_WEIGHT, skip=scorer) if rng.random() < ASSISTED_SHARE else None
         out.append(Goal(minute, side, scorer, assist))
     return out
+
+
+# -- match statistics ---------------------------------------------------------
+# Declared game design, set by judgement at the user's direction (C26); there is no
+# open Champions League source they are fitted to. `game --validate` prints what they
+# produce. Each side's shots grow from the expected goals that decided the score:
+
+SAVED_PER_XG = 1.9          # shots on target kept out, per expected goal
+OFF_PER_XG = 3.0            # shots off target or blocked, per expected goal ...
+OFF_BASE = 4.0              # ... plus a floor: even a blunt side shoots from range
+SHOT_POSSESSION = 0.5       # +/- this share of off-target shots, from 0% to 100% possession
+SHOT_XG_CAP = 3.2           # a rout's chances stop growing here: 20 on target reads as a bug
+
+# Possession and passing follow CONTROL, a weighted mean of the eleven's ratings in
+# which midfield counts most.
+CONTROL_WEIGHT = {"GK": 0.1, "DF": 0.5, "MF": 1.0, "FW": 0.35}
+POSSESSION_K = 0.012        # share of the ball per rating point of control edge
+POSSESSION_HOME = 0.02      # the home side's extra share
+POSSESSION_SD = 0.06
+POSSESSION_RANGE = (0.25, 0.75)
+PASSES_AT_HALF = 480        # a side's passes over ninety minutes with half the ball
+PASSES_SD = 0.08
+ACCURACY_BASE = 0.81
+ACCURACY_K = 0.006          # per rating point of a player above eighty
+ACCURACY_POSSESSION = 0.30  # more of the ball, more short safe passes
+ACCURACY_SD = 0.03
+ACCURACY_RANGE = (0.55, 0.95)
+
+# Who shoots and who passes, by line. A shot that misses is picked as a scorer is
+# (SCORE_WEIGHT), so forwards shoot most; passes lean on midfield.
+PASS_WEIGHT = {"GK": 0.45, "DF": 1.05, "MF": 1.35, "FW": 0.6}
+
+
+def control(xi: Sequence[Card]) -> float:
+    return _weighted(xi, CONTROL_WEIGHT)
+
+
+def _clamp(x: float, lo_hi: tuple[float, float]) -> float:
+    return min(max(x, lo_hi[0]), lo_hi[1])
+
+
+def _stats_rng(home: Sequence[Card], away: Sequence[Card], neutral: bool, r: Result) -> random.Random:
+    """A stream of its own, seeded by everything that makes this match this match.
+    Python seeds a Random from a string through SHA-512, so it is the same in every
+    process, and nothing is drawn from the tournament's stream."""
+    key = "|".join([
+        ",".join(c.id for c in home), ",".join(c.id for c in away), str(neutral),
+        f"{r.home_goals}-{r.away_goals}-{r.extra_time}-{r.pens}",
+        ";".join(f"{g.minute}.{g.side}.{g.scorer.id}" for g in r.goals),
+    ])
+    return random.Random(f"stats|{key}")
+
+
+def _side_stats(rng: random.Random, xi: Sequence[Card], possession: float, lam: float,
+                goals: list[Goal], side: int, saves_against: int, minutes: float) -> SideStats:
+    lines = [PlayerLine(c) for c in xi]
+    line_of = {id(c): ln for c, ln in zip(xi, lines)}
+    # Goals first: each is a shot on target by its scorer.
+    for g in goals:
+        if g.side == side:
+            ln = line_of[id(g.scorer)]
+            ln.shots += 1
+            ln.on_target += 1
+    lam = min(lam, SHOT_XG_CAP)
+    saved = poisson(rng, SAVED_PER_XG * lam * minutes)
+    off = poisson(rng, (OFF_BASE + OFF_PER_XG * lam) * minutes
+                  * (1 + SHOT_POSSESSION * (possession - 0.5) * 2))
+    for n, on in ((saved, True), (off, False)):
+        for _ in range(n):
+            ln = line_of[id(_pick(rng, xi, SCORE_WEIGHT))]
+            ln.shots += 1
+            ln.on_target += on
+    # Passes: the side's total, shared out by line and quality, each player completing
+    # his own share at an accuracy that rises with his rating and the side's possession.
+    total = max(0, round(PASSES_AT_HALF * 2 * possession * minutes * rng.gauss(1, PASSES_SD)))
+    weights = [PASS_WEIGHT[c.pos] * math.exp(0.03 * (c.rating - 80)) * rng.uniform(0.8, 1.2) for c in xi]
+    shares = [total * w / sum(weights) for w in weights]
+    counts = [int(x) for x in shares]
+    for i in sorted(range(len(xi)), key=lambda i: shares[i] - counts[i], reverse=True)[:total - sum(counts)]:
+        counts[i] += 1
+    for ln, n in zip(lines, counts):
+        acc = _clamp(ACCURACY_BASE + ACCURACY_K * (ln.card.rating - 80)
+                     + ACCURACY_POSSESSION * (possession - 0.5) + rng.gauss(0, ACCURACY_SD), ACCURACY_RANGE)
+        ln.passes, ln.completed = n, round(n * acc)
+    keeper = next((ln for ln in lines if ln.card.pos == "GK"), None)
+    if keeper is not None:
+        keeper.saves = saves_against
+    return SideStats(possession, lines)
+
+
+def match_stats(home: Sequence[Card], away: Sequence[Card], lh: float, la: float,
+                r: Result, neutral: bool) -> tuple[SideStats, SideStats]:
+    rng = _stats_rng(home, away, neutral, r)
+    edge = control(home) - control(away)
+    p = 0.5 + POSSESSION_K * edge + (0 if neutral else POSSESSION_HOME) + rng.gauss(0, POSSESSION_SD)
+    p = round(_clamp(p, POSSESSION_RANGE), 3)
+    minutes = 1 + (EXTRA_TIME_SHARE if r.extra_time else 0)
+    # Saves are the shots on target that didn't go in; draw the away side's first so
+    # the home keeper can be credited with them, and vice versa.
+    a = _side_stats(rng, away, 1 - p, la, r.goals, 1, 0, minutes)
+    h = _side_stats(rng, home, p, lh, r.goals, 0, a.on_target - r.away_goals, minutes)
+    keeper = next((ln for ln in a.players if ln.card.pos == "GK"), None)
+    if keeper is not None:
+        keeper.saves = h.on_target - r.home_goals
+    return h, a
 
 
 def shootout(rng: random.Random, home: Sequence[Card], away: Sequence[Card]) -> tuple[int, int]:
@@ -198,4 +355,5 @@ def play(
         if r.home_goals + level_on[0] == r.away_goals + level_on[1]:
             r.pens = shootout(rng, home, away)
     r.goals.sort(key=lambda g: (g.minute, g.side))
+    r.stats = match_stats(home, away, lh, la, r, neutral)
     return r

@@ -209,6 +209,14 @@ def test_the_room_tournament_has_every_friend_and_real_sides_for_the_rest():
     assert legs(g) == legs(t)          # one tournament, whoever is looking at it
     spectator = stranger.get(f"/api/rooms/{code}/tournament").json()
     assert spectator["you"] is None and spectator["your_matches"] == []
+    # Each friend gets their own journey card; someone watching gets none.
+    assert len(t["journey"]["players"]) == 11 and len(t["journey"]["matches"]) == len(t["your_matches"])
+    assert g["journey"]["players"] != t["journey"]["players"] or g["you"]["xi"] == t["you"]["xi"]
+    assert spectator["journey"] is None
+    an = host.get(f"/api/rooms/{code}/analysis").json()
+    assert an["room"]["code"] == code and an["you"]["name"] == "host_t"
+    assert an["analysis"]["hero"]["matches"] == len(legs(t)) and len(an["analysis"]["sides"]) == 8
+    assert stranger.get(f"/api/rooms/{code}/analysis").json()["you"] is None
     assert spectator["champion"]["key"] == t["champion"]["key"]
 
 

@@ -22,7 +22,7 @@ from fastapi.responses import FileResponse, JSONResponse, Response as PlainRespo
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from game import match
+from game import analysis as analyses, journey as journeys, match
 from game.deck import Card, ClubSeason, load_deck
 from game.draft import IllegalMove, Pick, Reroll, Session, decode, encode, replay, why_not
 from game.formations import DEFAULT, FORMATIONS
@@ -139,7 +139,19 @@ def fixture_out(f: Fixture) -> dict:
         "pens": list(r.pens) if r.pens else None,
         "goals": [{"minute": g.minute, "side": g.side, "scorer": g.scorer.name,
                    "assist": g.assist.name if g.assist else None} for g in r.goals],
+        "stats": stats_out(r),
     }
+
+
+def stats_out(r) -> dict | None:
+    """Both sides' match statistics as [home, away] pairs. Possession is whole percents
+    that add up to 100, as a scoreboard shows it."""
+    if r.stats is None:
+        return None
+    h, a = r.stats
+    ph = round(h.possession * 100)
+    return {"possession": [ph, 100 - ph], **{k: [getattr(h, k), getattr(a, k)]
+            for k in ("shots", "on_target", "passes", "completed", "saves")}}
 
 
 def leader_out(card: Card, side: Side, n: int) -> dict:
@@ -148,6 +160,112 @@ def leader_out(card: Card, side: Side, n: int) -> dict:
     if side.owner is not None:
         out.update(human=True, **colours(side))
     return out
+
+
+def pct(x: float | None) -> int | None:
+    return None if x is None else round(x * 100)
+
+
+def player_totals_out(p: journeys.PlayerTotals) -> dict:
+    c = p.card
+    return {
+        "id": c.id, "name": c.name, "pos": c.pos, "rating": c.rating, "club": c.club_name,
+        "short": c.short, "season": c.label, "crest": crest_url(c.crest),
+        "apps": p.apps, "minutes": p.minutes, "goals": p.goals, "assists": p.assists,
+        "shots": p.shots, "on_target": p.on_target, "passes": p.passes, "completed": p.completed,
+        "accuracy": pct(p.accuracy), "saves": p.saves, "clean_sheets": p.clean_sheets,
+        "mark": p.mark, "marks": p.marks,
+    }
+
+
+def journey_out(j: journeys.Journey) -> dict:
+    """A side's whole tournament, for its journey card (C27)."""
+    def award(p, n):
+        return None if p is None else {"name": p.card.name, "n": n, "crest": crest_url(p.card.crest),
+                                       "pos": p.card.pos, "short": p.card.short, "season": p.card.label}
+    scorer = j.top(lambda p: p.goals)
+    maker = j.top(lambda p: p.assists)
+    star = j.star
+    matches = []
+    for m in j.matches:
+        f, i = m.fixture, m.side_index
+        r = f.result
+        mine, theirs = (r.home_goals, r.away_goals) if i == 0 else (r.away_goals, r.home_goals)
+        opp = f.away if i == 0 else f.home
+        matches.append({"stage": f.stage, "label": f.label, "outcome": m.outcome, "knockout": m.knockout,
+                        "for": mine, "against": theirs, "opp": side_out(opp),
+                        "pens": None if r.pens is None else list(r.pens if i == 0 else r.pens[::-1]),
+                        "extra_time": r.extra_time})
+    w, d, l = j.record
+    return {
+        "reached": j.reached, "record": [w, d, l], "goals_for": j.goals_for,
+        "goals_against": j.goals_against, "possession": pct(j.possession), "shots": j.shots,
+        "on_target": j.on_target, "passes": j.passes, "completed": j.completed,
+        "accuracy": pct(j.completed / j.passes) if j.passes else None,
+        "clean_sheets": j.clean_sheets, "matches": matches,
+        "players": [player_totals_out(p) for p in j.players],
+        "awards": {"top_scorer": award(scorer, scorer.goals if scorer else 0),
+                   "top_assists": award(maker, maker.assists if maker else 0),
+                   "star": award(star, star.mark if star else 0)},
+    }
+
+
+def analysis_out(a: analyses.Analysis) -> dict:
+    """The tournament analysis (C28). Rates with nothing under them are None."""
+    def per(n, d):
+        return round(n / d, 2) if d else None
+
+    def side_row(r: analyses.SideRow) -> dict:
+        return {**side_out(r.side), "reached": r.reached, "p": r.played, "w": r.won, "d": r.drawn,
+                "l": r.lost, "gf": r.gf, "ga": r.ga, "possession": pct(r.possession) if r.played else None,
+                "shots": per(r.shots, r.played), "on_target": per(r.on_target, r.played),
+                "accuracy": pct(r.completed / r.passes) if r.passes else None,
+                "clean_sheets": r.clean_sheets, "mark": r.mark}
+
+    def board(rows, fmt=lambda v: v):
+        return [{"name": p.card.name, "pos": p.card.pos, "crest": crest_url(p.card.crest),
+                 "side": side_out(p.side), "apps": p.apps, "value": fmt(v)} for p, v in rows]
+
+    def fixture_brief(f):
+        return None if f is None else {"stage": f.stage, "label": f.label, "group": f.group,
+                                       "home": side_out(f.home), "away": side_out(f.away),
+                                       "hg": f.result.home_goals, "ag": f.result.away_goals}
+
+    sides = a.sides
+    n = sum(r.played for r in sides)
+    average = {"goals": per(sum(r.gf for r in sides), n), "conceded": per(sum(r.ga for r in sides), n),
+               "shots": per(sum(r.shots for r in sides), n), "on_target": per(sum(r.on_target for r in sides), n),
+               "possession": 50, "accuracy": pct(a.completed / a.passes) if a.passes else None}
+    you = None
+    if a.you is not None:
+        r = a.you
+        you = {"goals": per(r.gf, r.played), "conceded": per(r.ga, r.played), "shots": per(r.shots, r.played),
+               "on_target": per(r.on_target, r.played), "possession": pct(r.possession) if r.played else None,
+               "accuracy": pct(r.completed / r.passes) if r.passes else None}
+    return {
+        "hero": {"matches": a.matches, "goals": a.goals, "goals_per_match": per(a.goals, a.matches),
+                 "shots": a.shots, "on_target": a.on_target,
+                 "conversion": pct(a.goals / a.shots) if a.shots else None,
+                 "on_target_share": pct(a.on_target / a.shots) if a.shots else None,
+                 "accuracy": pct(a.completed / a.passes) if a.passes else None,
+                 "extra_time": a.extra_time, "shootouts": a.shootouts},
+        "home": {"home_win": a.home[0], "draw": a.home[1], "away_win": a.home[2]},
+        "buckets": [f"{lo}–{hi}" if hi <= 90 else "Extra time" for lo, hi in analyses.GOAL_BUCKETS],
+        "goal_minutes": a.goal_minutes,
+        "your_minutes": None if a.your_minutes is None else {"scored": a.your_minutes[0], "conceded": a.your_minutes[1]},
+        "stages": [{"stage": s.stage, "matches": s.matches, "goals": s.goals,
+                    "goals_per_match": per(s.goals, s.matches), "shots_per_match": per(s.shots, s.matches * 2),
+                    "extra_time": s.extra_time, "shootouts": s.shootouts} for s in a.stages],
+        "sides": [side_row(r) for r in sides],
+        "you": you, "average": average, "min_apps": a.min_apps,
+        "boards": {
+            "goals": board(a.boards["goals"]), "assists": board(a.boards["assists"]),
+            "on_target": board(a.boards["on_target"]), "mark": board(a.boards["mark"]),
+            "accuracy": board(a.boards["accuracy"], pct), "saves": board(a.boards["saves"]),
+            "clean_sheets": board(a.boards["clean_sheets"]),
+        },
+        "biggest_win": fixture_brief(a.biggest_win), "most_goals": fixture_brief(a.most_goals),
+    }
 
 
 def tournament_out(t: Tournament) -> dict:
@@ -173,6 +291,7 @@ def tournament_out(t: Tournament) -> dict:
         "your_matches": [fixture_out(f) for f in t.fixtures if you in (f.home, f.away)],
         "groups": groups, "knockout": knockout,
         "champion": side_out(t.champion), "reached": t.reached(you) if you else None,
+        "journey": journey_out(journeys.journey(t, you)) if you else None,
         "golden_boot": [leader_out(c, s, n) for c, s, n in leaders(t, "goals", 10)],
         "assists": [leader_out(c, s, n) for c, s, n in leaders(t, "assists", 5)],
     }
@@ -297,13 +416,24 @@ def reroll(state: str, memory: bool = False) -> dict:
     return session_out(new, _replay(new), memory)
 
 
-@app.get("/api/tournament/{state}")
-def tournament(state: str) -> dict:
+def _solo_tournament(state: str) -> Tournament:
     s = _replay(state)
     if not s.complete:
         raise HTTPException(409, "the eleven is not complete yet")
     you = Side("YOU", "Your XI", "YOU", s.formation, s.picks, you=True)
-    return tournament_out(play_tournament(load_deck(), league(), s.seed, you))
+    return play_tournament(load_deck(), league(), s.seed, you)
+
+
+@app.get("/api/tournament/{state}")
+def tournament(state: str) -> dict:
+    return tournament_out(_solo_tournament(state))
+
+
+@app.get("/api/tournament/{state}/analysis")
+def tournament_analysis(state: str) -> dict:
+    t = _solo_tournament(state)
+    you = next((s for s in t.sides if s.you), None)
+    return {"analysis": analysis_out(analyses.tournament_analysis(t, you)), "you": side_out(you)}
 
 
 # -- accounts ---------------------------------------------------------------
@@ -553,8 +683,7 @@ def players_out(t: Tournament) -> list[dict]:
     return sorted(out, key=lambda p: (REACHED_ORDER.index(p["reached"]), -(p["gf"] - p["ga"]), -p["gf"]))
 
 
-@app.get("/api/rooms/{code}/tournament")
-def room_tournament(code: str, request: Request) -> dict:
+def _room_tournament(code: str, request: Request) -> tuple[rooms.Room, Tournament]:
     with db.connection() as conn:
         room = rooms.load_room(conn, code)
         me = _account(conn, request)
@@ -564,10 +693,25 @@ def room_tournament(code: str, request: Request) -> dict:
     humans = rooms.sides(deck, room)
     for side in humans:
         side.you = me is not None and side.owner == me.account_id
-    t = play_room(deck, league(), room.seed, humans, room.size)
-    return {**tournament_out(t), "room": {"code": room.code, "size": room.size,
-                                          "format": ROOM_FORMATS[room.size]},
-            "players": players_out(t)}
+    return room, play_room(deck, league(), room.seed, humans, room.size)
+
+
+def room_brief(room: rooms.Room) -> dict:
+    return {"code": room.code, "size": room.size, "format": ROOM_FORMATS[room.size]}
+
+
+@app.get("/api/rooms/{code}/tournament")
+def room_tournament(code: str, request: Request) -> dict:
+    room, t = _room_tournament(code, request)
+    return {**tournament_out(t), "room": room_brief(room), "players": players_out(t)}
+
+
+@app.get("/api/rooms/{code}/analysis")
+def room_analysis(code: str, request: Request) -> dict:
+    room, t = _room_tournament(code, request)
+    you = next((s for s in t.sides if s.you), None)
+    return {"analysis": analysis_out(analyses.tournament_analysis(t, you)),
+            "you": side_out(you) if you else None, "room": room_brief(room)}
 
 
 # -- what browsers saw go wrong ----------------------------------------------
@@ -659,7 +803,8 @@ def _page(name: str):
 
 PAGES = (("/", "index"), ("/draft", "draft"), ("/cup", "cup"), ("/archive", "archive"),
          ("/friends", "friends"), ("/room", "room"), ("/about", "about"), ("/faq", "faq"),
-         ("/privacy", "privacy"), ("/terms", "terms"), ("/offline", "offline"), ("/admin", "admin"))
+         ("/privacy", "privacy"), ("/terms", "terms"), ("/offline", "offline"), ("/admin", "admin"),
+         ("/analysis", "analysis"))
 for _path, _name in PAGES:
     app.add_api_route(_path, _page(_name), methods=["GET"], include_in_schema=False)
 

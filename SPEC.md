@@ -125,6 +125,29 @@ Goals are Poisson. A side's expected goals are
 Means are calibrated by construction; draw rate, result split and spread are
 **reported, not tuned**.
 
+### Match statistics
+
+Every match also has possession, shots, shots on target, passes, passes completed
+and saves, for each side and each player. **The constants are declared game design,
+set by judgement at the user's direction; no real source is fitted** (C26), and the
+validator prints what they produce with no "real" column.
+
+- **They never change a result.** They are drawn after the score, from a random stream
+  seeded by the match itself (both elevens, the score, the goals), never from the
+  tournament's stream.
+- **Shots grow from the score's own expected goals.** Every goal is a shot on target by
+  its scorer. Saved shots ~ Poisson(1.9 x lambda); shots off target or blocked ~
+  Poisson(4.0 + 3.0 x lambda), scaled +/-50% across 0-100% possession; lambda capped
+  at 3.2 for the shots of a rout. Shooters are drawn as scorers are.
+- **Possession** is 0.5 + 0.012 per point of CONTROL edge (+0.02 at home) + N(0, 0.06),
+  kept within 25-75%. Control weights: GK 0.1, DF 0.5, MF 1.0, FW 0.35.
+- **Passes:** 480 x 2 x possession (x 4/3 after extra time) x N(1, 0.08), shared by line
+  (GK 0.45, DF 1.05, MF 1.35, FW 0.6) and quality. Each player completes his share at
+  0.81 + 0.006 per rating point above 80 + 0.30 x (possession - 0.5) + N(0, 0.03),
+  within 55-95%.
+- **Saves** are the opponent's shots on target that were not goals, all the keeper's.
+- A side's totals are its players' lines added up, so the two cannot disagree.
+
 ## 7. The tournament
 
 - 32 sides: yours plus **31 different clubs**, each in one season drawn uniformly
@@ -139,6 +162,33 @@ Means are calibrated by construction; draw rate, result split and spread are
 - Final: one match, neutral ground, extra time and penalties.
 - The honours count scorers per (person, side): one man in two drawn club-seasons
   is two rows, never one summed total no single team produced.
+
+### Players' tournaments, the journey card and the analysis
+
+- **One set of totals** (`game.journey.player_totals`) per (side, person): apps, minutes
+  (120 after extra time), goals, assists, shots, on target, passes, completed, saves,
+  clean sheets and a mark per match. The journey card, the players table and every
+  analysis board read it, so they cannot disagree.
+- **The mark** out of 10 is declared (C27): 6.4, +0.9 a goal, +0.75 an assist, +0.15 a
+  shot on target that didn't go in, +4.0 x (pass accuracy - 0.84) once a player has 10
+  passes, +0.2 a save, per goal conceded GK -0.3 / DF -0.1 / MF -0.05, a clean sheet
+  GK +0.8 / DF +0.6 / MF +0.2, +0.3 a win, -0.3 a loss; kept within 3-10. A shoot-out
+  is a draw for the mark. Measured over 40 tournaments: mean 6.64; by line GK 6.73,
+  DF 6.43, MF 6.66, FW 6.89; a 10 in 0.1% of player-matches.
+- **The journey card** (C27) is your side's tournament as one 1080 px image: the ending,
+  W-D-L and a form strip (knockouts ringed), six team figures, three awards (top
+  scorer, most assists, player of the tournament = best average mark), and the eleven
+  with each man's apps, goals, assists, a line-specific figure and his average mark.
+  Drawn in the browser, downloadable and shareable. No award goes to a 0. In a room,
+  each friend's card is their own; someone watching has none.
+- **The analysis** (C28), at `/analysis`, covers the whole tournament: headline totals;
+  honours (golden boot, most assists, player of the tournament, golden glove, biggest
+  win, most goals in a match); goals by quarter-hour (all, or yours scored and
+  conceded); your side per match against the field's average; home win / draw / away
+  win in matches with a home side; round by round; every side, sortable; and seven
+  player boards. A rate (mark, pass accuracy) is ranked only for a player with at least
+  half as many matches as anyone; pass accuracy also needs 20 passes a match and is
+  outfield only. An empty rate is "–", never 0.
 
 ## 8. Accounts and rooms (playing with friends)
 

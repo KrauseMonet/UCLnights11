@@ -134,9 +134,38 @@ Means are calibrated by construction; draw rate, result split and spread are
 - The honours count scorers per (person, side): one man in two drawn club-seasons
   is two rows, never one summed total no single team produced.
 
-## 8. Not in scope yet
+## 8. Accounts and rooms (playing with friends)
 
-Puzzle games, rooms, accounts, the daily challenge, auctions. The engine, draft and
+- **Accounts:** username (3–20 of `A–Z a–z 0–9 _`, case-insensitively unique), email
+  and password (8+ characters), hashed with PBKDF2-HMAC-SHA256 at 600,000 iterations.
+  The session is a signed cookie (HMAC-SHA256, 30 days); there is no session table.
+  Signing in is needed only for rooms: the solo game never asks and never touches the
+  database.
+- **A room** has a six-character code and a size: **2** (a single final), **4**
+  (semi-finals and final), **8** (quarter-finals on), **16** (round of 16 on) or **32**
+  (the full format of §7). Up to `size` signed-in people join with the code; the host
+  starts the draft; nobody joins or leaves after that.
+- **The draft** is the solo draft (§5), one per seat, each in the seat's own
+  formation. Every seat shares the room's seed, so all are dealt the same squads in the
+  same order until the deal-time guarantee redraws one for a single seat. Seats draft at
+  their own pace; a move carries the move count the player's screen had seen and is
+  refused if the draft has moved on. Picks are not exclusive between friends: two
+  people can both take Messi 2011–12.
+- **The host can finish the drafts** of anyone who has wandered off: each unfinished
+  eleven takes the highest-rated takeable player of each remaining deal.
+- **The tournament** starts when the last eleven is full. Places no person took go to
+  real sides drawn exactly as in §7 (different clubs, one season each, best eleven).
+  A cup of 4–16 is an open draw every round, two legs (extra time and penalties on a
+  level aggregate) and a one-match final on neutral ground. It is a pure function of
+  (seed, size, the seats' draft states) and is recomputed on every request, never
+  stored; a room of one in 32 plays exactly the solo tournament of the same seed.
+- **Stored:** `accounts`, `rooms` (code, size, seed, host, status, a version that
+  rises on every write) and `room_seats` (who, seat, formation, draft state string).
+  Lobbies nobody started are swept after three days.
+
+## 9. Not in scope yet
+
+Puzzle games, saved career stats, password reset, the daily challenge, auctions. The engine, draft and
 deck are built so each can be added without changing their contracts. No UEFA mark is
 used. Club crests are used on a non-commercial basis, era-correct where a dated file
 exists (`data/crest_eras.csv`), with every source named in `CREDITS.md`.

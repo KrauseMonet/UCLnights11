@@ -18,3 +18,11 @@ pyproject.toml
 CLAUDE.md
 SPEC.md
 CREDITS.md
+migrations/
+# The Neon CLI's config and its node packages are local tooling; the site ships none of it.
+node_modules/
+neon.ts
+package.json
+package-lock.json
+skills-lock.json
+.neon

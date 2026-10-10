@@ -41,3 +41,11 @@ def test_link_previews_use_an_absolute_image_url():
         m = re.search(r'property="og:image" content="([^"]+)"', text)
         assert m and m.group(1).startswith("https://"), page.name
         assert "__ORIGIN__" not in text
+
+
+def test_the_function_ships_what_accounts_need_and_none_of_the_neon_tooling():
+    # Vercel installs requirements.txt, not pyproject.toml: without psycopg there the
+    # solo game still runs and every friends route dies on import.
+    assert any(line.startswith("psycopg") for line in (ROOT / "requirements.txt").read_text().splitlines())
+    ignore = (ROOT / ".vercelignore").read_text().splitlines()
+    assert {"node_modules/", "package.json", "neon.ts", "migrations/"} <= set(ignore)

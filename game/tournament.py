@@ -1,4 +1,6 @@
-"""A whole tournament: your eleven and 31 real quarter-final sides.
+"""A whole tournament: your eleven and 31 real quarter-final sides -- or, for a room of
+friends (play_room), every friend's eleven and real sides filling the rest of a 2-, 4-,
+8-, 16- or 32-team draw.
 
 The format is the classic one (1999-2000 to 2023-24 in spirit): eight groups of
 four seeded from four pots by strength, home and away; the top two go through;
@@ -13,7 +15,12 @@ allow (best_xi). Nobody is
 invented: a club-season the deck holds can always field one, which etl.deck
 guarantees before admitting it.
 
-Everything is a pure function of the seed and your eleven, so the server keeps
+A room of 2 to 16 is a straight knockout (CUP_STAGES): an open draw each round,
+two legs until the final, which is one match at a neutral ground. A room of 32 plays
+the full format above. Either way the empty places go to real sides drawn exactly as
+the solo opposition is, at most one season per club.
+
+Everything is a pure function of the seed and the human elevens, so the server keeps
 no tournament state at all.
 """
 
@@ -33,6 +40,9 @@ GROUPS = "ABCDEFGH"
 GROUP_ROUNDS = [((0, 1), (2, 3)), ((2, 0), (3, 1)), ((0, 3), (1, 2)),
                 ((1, 0), (3, 2)), ((0, 2), (1, 3)), ((3, 0), (2, 1))]
 STAGES = ["Group stage", "Round of 16", "Quarter-finals", "Semi-finals", "Final"]
+# A room's size and the knockout rounds it plays. 32 plays the group format instead.
+CUP_STAGES = {2: STAGES[4:], 4: STAGES[3:], 8: STAGES[2:], 16: STAGES[1:]}
+ROOM_SIZES = (2, 4, 8, 16, 32)
 
 
 @dataclass(eq=False)
@@ -43,6 +53,7 @@ class Side:
     formation: Formation
     xi: list[Card]
     you: bool = False
+    owner: int | None = None       # the account whose eleven this is, in a room
     club: str | None = None
     season: int | None = None
     label: str | None = None       # "2004–05"
@@ -147,6 +158,11 @@ class Tournament:
     def you(self) -> Side:
         return next(s for s in self.sides if s.you)
 
+    @property
+    def stages(self) -> list[str]:
+        """The knockout rounds this tournament played, in order."""
+        return [st for st in STAGES[1:] if any(t.stage == st for t in self.ties)]
+
     def reached(self, side: Side) -> str:
         """How far a side went: the stage it went out in, or Champions."""
         if side is self.champion:
@@ -217,14 +233,16 @@ def _two_legs(rng: random.Random, stage: str, a: Side, b: Side, league: match.Le
     return tie
 
 
-def draw_opposition(rng: random.Random, deck: Deck) -> list[ClubSeason]:
-    """31 club-seasons, at most one per club.
+def draw_opposition(rng: random.Random, deck: Deck, n: int = TEAMS - 1) -> list[ClubSeason]:
+    """n club-seasons (31 for a solo tournament), at most one per club.
 
     Drawn uniformly over club-seasons and skipping a club already drawn, so a
     club with many quarter-finals is still likelier to appear -- but a real
     tournament never holds the same club twice, and six Real Madrids in one draw
     read as a bug rather than a dream.
     """
+    if n == 0:
+        return []
     pool = list(deck.club_seasons)
     rng.shuffle(pool)
     out, clubs = [], set()
@@ -232,14 +250,60 @@ def draw_opposition(rng: random.Random, deck: Deck) -> list[ClubSeason]:
         if cs.club not in clubs:
             out.append(cs)
             clubs.add(cs.club)
-            if len(out) == TEAMS - 1:
+            if len(out) == n:
                 return out
-    raise ValueError(f"the deck holds only {len(clubs)} clubs; a tournament needs {TEAMS - 1}")
+    raise ValueError(f"the deck holds only {len(clubs)} clubs; a tournament needs {n}")
+
+
+def _knockout(rng: random.Random, t: Tournament, alive: list[Side], stages: list[str],
+              league: match.League) -> None:
+    """Open-draw two-legged rounds, then a one-match final at a neutral ground."""
+    for stage in stages[:-1]:
+        rng.shuffle(alive)
+        nxt = []
+        for i in range(0, len(alive), 2):
+            tie = _two_legs(rng, stage, alive[i], alive[i + 1], league)
+            t.ties.append(tie)
+            t.fixtures += tie.legs
+            nxt.append(tie.winner)
+        alive = nxt
+
+    a, b = alive
+    final = match.play(rng, a.xi, b.xi, league, neutral=True, extra_time_if_level=True)
+    fx = Fixture("Final", a, b, final, "Final")
+    t.fixtures.append(fx)
+    t.ties.append(Tie("Final", a, b, [fx], a if final.winner == 0 else b))
+    t.champion = t.ties[-1].winner
 
 
 def play_tournament(deck: Deck, league: match.League, seed: int, you: Side) -> Tournament:
+    """Your eleven against 31 real sides: the solo game."""
+    return _group_tournament(deck, league, seed, [you])
+
+
+def play_room(deck: Deck, league: match.League, seed: int, humans: list[Side],
+              size: int) -> Tournament:
+    """A room's tournament: every human eleven, and real sides filling the other places.
+
+    ``size`` is one of ROOM_SIZES. 32 plays groups and knockouts exactly as the solo
+    game does; the smaller sizes are straight knockouts, so 2 is a single final."""
+    if size not in ROOM_SIZES:
+        raise ValueError(f"a room holds {', '.join(map(str, ROOM_SIZES))} sides, not {size}")
+    if not 1 <= len(humans) <= size:
+        raise ValueError(f"{len(humans)} players cannot fill a {size}-side room")
+    if size == TEAMS:
+        return _group_tournament(deck, league, seed, humans)
     rng = random.Random(f"{seed}:cup")
-    sides = [you] + [club_side(cs) for cs in draw_opposition(rng, deck)]
+    sides = list(humans) + [club_side(cs) for cs in draw_opposition(rng, deck, size - len(humans))]
+    t = Tournament(sides, {}, {})
+    _knockout(rng, t, list(sides), CUP_STAGES[size], league)
+    return t
+
+
+def _group_tournament(deck: Deck, league: match.League, seed: int,
+                      humans: list[Side]) -> Tournament:
+    rng = random.Random(f"{seed}:cup")
+    sides = list(humans) + [club_side(cs) for cs in draw_opposition(rng, deck, TEAMS - len(humans))]
     groups = _draw_groups(rng, sides)
     t = Tournament(sides, groups, {})
 
@@ -266,22 +330,7 @@ def play_tournament(deck: Deck, league: match.League, seed: int, you: Side) -> T
         t.fixtures += tie.legs
         alive.append(tie.winner)
 
-    for stage in ("Quarter-finals", "Semi-finals"):
-        rng.shuffle(alive)
-        nxt = []
-        for i in range(0, len(alive), 2):
-            tie = _two_legs(rng, stage, alive[i], alive[i + 1], league)
-            t.ties.append(tie)
-            t.fixtures += tie.legs
-            nxt.append(tie.winner)
-        alive = nxt
-
-    a, b = alive
-    final = match.play(rng, a.xi, b.xi, league, neutral=True, extra_time_if_level=True)
-    fx = Fixture("Final", a, b, final, "Final")
-    t.fixtures.append(fx)
-    t.ties.append(Tie("Final", a, b, [fx], a if final.winner == 0 else b))
-    t.champion = t.ties[-1].winner
+    _knockout(rng, t, alive, STAGES[2:], league)
     return t
 
 

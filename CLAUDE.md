@@ -9,8 +9,13 @@ seen to fail, and nothing in the deck is invented.
 
 ## Environment
 
-Python 3.11 via `uv`. No database: the deck is a committed JSON file built from
-committed inputs, and the site keeps no state.
+Python 3.11 via `uv`. The deck is a committed JSON file built from committed inputs and
+the solo game keeps no state. **Accounts and rooms live in Neon Postgres** (project
+`steep-cake-84438492`, branch `production`): `DATABASE_URL` and `SESSION_SECRET` must be
+set, locally in `.env` (gitignored; `neon deploy` writes `DATABASE_URL` there) and in
+Vercel's environment. Without them the solo game runs exactly as before and the friends
+routes answer 503. Tests start a throwaway Postgres from the `pgserver` dev dependency,
+so the suite needs no database of yours.
 
 ```bash
 export PATH="$HOME/.local/bin:$PATH"
@@ -25,11 +30,17 @@ uv run python -m game --validate        # engine vs real Champions League result
 uv run python -m game --play 42         # an automatic draft and tournament
 uv run python -m tools.fetch_crests     # crests from Wikipedia/Commons -> assets/crests
 uv run python -m tools.build_crests     # -> web/static/crests/*.webp (needs Pillow)
+uv run python -m tools.migrate          # apply migrations/*.sql to DATABASE_URL (DIRECT_URL if set)
+uv run python -m tools.migrate --status # list pending, change nothing
 uv run uvicorn web.app:app --port 8030  # the site
 PYTHONDONTWRITEBYTECODE=1 uv run pytest -q
 ```
 
-**Gates before any deploy:** `etl.deck --check`, `tools.build_crests --check` and
+**Neon CLI** (`npm i -g neon@latest`): `neon.ts` (an empty policy), `package.json` and the
+Neon agent skills in `.claude/skills/` came from `neon config init` and `neon skills`. All of
+it is local tooling and `.vercelignore` keeps it out of the deploy.
+
+**Gates before any deploy:** `tools.migrate --status` shows nothing pending on Neon, `etl.deck --check`, `tools.build_crests --check` and
 `tools.build_brand --check` (all exit 1 when stale), the test suite, and bump `?v=N` in every
 page when a stylesheet or script changes. The og:image addresses in every page name the
 production origin (`https://uclnights11.vercel.app`); change them when the custom domain lands.
@@ -108,9 +119,17 @@ tuned.
 | C16 | **The site is named UCLnights11, the user's choice (2026-10-10).** Domains checked by RDAP against each registry, the method validated first on a known-taken and a made-up domain: `uclnights11.com`, `.in` and `.app` were all unregistered, as were `uclnights.*`. "Campeones" itself is taken on all three, which is why it stayed a working name. **The one tension, raised with the user rather than smoothed over:** "UCL" is UEFA's own shorthand for the competition, so this is the one place the site leans on UEFA's branding where C11 otherwise avoids it; no trademark register was searched. The name lives in one place (`SITE_NAME`/`SITE_MARK` in `common.js`) plus the four page titles. |
 | C17 | **The logo is the user's own artwork, used exactly as given, at the user's explicit direction after the risk was put to them.** Its emblem is a ball of white stars, which is UEFA's registered "starball" mark; with "UCL" in the name the logo reads as official branding. The user chose "use it exactly as given" over a starball-free emblem and over holding the deploy. `tools.build_brand` cuts it out by colour-to-alpha against its own navy; the first pass kept the whole backdrop, because the navy's red channel is ~1 and a pixel one step darker read as fully opaque, so the per-channel room now has a floor. |
 | C18 | **Deployed on Vercel like the cricket site: static pages and assets on the CDN, the API as one Python function in `bom1`** (`vercel.json`, `api/index.py`, `requirements.txt`). The function ships `data/deck.json` only; the archive's list of missing squads moved into the deck so it needs nothing else. No database: nothing outlives a request (C10), so the Neon question was answered "not yet". `tests/test_deploy.py` fails if a page the app serves is not routed, if `.vercelignore` would strip the deck, or if a link-preview image is not an absolute URL — verified by deleting the `/archive` route. Public GitHub repo, the user's choice. |
+| C19 | **Sign-in and rooms, at the user's request, built on the cricket site's structure** (its A102 accounts, A120 connection reuse, rooms polled rather than pushed). Email+password with stdlib PBKDF2 and a signed cookie, no OAuth and no email service, as there. Sign-in gates rooms only. **The first state to outlive a request**, so C10's "no database until something has to outlive a request" is now answered: Neon, but only for who sits where and each seat's draft string. The tournament is still recomputed from those on every read, never stored. |
+| C20 | **Every seat drafts its own eleven, at its own pace, from one shared seed** — not the cricket site's turn-based shared pool. A 32-person turn-by-turn draft is 352 turns of waiting; parallel drafts from one shuffle keep it fair (everyone sees the same squads in the same order) without anyone waiting on anyone. Picks are not exclusive between friends. The host's "finish their drafts" (best takeable player each deal) is the escape hatch for a friend who wanders off, in place of the cricket site's turn timer. |
+| C21 | **Rooms of 2, 4, 8 and 16 are straight knockouts; 32 is the solo format**, and empty places are filled by `draw_opposition` exactly as solo fills them. Refactoring `play_tournament` to share the knockout code was checked by fingerprinting six seeds' full tournaments before and after: identical, so no shared solo link changed. A test pins that a room of one in 32 IS the solo tournament. The room rules (completion only when the last eleven is full, stale-move refusal, host-only start, full-room refusal, membership on moves, one season per club among fillers) were each deleted once and their test seen to fail. |
 | C15 | **Four pages: home, draft, tournament, archive.** The archive is new to this site: every club-season with its crest, its star and a drawer holding the full rated squad, plus the list of quarter-finalists Wikipedia cannot supply a squad for, so their absence is explained rather than silent. On the tournament page the groups, bracket and scorers stay hidden until your own run has been watched. |
 
 ## Known limits
+
+- **Accounts have no password reset, no email verification and no rate limit on sign-in**
+  attempts (PBKDF2's cost is the only brake). Each needs something the site does not have
+  yet (an email service; shared state for counting attempts).
+- Rooms are polled every 2.5 s, not pushed: Vercel's Python functions hold no sockets.
 
 - `data/squads.json` carries some junk links from squad tables (a link to the
   article "Midfielder", an odd "Thumbnail crab" entry). They are never rated, so

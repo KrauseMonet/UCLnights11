@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Play with friends · UCLnights11</title>
+<meta name="description" content="Draft against your friends from every Champions League quarter-finalist since 1994–95, then play one tournament together: a final, a 4-, 8- or 16-team cup, or the full 32.">
+<link rel="icon" type="image/png" sizes="32x32" href="/static/brand/favicon-32.png">
+<link rel="apple-touch-icon" href="/static/brand/apple-touch-icon.png">
+<meta name="theme-color" content="#050b1c">
+<meta property="og:site_name" content="UCLnights11">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://uclnights11.vercel.app/static/brand/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preload" href="/static/fonts/Anton.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/static/style.css?v=11">
+</head>
+<body>
+<main class="sheet">
+  <section class="friends-hero">
+    <div class="kicker">Play with friends</div>
+    <h1 class="arch-h">Your eleven. <em>Their</em> eleven.</h1>
+    <p class="home-lede">Everyone in the room drafts from the same shuffled deck of real quarter-final squads,
+      at their own pace. Then one draw, one bracket, one trophy. Any place nobody takes goes to a real side of
+      history, fielding its real squad.</p>
+  </section>
+
+  <div id="gate"></div>
+
+  <div class="friends-grid" id="play" hidden>
+    <section class="panel">
+      <div class="panel-h"><span class="label">Start a room</span><span class="label" id="fmtnote"></span></div>
+      <div class="fmts" id="formats" role="radiogroup" aria-label="Format"></div>
+      <div class="room-form">
+        <span class="label">Your formation</span>
+        <div class="chips" id="formations" role="radiogroup" aria-label="Formation"></div>
+      </div>
+      <div class="room-form"><button class="btn primary" id="create">Create room</button></div>
+    </section>
+    <div class="cup-stack">
+      <section class="panel">
+        <div class="panel-h"><span class="label">Join with a code</span></div>
+        <form class="join" id="join" autocomplete="off">
+          <input id="code" maxlength="6" placeholder="K7P2QX" aria-label="Room code" spellcheck="false">
+          <button class="btn primary" type="submit">Join</button>
+        </form>
+      </section>
+      <section class="panel">
+        <div class="panel-h"><span class="label">Your rooms</span></div>
+        <div id="mine"><p class="empty">Rooms you create or join show up here.</p></div>
+      </section>
+    </div>
+  </div>
+</main>
+<script src="/static/common.js?v=11"></script>
+<script src="/static/friends.js?v=11"></script>
+</body>
+</html>

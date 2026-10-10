@@ -7,3 +7,4 @@ __pycache__/
 # Raw Wikipedia responses are a re-fetchable cache, not source.
 /data/wiki/
 .vercel
+node_modules/

@@ -7,12 +7,14 @@ dependencies = [
     "pydantic>=2.8",
     "fastapi>=0.141.1",
     "uvicorn>=0.52.0",
+    "psycopg[binary]>=3.2",
 ]
 
 [dependency-groups]
 dev = [
     "httpx>=0.28.1",
     "numpy>=2.4.6",
+    "pgserver>=0.1.4",
     "pillow>=12.3.0",
     "pytest>=8.0",
 ]

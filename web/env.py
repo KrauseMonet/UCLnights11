@@ -1,0 +1,29 @@
+"""Read a local .env into the environment, never overriding a variable already set.
+
+`neon deploy` writes DATABASE_URL there; Vercel sets its variables itself and ships no
+.env, so in production this does nothing. Deliberately tiny instead of a dependency:
+KEY=VALUE lines, optional quotes, # comments.
+"""
+
+from __future__ import annotations
+
+import os
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+
+
+def load_dotenv(path: Path = ROOT / ".env") -> None:
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return
+    for line in lines:
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.removeprefix("export ").split("=", 1)
+        key, value = key.strip(), value.strip()
+        if len(value) >= 2 and value[0] == value[-1] and value[0] in "'\"":
+            value = value[1:-1]
+        os.environ.setdefault(key, value)

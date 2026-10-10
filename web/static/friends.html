@@ -14,16 +14,16 @@
 <meta property="og:image" content="https://uclnights11.vercel.app/static/brand/og-image.png">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preload" href="/static/fonts/Anton.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/static/style.css?v=ad18d19d28">
+<link rel="stylesheet" href="/static/style.css?v=675f8e8f22">
 </head>
 <body>
 <main class="sheet">
   <section class="friends-hero">
     <div class="kicker">Play with friends</div>
     <h1 class="arch-h">Your eleven. <em>Their</em> eleven.</h1>
-    <p class="home-lede">Everyone in the room drafts from the same shuffled deck of real quarter-final squads,
-      at their own pace. Then one draw, one bracket, one trophy. Any place nobody takes goes to a real side of
-      history, fielding its real squad.</p>
+    <p class="home-lede">Take turns drafting from real quarter-final squads, and a player taken is gone for everyone.
+      Or let everyone draft at their own pace. Then one draw, one bracket, one trophy. Any place nobody takes goes to
+      a real side of history, fielding its real squad.</p>
   </section>
 
   <div id="gate"></div>
@@ -36,6 +36,14 @@
       <div class="room-form">
         <span class="label">Your formation</span>
         <div class="chips" id="formations" role="radiogroup" aria-label="Formation"></div>
+      </div>
+      <div class="room-form">
+        <span class="label">The draft</span>
+        <div class="chips" id="styles" role="radiogroup" aria-label="Draft style"></div>
+      </div>
+      <div class="room-form" id="timerrow">
+        <span class="label">Pick clock</span>
+        <div class="chips" id="timers" role="radiogroup" aria-label="Pick clock"></div>
       </div>
       <div class="room-form">
         <span class="label">Ratings</span>
@@ -58,7 +66,7 @@
     </div>
   </div>
 </main>
-<script src="/static/common.js?v=a2e7746176"></script>
-<script src="/static/friends.js?v=cf77c30f92"></script>
+<script src="/static/common.js?v=4414ffc313"></script>
+<script src="/static/friends.js?v=9617f847e5"></script>
 </body>
 </html>

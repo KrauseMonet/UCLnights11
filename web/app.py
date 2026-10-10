@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json
 import random
+import time
 from functools import lru_cache
 from pathlib import Path
 
@@ -519,23 +520,70 @@ ROOM_FORMATS = {2: "Final", 4: "4-team cup", 8: "8-team cup", 16: "16-team cup",
 def room_out(room: rooms.Room, me: accounts.Account | None) -> dict:
     mine = room.seat_of(me.account_id) if me else None
     draft = None
-    if mine is not None and room.status == "drafting":
+    turns = None
+    picks = {s.account_id: (s.picks, s.complete) for s in room.seats}
+    if room.turns and room.status in ("drafting", "complete"):
+        d = rooms.shared_of(load_deck(), room)
+        picks = {s.account_id: (len(p), len(p) == 11) for s, p in zip(room.seats, d.picks)}
+        turns = turns_out(room, d, mine)
+        if mine is not None:
+            i = room.seats.index(mine)
+            mine_picks = [card_out(c) for c in d.picks[i]]
+            if room.memory:
+                for c in mine_picks:
+                    c["rating"] = None
+            f = d.formations[i]
+            draft = {"formation": {"code": f.code, "label": f.label, "lines": f.lines},
+                     "picks": mine_picks, "complete": len(d.picks[i]) == 11, "memory": room.memory,
+                     "state": room.moves_text}
+    elif mine is not None and room.status == "drafting":
         draft = session_out(mine.state, _replay(mine.state), room.memory)
     return {
         "code": room.code, "size": room.size, "format": ROOM_FORMATS[room.size],
-        "memory": room.memory,
+        "memory": room.memory, "style": room.style, "timer": room.timer_seconds,
         "stages": CUP_STAGES.get(room.size, ["Group stage", *CUP_STAGES[16]]),
-        "status": room.status, "version": room.version,
+        "status": room.status, "version": room.version, "failure_reason": room.failure_reason,
         "is_host": me is not None and room.host_id == me.account_id,
         "seated": mine is not None,
         "seats": [{
             "id": s.account_id, "username": s.username, "seat": s.seat,
             "formation": FORMATIONS[s.formation].label, "code": s.formation,
-            "picks": s.picks, "complete": s.complete, "host": s.account_id == room.host_id,
+            "picks": picks[s.account_id][0], "complete": picks[s.account_id][1],
+            "host": s.account_id == room.host_id,
             "you": mine is s, **rooms.seat_palette(s.seat),
         } for s in room.seats],
         "fillers": room.size - len(room.seats),
         "draft": draft,
+        "turns": turns,
+    }
+
+
+def turns_out(room: rooms.Room, d, mine) -> dict:
+    """A room that takes turns (C29): whose turn, the deal everyone is watching, the
+    clock and the latest picks. The deal's reasons are the picker's, since it is dealt to
+    them; in a memory room nobody sees a rating."""
+    active = d.active
+    deal = None
+    if d.deal is not None and active is not None:
+        cards = [{**card_out(c, d.reason(c, active)), "i": i} for i, c in enumerate(d.deal.cards)]
+        if room.memory:
+            cards.sort(key=lambda c: (LINE_ORDER.index(c["pos"]), c["name"]))
+            for c in cards:
+                c["rating"] = None
+        deal = club_season_out(d.deal, cards)
+    seat = room.seats[active] if active is not None else None
+    recent = []
+    for i, card in reversed(d.log[-12:]):
+        c = card_out(card)
+        if room.memory and room.status != "complete":
+            c["rating"] = None
+        recent.append({"username": room.seats[i].username, "seat": room.seats[i].seat, **rooms.seat_palette(room.seats[i].seat), "card": c})
+    return {
+        "expect": len(d.moves), "total": d.total, "round": d.round, "rounds": 11,
+        "turn": None if seat is None else {"id": seat.account_id, "username": seat.username,
+                                           "you": seat is mine, "seat": seat.seat, **rooms.seat_palette(seat.seat)},
+        "deal": deal, "recent": recent,
+        "server_now": time.time(), "turn_started_at": room.turn_started_at, "timer": room.timer_seconds,
     }
 
 
@@ -543,6 +591,13 @@ class RoomIn(BaseModel):
     size: int
     formation: str = DEFAULT
     memory: bool = False
+    style: str = "turns"
+    timer: int = 30
+
+
+class StyleIn(BaseModel):
+    style: str
+    timer: int = 30
 
 
 class MemoryIn(BaseModel):
@@ -573,7 +628,8 @@ def _room_reply(conn, request: Request, code: str) -> dict:
 @app.post("/api/rooms")
 def create_room(body: RoomIn, request: Request) -> dict:
     with db.connection() as conn:
-        code = rooms.create_room(conn, _signed_in(conn, request), body.size, body.formation, body.memory)
+        code = rooms.create_room(conn, _signed_in(conn, request), body.size, body.formation, body.memory,
+                                 body.style, body.timer)
         return _room_reply(conn, request, code)
 
 
@@ -586,6 +642,7 @@ def list_my_rooms(request: Request) -> dict:
 @app.get("/api/rooms/{code}")
 def get_room(code: str, request: Request) -> dict:
     with db.connection() as conn:
+        rooms.resolve_if_due(conn, load_deck(), code)      # a run-out clock picks here
         return _room_reply(conn, request, code)
 
 
@@ -617,6 +674,13 @@ def room_formation(code: str, body: FormationIn, request: Request) -> dict:
         return _room_reply(conn, request, code)
 
 
+@app.post("/api/rooms/{code}/style")
+def room_style(code: str, body: StyleIn, request: Request) -> dict:
+    with db.connection() as conn:
+        rooms.set_style(conn, _signed_in(conn, request), code, body.style, body.timer)
+        return _room_reply(conn, request, code)
+
+
 @app.post("/api/rooms/{code}/memory")
 def room_memory(code: str, body: MemoryIn, request: Request) -> dict:
     with db.connection() as conn:
@@ -631,12 +695,16 @@ def start_room(code: str, request: Request) -> dict:
         return _room_reply(conn, request, code)
 
 
-def _room_move(code: str, request: Request, move, expect: int) -> dict:
+def _room_move(code: str, request: Request, move, expect: int):
     with db.connection() as conn:
         try:
             rooms.make_move(conn, load_deck(), _signed_in(conn, request), code, move, expect)
         except IllegalMove as e:
             raise HTTPException(400, str(e)) from None
+        except rooms.Conflict as e:
+            # Returned, not raised: an exception would roll back any pick the clock made
+            # on the way in. Sends the room as it now is (the cricket site's A146).
+            return JSONResponse({"detail": str(e), "room": _room_reply(conn, request, code)}, status_code=409)
         return _room_reply(conn, request, code)
 
 

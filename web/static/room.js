@@ -13,6 +13,7 @@
 shell("friends");
 const CODE = location.hash.slice(1).toUpperCase();
 const POLL_MS = 2500;
+const TURN_POLL_MS = 1000;            // while a pick clock runs, so a turn passes within a second
 const MAX_BACKOFF_MS = 20000;
 const STATUS = { lobby: "Lobby", drafting: "Drafting", complete: "Finished" };
 let R = null;              // the room as last applied
@@ -23,6 +24,21 @@ let inflight = null;       // the one poll in flight: a timer, a tab waking and 
 let failures = 0;
 let dead = false;
 let wantsJoin = new URLSearchParams(location.search).has("join");
+const TITLE = document.title;
+
+/* The server's clock, as seen from here (the cricket site's A119): each poll's
+   server_now plus half its round trip, keeping only the sample with the shortest round
+   trip, since that one carries the least error. The countdown reads this, never the
+   seconds a reply happened to say. */
+const CLOCK = { offset: 0, rtt: Infinity };
+function serverNow() { return Date.now() / 1000 + CLOCK.offset; }
+function sampleClock(t0, t1, serverTime) {
+  const rtt = (t1 - t0) / 1000;
+  if (serverTime == null || rtt > CLOCK.rtt) return;
+  CLOCK.rtt = rtt;
+  CLOCK.offset = serverTime + rtt / 2 - t1 / 1000;
+}
+const takingTurns = () => R && R.style === "turns" && R.status === "drafting";
 
 const movesIn = (state) => { const p = state.split("-"); return p.length === 3 && p[2] ? p[2].split(".").length : 0; };
 const inviteUrl = () => `${location.origin}/room?join=1#${CODE}`;
@@ -36,7 +52,7 @@ function apply(room) {
   maybeJoin();
 }
 
-function schedule(ms) {
+function schedule(ms = takingTurns() ? TURN_POLL_MS : POLL_MS) {
   clearTimeout(timer);
   if (!dead && !document.hidden) timer = setTimeout(poll, ms);
 }
@@ -49,7 +65,8 @@ function poll() {
 async function pollOnce() {
   clearTimeout(timer);
   let room;
-  try { room = await api(`/api/rooms/${CODE}`); }
+  const t0 = Date.now();
+  try { room = await api(`/api/rooms/${CODE}`); sampleClock(t0, Date.now(), room.turns && room.turns.server_now); }
   catch (e) {
     if (e.status === 404) return gone(e.message);
     failures += 1;
@@ -58,7 +75,7 @@ async function pollOnce() {
   }
   if (failures) { failures = 0; connection(null); }
   apply(room);
-  schedule(POLL_MS);
+  schedule();
 }
 
 /* The one line that says the room is still there but this browser can't reach it. */
@@ -83,9 +100,11 @@ async function act(path, body) {
   try { apply(await api(`/api/rooms/${CODE}/${path}`, { method: "POST", body: body ? JSON.stringify(body) : undefined })); }
   catch (e) {
     // With no reply the move may still have landed; the poll shows which. A pick sent
-    // twice is refused by its `expect`, so asking again can't take a second player.
+    // twice is refused by its `expect`, so asking again can't take a second player. A
+    // 409 carries the room as it now is, so the screen catches up at once.
     toast(e.status === 0 ? "Connection dropped. Checking whether that went through…" : e.message);
-    poll();
+    if (e.status === 409 && e.body && e.body.room) apply(e.body.room);
+    else poll();
   }
   finally { busy = false; }
 }
@@ -102,7 +121,7 @@ async function maybeJoin() {
 function render() {
   const you = R.seats.find((s) => s.you);
   $("top").innerHTML = `
-    <div><div class="kicker">${esc(R.format)} · ${esc(STATUS[R.status])}${R.memory ? " · Memory" : ""}</div>
+    <div><div class="kicker">${esc(R.format)} · ${esc(STATUS[R.status] || R.status)}${R.style === "turns" ? ` · take turns, ${R.timer}s` : " · own pace"}${R.memory ? " · Memory" : ""}</div>
       <h1 class="room-code" aria-label="Room code ${esc(R.code)}">${esc(R.code)}</h1>
       <p class="sub">${R.seats.length} of ${R.size} players${R.fillers ? ` · ${R.fillers} place${R.fillers === 1 ? "" : "s"} for real sides` : ""}${you ? "" : " · watching"}</p></div>
     <div class="room-acts">${R.status === "lobby" ? `<button class="btn ghost small" id="invite">Copy invite link</button>` : ""}
@@ -111,13 +130,15 @@ function render() {
   if (inv) inv.onclick = () => copyText(inviteUrl(), "Invite link copied");
   renderStrip();
   if (R.status === "lobby") renderLobby();
+  else if (R.status === "failed") renderFailed();
+  else if (R.style === "turns") renderTurns();
   else renderDrafting();
 }
 
 function renderStrip() {
   const kick = R.is_host && R.status === "lobby";
   $("strip").innerHTML = R.seats.map((s) => `
-    <div class="seatcard ${s.you ? "me" : ""} ${s.complete ? "done" : ""}" style="${teamStyle(s)}">
+    <div class="seatcard ${s.you ? "me" : ""} ${s.complete ? "done" : ""} ${R.turns && R.turns.turn && R.turns.turn.id === s.id ? "on" : ""}" style="${teamStyle(s)}">
       ${sideCrest({ human: true, name: s.username, ...s }, 36)}
       <div class="who"><b>${esc(s.username)}${s.host ? ' <span class="host" title="Host">host</span>' : ""}</b>
         <small>${esc(s.formation)}${R.status === "lobby" ? "" : s.complete ? " · eleven in" : ` · ${s.picks}/11`}</small>
@@ -148,6 +169,14 @@ function renderLobby() {
     <section class="panel">
       <div class="panel-h"><span class="label">Your formation</span><span class="label">fixed when the draft starts</span></div>
       <div class="room-form"><div class="chips" id="forms" role="radiogroup" aria-label="Formation"></div></div>
+      <div class="panel-h"><span class="label">The draft</span><span class="label">${R.is_host ? "your call as host" : "the host's call"}</span></div>
+      <div class="room-form">${R.is_host
+        ? `<div class="chips" role="radiogroup" aria-label="Draft style">
+             <button class="chip" role="radio" aria-checked="${R.style === "turns"}" data-style="turns">Take turns · shared pool</button>
+             <button class="chip" role="radio" aria-checked="${R.style === "own"}" data-style="own">Own pace</button></div>
+           ${R.style === "turns" ? `<div class="chips" role="radiogroup" aria-label="Pick clock">${[15, 30, 45].map((t) =>
+             `<button class="chip" role="radio" aria-checked="${R.timer === t}" data-timer="${t}">${t}s a pick</button>`).join("")}</div>` : ""}`
+        : `<p class="note">${R.style === "turns" ? `<b>Taking turns</b>, ${R.timer} seconds a pick.` : "<b>Own pace:</b> everyone drafts at once."}</p>`}</div>
       <div class="panel-h"><span class="label">Ratings</span><span class="label">${R.is_host ? "your call as host" : "the host's call"}</span></div>
       <div class="room-form">${R.is_host
         ? `<div class="chips" role="radiogroup" aria-label="Ratings">
@@ -163,8 +192,12 @@ function renderLobby() {
     <section class="panel">
       <div class="panel-h"><span class="label">How a room plays</span></div>
       <ol class="howto">
-        <li>Everyone is dealt from the <b>same shuffle</b>, so you all see the same squads in the same order.</li>
-        <li>Draft at your own pace: one player per squad, two rerolls, just like the solo game.</li>
+        ${R.style === "turns"
+          ? `<li><b>Take turns</b> in a snake: first in one round, last in the next. Each turn deals one real squad to whoever is picking.</li>
+             <li><b>A player taken is gone for everyone</b>, in every season. You have ${R.timer} seconds a pick, or one is made for you.</li>
+             <li>Eleven rounds: at most about ${Math.ceil((R.seats.length * 11 * R.timer) / 60)} minutes with ${R.seats.length} ${R.seats.length === 1 ? "player" : "players"}.</li>`
+          : `<li>Everyone is dealt from the <b>same shuffle</b>, so you all see the same squads in the same order.</li>
+             <li>Draft at your own pace: one player per squad, two rerolls, just like the solo game.</li>`}
         ${R.memory ? "<li><b>Memory mode:</b> no ratings until the tournament. Pick on what you remember.</li>" : ""}
         <li>When the last eleven is in: ${esc(R.stages.join(" → "))}. ${R.size === 2 ? "Winner takes all." : "Ties are two legs; the final is one night on neutral ground."}</li>
       </ol>
@@ -177,6 +210,8 @@ function renderLobby() {
     el.querySelectorAll(".chip").forEach((b) => b.onclick = () => { store.set("formation", b.dataset.c); act("formation", { formation: b.dataset.c }); });
   }).catch(() => {});
   $("view").querySelectorAll("[data-m]").forEach((b) => b.onclick = () => act("memory", { memory: b.dataset.m === "1" }));
+  $("view").querySelectorAll("[data-style]").forEach((b) => b.onclick = () => act("style", { style: b.dataset.style, timer: R.timer }));
+  $("view").querySelectorAll("[data-timer]").forEach((b) => b.onclick = () => act("style", { style: R.style, timer: +b.dataset.timer }));
   if ($("startb")) $("startb").onclick = () => act("start");
   $("leaveb").onclick = async () => {
     if (!confirm("Leave this room?")) return;
@@ -231,6 +266,84 @@ function renderDrafting() {
   renderPitch($("pitch"), d.formation.code, d.picks, d.picks.length ? d.picks[d.picks.length - 1].id : null);
   $("xisub").textContent = `${d.picks.length} / 11`;
   xiFoot($("xifoot"), d);
+}
+
+// ------------------------------------------------------------------ taking turns (C29)
+
+let ticker = null;
+let shownTurn = null;     // the pick number the deal on screen belongs to
+
+function renderFailed() {
+  shownTurn = null;
+  $("view").innerHTML = `<section class="panel gate"><div><h2>This draft couldn't finish</h2>
+    <p>${esc(R.failure_reason || "Something went wrong.")}</p></div>
+    <div class="gate-cta"><a class="btn primary" href="/friends">Start another room</a></div></section>`;
+}
+
+function renderTurns() {
+  const T = R.turns, d = R.draft, mine = T.turn && T.turn.you;
+  if (!$("tdeal")) {
+    $("view").innerHTML = `<div class="turnbar" id="turnbar"></div>
+      <div class="draft-top">${d ? `<h2 class="h2 tight" id="formname"></h2>` : ""}
+        <div class="progress"><span class="label">Round <b id="roundno" style="color:var(--gold)">1</b> of 11${R.memory ? ` · <span class="memtag">Memory</span>` : ""}</span>
+          <div class="bar"><i id="bar" style="width:0"></i></div></div>
+        ${d ? `<div class="linechips" id="lines" aria-label="Places filled in each line"></div>` : ""}</div>
+      <div class="draft-grid">
+        <section class="panel deal" id="tdeal" aria-live="polite"></section>
+        <aside class="cup-stack">
+          ${d ? `<section class="panel"><div class="panel-h"><span class="label">Your XI</span><span class="label" id="xisub"></span></div>
+            <div class="pitch" id="pitch"></div></section>` : ""}
+          <section class="panel"><div class="panel-h"><span class="label">Latest picks</span><span class="label" id="pickcount"></span></div>
+            <ol class="feed-list" id="recent"></ol></section>
+        </aside></div>`;
+  }
+  // The banner and clock change every turn; the deal only when the turn does.
+  $("turnbar").innerHTML = T.turn ? `<div class="turnbar-in ${mine ? "mine" : ""}" style="${teamStyle(T.turn)}">
+      ${sideCrest({ human: true, name: T.turn.username, ...T.turn }, 36)}
+      <div class="tb-who"><b>${mine ? "Your pick" : `${esc(T.turn.username)} is picking`}</b>
+        <small>Pick ${T.expect + 1} of ${T.total}</small></div>
+      <div class="tb-clock"><span id="secs">–</span><div class="tb-gauge"><i id="gauge"></i></div></div></div>` : "";
+  $("roundno").textContent = T.round;
+  $("bar").style.width = `${(T.expect / T.total) * 100}%`;
+  document.title = mine ? `● Your pick · ${TITLE}` : TITLE;
+  if (d) {
+    $("formname").textContent = d.formation.label;
+    lineChips($("lines"), d.formation, d.picks);
+    renderPitch($("pitch"), d.formation.code, d.picks, d.picks.length ? d.picks[d.picks.length - 1].id : null);
+    $("xisub").textContent = `${d.picks.length} / 11`;
+  }
+  if (T.deal && shownTurn !== T.expect) {
+    const fresh = shownTurn !== null;
+    shownTurn = T.expect;
+    renderDeal($("tdeal"), T.deal, {
+      headingHtml: mine ? "Dealt to you" : `Dealt to ${esc(T.turn.username)}`, fresh, readOnly: !mine,
+      onTake: (i) => act("pick", { index: i, expect: T.expect }),
+    });
+    if (mine && fresh && navigator.vibrate) navigator.vibrate(120);
+  }
+  $("pickcount").textContent = `${T.expect} made`;
+  $("recent").innerHTML = T.recent.length ? T.recent.map((r) => `<li style="${teamStyle(r)}">
+      <span class="dot" aria-hidden="true"></span><b>${esc(r.username)}</b>
+      <span class="pk">${esc(r.card.name)}</span><span class="pos ${r.card.pos}">${r.card.pos}</span>
+      <small>${esc(r.card.short)} ${esc(r.card.season.slice(2))}${r.card.rating == null ? "" : ` · ${r.card.rating}`}</small></li>`).join("")
+    : `<li class="empty">No picks yet.</li>`;
+  startTicker();
+}
+
+/* The countdown, redrawn four times a second from the synced clock, separately from
+   the polls (the cricket site's A91: the display clock is not the poll clock). */
+function startTicker() {
+  clearInterval(ticker);
+  const tick = () => {
+    const T = R && R.turns;
+    if (!T || !T.turn || !$("secs")) return clearInterval(ticker);
+    const left = Math.max(0, T.timer - (serverNow() - T.turn_started_at));
+    $("secs").textContent = Math.ceil(left);
+    $("gauge").style.width = `${(left / T.timer) * 100}%`;
+    $("turnbar").classList.toggle("urgent", left <= 5);
+  };
+  tick();
+  ticker = setInterval(tick, 250);
 }
 
 // ------------------------------------------------------------------ boot

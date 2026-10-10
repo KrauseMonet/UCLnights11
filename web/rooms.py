@@ -20,14 +20,24 @@ from __future__ import annotations
 
 import random
 import secrets
+import time
 from dataclasses import dataclass
 
 from game.colours import palette
 from game.deck import Deck
-from game.draft import Move, Pick, Session, decode, encode, replay, why_not
+from game import shared_draft as shared
+from game.draft import IllegalMove, Move, Pick, Session, decode, encode, replay, why_not
 from game.formations import DEFAULT, FORMATIONS
 from game.tournament import ROOM_SIZES, Side
 from web.accounts import Account
+
+STYLES = ("turns", "own")
+# A turn's clock is allowed this long past its last second before the server picks for
+# the seat: the cricket site lost "the last second of every clock" to the round trip
+# until it added the same grace (its A146).
+CLOCK_GRACE_S = 2.0
+# Read through this, so tests can move time on.
+clock = time.time
 
 CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"   # no 0/O or 1/I to misread
 CODE_LENGTH = 6
@@ -85,10 +95,27 @@ class Room:
     status: str
     version: int
     memory: bool
+    style: str
+    timer_seconds: int
+    moves_text: str
+    turn_started_at: float | None
+    failure_reason: str | None
     seats: list[Seat]
 
     def seat_of(self, account_id: int | None) -> Seat | None:
         return next((s for s in self.seats if s.account_id == account_id), None)
+
+    @property
+    def moves(self) -> list[int]:
+        return shared.decode_moves(self.moves_text)
+
+    @property
+    def turns(self) -> bool:
+        return self.style == "turns"
+
+    def clock_expired(self, now: float) -> bool:
+        return (self.turns and self.status == "drafting" and self.turn_started_at is not None
+                and now - self.turn_started_at > self.timer_seconds + CLOCK_GRACE_S)
 
 
 def seat_palette(seat: int) -> dict[str, str]:
@@ -106,10 +133,18 @@ def human_side(seat: Seat, session: Session) -> Side:
 
 # -- reading ----------------------------------------------------------------
 
+ROOM_COLUMNS = ("code, size, seed, host_id, status, version, memory, style, timer_seconds,"
+                " moves, turn_started_at, failure_reason")
+
+
 def load_room(conn, code: str, lock: bool = False) -> Room:
     code = code.strip().upper()
+    if lock:
+        # Wait at most 5 s for the row, then fail as a 503 the page retries, rather than
+        # freezing every request behind one slow one (the cricket site's A92, A180).
+        conn.execute("select set_config('lock_timeout', '5s', true)")
     row = conn.execute(
-        "select code, size, seed, host_id, status, version, memory from rooms where code = %s"
+        f"select {ROOM_COLUMNS} from rooms where code = %s"
         + (" for update" if lock else ""), (code,)).fetchone()
     if row is None:
         raise NotFound("no room with that code")
@@ -144,20 +179,30 @@ def _check_formation(formation: str) -> str:
     return formation
 
 
+def _check_style(style: str, timer: int) -> None:
+    if style not in STYLES:
+        raise RoomError(f"unknown draft style {style!r}")
+    if timer not in shared.TIMER_CHOICES:
+        raise RoomError(f"a pick clock is {', '.join(map(str, shared.TIMER_CHOICES))} seconds")
+
+
 def create_room(conn, account: Account, size: int, formation: str = DEFAULT,
-                memory: bool = False) -> str:
+                memory: bool = False, style: str = "turns",
+                timer: int = shared.DEFAULT_TIMER) -> str:
     if size not in ROOM_SIZES:
         raise RoomError(f"a room holds {', '.join(map(str, ROOM_SIZES))} sides")
     _check_formation(formation)
+    _check_style(style, timer)
     # Lobbies nobody started are swept here, lazily, rather than by a scheduled job.
     conn.execute("delete from rooms where status = 'lobby'"
                  " and updated_at < now() - make_interval(days => %s)", (LOBBY_TTL_DAYS,))
     seed = random.SystemRandom().randrange(1, 2**31 - 1)
     for _ in range(20):
         code = "".join(secrets.choice(CODE_ALPHABET) for _ in range(CODE_LENGTH))
-        row = conn.execute("insert into rooms (code, size, seed, host_id, memory) values (%s, %s, %s, %s, %s)"
+        row = conn.execute("insert into rooms (code, size, seed, host_id, memory, style, timer_seconds)"
+                           " values (%s, %s, %s, %s, %s, %s, %s)"
                            " on conflict (code) do nothing returning code",
-                           (code, size, seed, account.account_id, memory)).fetchone()
+                           (code, size, seed, account.account_id, memory, style, timer)).fetchone()
         if row:
             conn.execute("insert into room_seats (room_code, account_id, seat, formation)"
                          " values (%s, %s, 0, %s)", (code, account.account_id, formation))
@@ -238,12 +283,28 @@ def set_memory(conn, account: Account, code: str, memory: bool) -> None:
     _touch(conn, room)
 
 
+def set_style(conn, account: Account, code: str, style: str, timer: int) -> None:
+    """How the room drafts, and how long a turn lasts: the host's call, in the lobby."""
+    room = load_room(conn, code, lock=True)
+    if room.host_id != account.account_id:
+        raise Forbidden("only the host can choose how the room drafts")
+    if room.status != "lobby":
+        raise Conflict("the draft has already started")
+    _check_style(style, timer)
+    conn.execute("update rooms set style = %s, timer_seconds = %s where code = %s", (style, timer, room.code))
+    _touch(conn, room)
+
+
 def start_room(conn, account: Account, code: str) -> None:
     room = load_room(conn, code, lock=True)
     if room.host_id != account.account_id:
         raise Forbidden("only the host can start the draft")
     if room.status != "lobby":
         raise Conflict("the draft has already started")
+    if room.turns:
+        conn.execute("update rooms set moves = '', turn_started_at = %s where code = %s", (clock(), room.code))
+        _touch(conn, room, "drafting")
+        return
     for s in room.seats:
         conn.execute("update room_seats set state = %s where room_code = %s and account_id = %s",
                      (encode(room.seed, s.formation, []), room.code, s.account_id))
@@ -258,6 +319,14 @@ def _save_state(conn, room: Room, seat: Seat, state: str) -> None:
 
 
 def make_move(conn, deck: Deck, account: Account, code: str, move: Move, expect: int) -> None:
+    if load_room(conn, code).turns:
+        if not isinstance(move, Pick):
+            raise RoomError("there are no rerolls when the room takes turns")
+        return make_turn_pick(conn, deck, account, code, move.index, expect)
+    _own_pace_move(conn, deck, account, code, move, expect)
+
+
+def _own_pace_move(conn, deck: Deck, account: Account, code: str, move: Move, expect: int) -> None:
     """``expect`` is how many moves the player's screen had seen. A reply that arrives
     after the draft has moved on (a double click, a second tab) is refused rather than
     applied to a squad the player never looked at."""
@@ -290,10 +359,16 @@ def autopick(deck: Deck, state: str) -> str:
 def seat_removed(conn, code: str) -> None:
     """After a seat is taken out of a started room (an account deleted by an admin): the
     room completes if every eleven left in it is full, as it would have when the last
-    pick landed."""
+    pick landed. A room that took turns can't lose a seat: every later pick's owner is
+    its place in the snake, so the room is marked failed rather than replayed wrongly."""
     try:
         room = load_room(conn, code, lock=True)
     except NotFound:
+        return
+    if room.turns and room.status != "lobby":
+        conn.execute("update rooms set failure_reason = %s where code = %s",
+                     ("a player's account was deleted during the draft", room.code))
+        _touch(conn, room, "failed")
         return
     done = room.status == "drafting" and room.seats and all(s.complete for s in room.seats)
     _touch(conn, room, "complete" if done else None)
@@ -301,12 +376,25 @@ def seat_removed(conn, code: str) -> None:
 
 def finish_drafts(conn, deck: Deck, account: Account, code: str) -> None:
     """The host's way past a friend who has wandered off: every unfinished eleven is
-    completed with the best player each of its remaining deals offers."""
+    completed with the best player each of its remaining deals offers. When the room
+    takes turns, every remaining turn is played that way, in snake order."""
     room = load_room(conn, code, lock=True)
     if room.host_id != account.account_id:
         raise Forbidden("only the host can finish the drafts")
     if room.status != "drafting":
         raise Conflict("there is nothing to finish")
+    if room.turns:
+        moves = room.moves
+        try:
+            d = shared_of(deck, room, moves)
+            while not d.complete:
+                moves.append(shared.best_pick(d))
+                d = shared_of(deck, room, moves)
+        except shared.Stranded as e:
+            _fail(conn, room, str(e))
+            return
+        _save_moves(conn, room, moves, "complete")
+        return
     for seat in room.seats:
         if not seat.complete:
             conn.execute("update room_seats set state = %s where room_code = %s and account_id = %s",
@@ -316,9 +404,89 @@ def finish_drafts(conn, deck: Deck, account: Account, code: str) -> None:
 
 def sides(deck: Deck, room: Room) -> list[Side]:
     """Every seat's eleven as a side, in seat order. The room must be complete."""
+    if room.turns:
+        d = shared_of(deck, room)
+        return [Side(f"P{seat.seat}", seat.username, seat.username[:3].upper(), f, picks,
+                     owner=seat.account_id, club_name=seat.username, label=f.label, **seat_palette(seat.seat))
+                for seat, f, picks in zip(room.seats, d.formations, d.picks)]
     out = []
     for seat in room.seats:
         seed, formation, moves = decode(seat.state)
         out.append(human_side(seat, replay(deck, seed, formation, moves)))
     return out
 
+
+
+# -- taking turns (C29) --------------------------------------------------------
+
+def shared_of(deck: Deck, room: Room, moves: list[int] | None = None) -> shared.SharedDraft:
+    """The room's draft, replayed: seats in the order they sat down, host first."""
+    return shared.replay_shared(deck, room.seed, [s.formation for s in room.seats],
+                                room.moves if moves is None else moves)
+
+
+def _save_moves(conn, room: Room, moves: list[int], status: str | None = None) -> None:
+    conn.execute("update rooms set moves = %s, turn_started_at = %s where code = %s",
+                 (shared.encode_moves(moves), clock(), room.code))
+    room.moves_text = shared.encode_moves(moves)
+    _touch(conn, room, status)
+
+
+def _fail(conn, room: Room, reason: str) -> None:
+    conn.execute("update rooms set failure_reason = %s where code = %s", (reason, room.code))
+    _touch(conn, room, "failed")
+
+
+def resolve(conn, deck: Deck, room: Room) -> bool:
+    """Pick for a seat whose clock ran out. Called with the room locked, before any
+    move and on any poll that finds the clock expired, so there is no scheduled job: if
+    nobody is looking, the clock simply waits. One pick at most, since the pick starts
+    the next turn's clock."""
+    if not room.clock_expired(clock()):
+        return False
+    moves = room.moves
+    try:
+        d = shared_of(deck, room, moves)
+        moves.append(shared.autopick(d))
+        d = shared_of(deck, room, moves)
+    except shared.Stranded as e:
+        _fail(conn, room, str(e))
+        return True
+    _save_moves(conn, room, moves, "complete" if d.complete else None)
+    return True
+
+
+def resolve_if_due(conn, deck: Deck, code: str) -> None:
+    """For a poll: a lock-free look first, and the locked resolve only when a clock has
+    actually run out (the cricket site's A92: polls taking the pick lock froze drafts)."""
+    if load_room(conn, code).clock_expired(clock()):
+        resolve(conn, deck, load_room(conn, code, lock=True))
+
+
+def make_turn_pick(conn, deck: Deck, account: Account, code: str, index: int, expect: int) -> None:
+    """``expect`` is how many picks the room had when this player chose: a pick sent
+    after the turn moved on (the clock ran out, a second tab) is refused, never applied
+    to a deal the player didn't see (the cricket site's A146)."""
+    room = load_room(conn, code, lock=True)
+    seat = room.seat_of(account.account_id)
+    if seat is None:
+        raise Forbidden("you are not in this room")
+    if room.status != "drafting":
+        raise Conflict("there is nothing to draft")
+    if resolve(conn, deck, room):
+        room = load_room(conn, code, lock=True)
+        if room.status != "drafting":
+            raise Conflict("the draft is over")
+    moves = room.moves
+    if len(moves) != expect:
+        raise Conflict("that turn has passed; the room has moved on")
+    d = shared_of(deck, room, moves)
+    if d.active is None or room.seats[d.active].account_id != account.account_id:
+        raise Conflict("it isn't your turn")
+    moves.append(index)
+    try:
+        d = shared_of(deck, room, moves)        # raises IllegalMove on a pick the deal didn't offer
+    except shared.Stranded as e:
+        _fail(conn, room, str(e))
+        return
+    _save_moves(conn, room, moves, "complete" if d.complete else None)

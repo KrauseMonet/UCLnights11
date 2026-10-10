@@ -16,6 +16,10 @@ let size = +(store.get("room-size") || 8);
 let formation = store.get("formation") || "433";
 let memory = store.get("memory") === "1";
 const RATINGS = [{ code: "0", label: "Shown" }, { code: "1", label: "Hidden · Memory" }];
+const STYLES = [{ code: "turns", label: "Take turns · shared pool" }, { code: "own", label: "Own pace" }];
+const TIMERS = [15, 30, 45].map((t) => ({ code: String(t), label: `${t}s a pick` }));
+let style = store.get("room-style") || "turns";
+let timer = +(store.get("room-timer") || 30);
 
 function chips(el, items, current, pick) {
   el.innerHTML = items.map((x) => `<button class="chip" role="radio" aria-checked="${x.code === current}" data-c="${x.code}">${esc(x.label)}</button>`).join("");
@@ -63,7 +67,7 @@ function render(me) {
 $("create").onclick = async () => {
   $("create").disabled = true;
   try {
-    const room = await api("/api/rooms", { method: "POST", body: JSON.stringify({ size, formation, memory }) });
+    const room = await api("/api/rooms", { method: "POST", body: JSON.stringify({ size, formation, memory, style, timer }) });
     location.href = `/room#${room.code}`;
   } catch (e) { toast(e.message); $("create").disabled = false; }
 };
@@ -81,5 +85,9 @@ $("code").oninput = () => { $("code").value = $("code").value.toUpperCase(); };
   const meta = await loadMeta().catch(() => null);
   if (meta) chips($("formations"), meta.formations, formation, (c) => { formation = c; store.set("formation", c); });
   chips($("ratings"), RATINGS, memory ? "1" : "0", (c) => { memory = c === "1"; store.set("memory", c); });
+  const showTimers = () => { $("timerrow").hidden = style !== "turns"; };
+  chips($("styles"), STYLES, style, (c) => { style = c; store.set("room-style", c); showTimers(); });
+  chips($("timers"), TIMERS, String(timer), (c) => { timer = +c; store.set("room-timer", c); });
+  showTimers();
   onAuth(render);
 })();

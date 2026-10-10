@@ -430,6 +430,32 @@ button{font:inherit;cursor:pointer}
 .memtag{color:var(--mint)}
 .hint{color:var(--ink-3);font-size:13px}
 
+/* --- taking turns (C29) --- */
+.seatcard.on{border-color:var(--team);box-shadow:0 0 0 2px color-mix(in srgb,var(--team) 45%,transparent)}
+.turnbar{margin:16px 0 0;position:sticky;top:72px;z-index:30}   /* the clock stays in view down a long squad */
+.turnbar-in{background-color:var(--panel)}
+.turnbar-in{display:flex;align-items:center;gap:14px;padding:12px 16px;border-radius:14px;border:1px solid var(--line);
+  border-left:4px solid var(--team);background:linear-gradient(90deg,color-mix(in srgb,var(--team-deep) 85%,var(--panel)),var(--panel))}
+.turnbar-in.mine{border-color:var(--gold);box-shadow:0 0 0 2px rgba(245,184,61,.35),0 18px 40px -18px rgba(245,184,61,.5)}
+.tb-who{flex:1;min-width:0}
+.tb-who b{display:block;font:400 26px/1 var(--display);text-transform:uppercase;letter-spacing:.02em}
+.turnbar-in.mine .tb-who b{color:var(--gold-2)}
+.tb-who small{font:600 10.5px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)}
+.tb-clock{width:110px;text-align:right}
+.tb-clock span{font:400 34px/1 var(--display);font-variant-numeric:tabular-nums;color:var(--mint)}
+.tb-gauge{height:4px;border-radius:999px;background:rgba(255,255,255,.1);overflow:hidden;margin-top:6px}
+.tb-gauge i{display:block;height:100%;background:var(--mint);transition:width .25s linear}
+.turnbar.urgent .tb-clock span{color:var(--red);animation:pulse 1s infinite}
+.turnbar.urgent .tb-gauge i{background:var(--red)}
+@keyframes pulse{50%{opacity:.45}}
+.feed-list{list-style:none;margin:0;padding:4px 0;max-height:360px;overflow:auto}
+.feed-list li{display:grid;grid-template-columns:10px auto 1fr auto;gap:2px 8px;align-items:center;padding:8px 16px;border-top:1px solid var(--line);font-size:13px}
+.feed-list li:first-child{border:0}
+.feed-list li.empty{display:block;color:var(--ink-3)}
+.feed-list .dot{width:8px;height:8px;border-radius:50%;background:var(--team)}
+.feed-list .pk{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:700}
+.feed-list small{grid-column:2/-1;color:var(--ink-3);font-size:11.5px}
+
 /* --- a room's results --- */
 .friends-table{width:100%;border-collapse:collapse;font-size:14px}
 .friends-table td{padding:10px 12px;border-top:1px solid var(--line);vertical-align:middle}
@@ -604,6 +630,9 @@ button{font:inherit;cursor:pointer}
   .nav-stat{display:none}
   .navlinks a{padding:8px 9px}
   .topnav-in{gap:10px}
+  .turnbar{top:68px}
+  .tb-who b{font-size:22px}
+  .tb-clock{width:90px}
   .brand img{height:28px}
   .steps{grid-template-columns:1fr}
   .home-stats{gap:24px}

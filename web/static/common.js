@@ -74,7 +74,7 @@ const API_TIMEOUT_MS = 15000;
 const RETRY_STATUS = new Set([0, 502, 503, 504]);
 
 class ApiError extends Error {
-  constructor(message, status) { super(message); this.status = status; }
+  constructor(message, status, body = null) { super(message); this.status = status; this.body = body; }
 }
 
 async function api(path, opts = {}) {
@@ -99,7 +99,7 @@ async function apiOnce(path, opts) {
   } finally { clearTimeout(timer); }
   const body = await res.json().catch(() => ({}));
   if (!res.ok) {
-    const err = new ApiError(body.detail || `Request failed (${res.status})`, res.status);
+    const err = new ApiError(body.detail || `Request failed (${res.status})`, res.status, body);
     if (res.status >= 500) reportFailure("api", `${opts.method || "GET"} ${path.split("?")[0]} ${res.status}`);
     throw err;
   }
@@ -290,20 +290,21 @@ function renderDeal(el, d, opts) {
         <span class="pos ${c.pos}">${c.pos}</span>
         <div class="who"><b>${esc(c.name)}</b><small>${esc(c.nation || "")}</small></div>
         ${c.rating == null ? "" : rate(c.rating)}
-        ${c.takeable ? `<button class="take" data-i="${i}" aria-label="Take ${esc(c.name)}">Take</button>`
+        ${opts.readOnly ? (c.takeable ? "" : `<span class="why">${esc(c.reason)}</span>`)
+          : c.takeable ? `<button class="take" data-i="${i}" aria-label="Take ${esc(c.name)}">Take</button>`
                      : `<span class="why">${esc(c.reason)}</span>`}
       </div>`).join("")).join("");
   el.style.cssText = teamStyle(d);
   el.innerHTML = `
-    <div class="panel-h"><span class="label">${esc(opts.heading || "Dealt to you")}</span><span class="label"><b>${open}</b> of ${d.cards.length} available</span></div>
+    <div class="panel-h"><span class="label">${opts.headingHtml || esc(opts.heading || "Dealt to you")}</span><span class="label"><b>${open}</b> of ${d.cards.length} available</span></div>
     <div class="band">
       ${crest(d.crest, 104, d.name)}
       <div class="deal-year">${esc(d.season)}</div>
       <div class="deal-club">${esc(d.name)}</div>
-      <div class="deal-actions">
+      ${opts.onReroll ? `<div class="deal-actions">
         <button class="btn small" data-reroll ${opts.rerollsLeft ? "" : "disabled"}>Another squad</button>
         <span class="label" style="color:rgba(255,255,255,.65)">${opts.rerollsLeft} left</span>
-      </div>
+      </div>` : ""}
     </div>
     <div>${rows}</div>`;
   if (opts.fresh) {
@@ -313,7 +314,7 @@ function renderDeal(el, d, opts) {
     if (el.getBoundingClientRect().top < 0) (document.querySelector(".draft-top") || el).scrollIntoView({ block: "start", behavior: "smooth" });
   }
   el.querySelectorAll(".take").forEach((b) => b.onclick = () => opts.onTake(+b.dataset.i));
-  el.querySelector("[data-reroll]").onclick = opts.onReroll;
+  if (opts.onReroll) el.querySelector("[data-reroll]").onclick = opts.onReroll;
 }
 
 /* How full each line of the eleven is, for the bar above the deal: on a phone the pitch

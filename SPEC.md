@@ -201,7 +201,18 @@ validator prints what they produce with no "real" column.
   (semi-finals and final), **8** (quarter-finals on), **16** (round of 16 on) or **32**
   (the full format of §7). Up to `size` signed-in people join with the code; the host
   starts the draft; nobody joins or leaves after that.
-- **The draft** is the solo draft (§5), one per seat, each in the seat's own
+- **Two ways to draft, the host's choice in the lobby** (C29). **Take turns** (the
+  default, after the cricket site): seats pick in a snake order (host first, then the
+  order people sat down; reversed every round), each turn deals one real squad to the
+  seat on turn, and **a player taken by anyone is gone for everyone, in every season**.
+  No rerolls. A pick clock of 15, 30 or 45 s (30 by default); when it runs out (plus a
+  2 s grace) the room picks a random player the seat can take, seeded by the move
+  number. It is enforced by whoever polls or moves next; with nobody looking the clock
+  waits. A pick sent after its turn has passed is refused with a 409 that carries the
+  room. Eleven rounds, so at most 11 x seats x clock. The host can finish the draft,
+  taking the best player each remaining deal offers. A draft that runs out of squads for
+  a seat is marked failed rather than worked round.
+- **Own pace**: the draft is the solo draft (§5), one per seat, each in the seat's own
   formation. Every seat shares the room's seed, so all are dealt the same squads in the
   same order until the deal-time guarantee redraws one for a single seat. Seats draft at
   their own pace; a move carries the move count the player's screen had seen and is
@@ -217,8 +228,8 @@ validator prints what they produce with no "real" column.
   level aggregate) and a one-match final on neutral ground. It is a pure function of
   (seed, size, the seats' draft states) and is recomputed on every request, never
   stored; a room of one in 32 plays exactly the solo tournament of the same seed.
-- **Stored:** `accounts`, `rooms` (code, size, seed, host, status, memory, a version that
-  rises on every write) and `room_seats` (who, seat, formation, draft state string).
+- **Stored:** `accounts`, `rooms` (code, size, seed, host, status, memory, style, pick
+  clock, the room's moves and when the current turn began, a version that rises on every write) and `room_seats` (who, seat, formation, draft state string).
   Lobbies nobody started are swept after three days.
 - **A dropped connection is not the end of a room.** The page polls; only a 404 means
   the room is gone. Any other failure keeps the screen, says it is reconnecting and tries

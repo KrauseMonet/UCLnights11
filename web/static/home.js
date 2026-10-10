@@ -43,8 +43,10 @@ $("start").onclick = async (e) => {
   ].map(([n, l]) => `<div><b>${n}</b>${l}</div>`).join("");
   const crests = META.crests.map((u) => crest(u, 48)).join("");
   $("marquee").innerHTML = crests + crests;     // twice, so the roll loops seamlessly
-  const [show, arch] = await Promise.all([api("/api/showcase"), api("/api/archive")]);
-  $("fan").innerHTML = show.map(fanCard).join("");
+  // Each section paints as soon as its own data lands; the fan is small and leads the page,
+  // so it must not wait for the archive, which carries every season.
+  api("/api/showcase").then((show) => { $("fan").innerHTML = show.map(fanCard).join(""); }).catch(() => {});
+  const arch = await api("/api/archive");
   const latest = arch.seasons[0];
   $("latest-sub").innerHTML = `${esc(latest.label)}. Every quarter-finalist since 1994–95 is in the deck. <a href="/archive">See all ${META.club_seasons}</a>.`;
   $("latest").innerHTML = latest.sides.map((s) =>

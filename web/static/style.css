@@ -48,7 +48,7 @@ button{font:inherit;cursor:pointer}
   -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
 .topnav-in{max-width:1180px;margin:0 auto;padding:0 26px;height:64px;display:flex;align-items:center;gap:26px}
 .brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink);
-  font-weight:800;font-size:16px;letter-spacing:.08em;text-transform:uppercase;flex:none}
+  font-weight:800;font-size:17px;letter-spacing:.02em;flex:none}
 .brand svg{width:30px;height:32px;filter:drop-shadow(0 3px 10px rgba(245,184,61,.35))}
 .brand b{color:var(--gold);font-weight:800}
 .navlinks{display:flex;gap:2px}

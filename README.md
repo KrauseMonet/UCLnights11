@@ -1,4 +1,6 @@
-# Campeones
+# UCLnights11
+
+(The repository folder is still `Campeones`, the working name.)
 
 Draft an eleven from every European Cup quarter-finalist since 1994–95, one real
 squad per turn, then take it through a 32-team tournament against the real thing.

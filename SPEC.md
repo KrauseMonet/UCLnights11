@@ -1,4 +1,4 @@
-# Campeones — specification
+# UCLnights11 — specification
 
 A football draft game. Each turn deals one real squad that reached the European
 Cup's quarter-finals; the player takes one man from it; eleven turns build a side

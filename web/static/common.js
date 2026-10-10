@@ -2,7 +2,9 @@
 /* Shared by every page: the nav and footer, the API helper, and the small renderers
    (crest medallion, rating chip, team colours, the pitch) that make the pages one site. */
 
-const SITE_NAME = "Campeones";
+const SITE_NAME = "UCLnights11";
+// The wordmark: "nights" in gold, the casing exactly as the name is written.
+const SITE_MARK = "UCL<b>nights</b>11";
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -16,7 +18,7 @@ function shell(active) {
   const nav = document.createElement("header");
   nav.className = "topnav";
   nav.innerHTML = `<div class="topnav-in">
-    <a class="brand" href="/">${BRAND_SVG}<span>${esc(SITE_NAME)}</span></a>
+    <a class="brand" href="/">${BRAND_SVG}<span>${SITE_MARK}</span></a>
     <nav class="navlinks">
       <a href="/draft" ${active === "draft" ? 'class="on"' : ""}>Draft</a>
       <a href="/archive" ${active === "archive" ? 'class="on"' : ""}>Archive</a>

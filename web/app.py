@@ -28,7 +28,7 @@ STATIC = Path(__file__).resolve().parent / "static"
 # Three sides the home page fans out: the game's idea in one picture.
 SHOWCASE = ("1998-MUN", "2010-BAR", "2001-RMA")
 
-app = FastAPI(title="Campeones")
+app = FastAPI(title="UCLnights11")
 app.mount("/static", StaticFiles(directory=STATIC), name="static")
 
 

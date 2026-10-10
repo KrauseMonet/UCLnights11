@@ -43,7 +43,7 @@ function renderHero() {
     return;
   }
   const champ = CUP.reached === "Champions";
-  $("hero").innerHTML = `${kicker}<h1 class="${champ ? "champ" : ""}">${champ ? "Campeones" : esc(CUP.reached)}</h1>
+  $("hero").innerHTML = `${kicker}<h1 class="${champ ? "champ" : ""}">${champ ? "Champions" : esc(CUP.reached)}</h1>
     <p>${champ ? "Your eleven won the whole thing." : `${esc(CUP.champion.name)} lifted the trophy.`}</p>`;
   $("actions").innerHTML = `<a class="btn primary" href="/">Draft again</a><button class="btn ghost" id="copy">Copy link</button>`;
   $("copy").onclick = () => navigator.clipboard.writeText(location.href).then(() => toast("Link copied"), () => toast(location.href));

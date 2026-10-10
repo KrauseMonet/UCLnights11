@@ -34,6 +34,12 @@ PYTHONDONTWRITEBYTECODE=1 uv run pytest -q
 page when a stylesheet or script changes. The og:image addresses in every page name the
 production origin (`https://uclnights11.vercel.app`); change them when the custom domain lands.
 
+**Repo and hosting:** public GitHub repo `KrauseMonet/UCLnights11`, pushed over a deploy key
+used by this repo only (`core.sshCommand` -> `~/.ssh/uclnights11_deploy`; the Mac's default
+key is IPLegends' deploy key and cannot push here). Vercel project `uclnights11`, connected to
+the repo: **a push to `main` deploys production**, so run the gates before pushing.
+Production: https://uclnights11.vercel.app
+
 **This project is fully separate from IPLegends**, at the user's request: no file, config or
 memory of it lives inside `~/IPLegends`. The fonts were copied out of it once (OFL).
 

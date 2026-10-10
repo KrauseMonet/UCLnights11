@@ -17,6 +17,12 @@ Vercel's environment. Without them the solo game runs exactly as before and the 
 routes answer 503. Tests start a throwaway Postgres from the `pgserver` dev dependency,
 so the suite needs no database of yours.
 
+**The Mac's DNS cannot resolve Neon hostnames** (the cricket site's A139, hit again here):
+look the direct endpoint up through Google and pass the address, which keeps the hostname
+for TLS: `dig +short @8.8.8.8 <host>`, then `PGHOSTADDR=<ip> uv run python -m tools.migrate`.
+Production's endpoint is in `aws-ap-southeast-1`; the function runs in `bom1`. Vercel's
+own DNS is unaffected. Both migrations were applied to Neon `production` on 2026-10-10.
+
 ```bash
 export PATH="$HOME/.local/bin:$PATH"
 uv sync

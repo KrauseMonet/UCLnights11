@@ -6,3 +6,4 @@ __pycache__/
 .DS_Store
 # Raw Wikipedia responses are a re-fetchable cache, not source.
 /data/wiki/
+.vercel

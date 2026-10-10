@@ -1,0 +1,20 @@
+[project]
+name = "campeones"
+version = "0.1.0"
+description = "Draft legends of the European Cup's quarter-finalists and play a tournament"
+requires-python = ">=3.11,<3.12"
+dependencies = [
+    "pydantic>=2.8",
+    "fastapi>=0.141.1",
+    "uvicorn>=0.52.0",
+]
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
+    "pytest>=8.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Campeones · Draft a European night</title>
+<meta name="description" content="Draft an eleven from three decades of European Cup quarter-finalists, then take it through a full tournament.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/style.css?v=2">
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="/" aria-label="Campeones home"><span class="star">✦</span> Campeones</a>
+  <span class="deckstat" id="deckstat"></span>
+</header>
+
+<main>
+  <!-- HOME -->
+  <section id="home" class="screen">
+    <div class="hero">
+      <p class="kicker">Thirty-two seasons · every quarter-finalist</p>
+      <h1>Draft a European night</h1>
+      <p class="lede">Each turn deals you one real squad that reached the last eight, from
+        Ajax 1994–95 to this year's. Take one player. Eleven turns later your side
+        enters a 32-team tournament against the real thing.</p>
+      <div class="formations" id="formations" role="radiogroup" aria-label="Formation"></div>
+      <button class="go" id="start">Start the draft</button>
+      <ol class="how">
+        <li><b>Deal.</b> A random club-season appears. Bayern reached 24 quarter-finals, APOEL one, so some sides are rarer than others.</li>
+        <li><b>Pick.</b> Take one player into an open slot in his own line. Two rerolls if a deal does nothing for you.</li>
+        <li><b>Play.</b> Groups, then two-legged knockouts, extra time and penalties, and a final at a neutral ground.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- DRAFT -->
+  <section id="draft" class="screen" hidden>
+    <div class="draftbar">
+      <div><span class="label">Pick</span> <b id="pickno">1</b>/11</div>
+      <div class="formation-name" id="formname"></div>
+      <button class="ghost" id="reroll">Reroll <span id="rerolls"></span></button>
+    </div>
+    <div class="draftgrid">
+      <div class="deal" id="deal"></div>
+      <div class="pitchwrap"><div class="pitch" id="pitch"></div></div>
+    </div>
+  </section>
+
+  <!-- TOURNAMENT -->
+  <section id="cup" class="screen" hidden>
+    <div class="cuphead" id="cuphead"></div>
+    <div class="match" id="match" hidden></div>
+    <div class="cupnav" id="cupnav"></div>
+    <div class="cupbody" id="cupbody"></div>
+  </section>
+</main>
+
+<footer class="foot">
+  Squads from Wikipedia (CC BY-SA) · ratings are this game's own judgement · results data from openfootball (CC0).
+  An independent fan game, not affiliated with UEFA or any club.
+</footer>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script src="/static/app.js?v=2"></script>
+</body>
+</html>

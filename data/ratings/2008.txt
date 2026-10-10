@@ -1,0 +1,174 @@
+# Liverpool F.C.
+Pepe Reina|88
+Jamie Carragher|86
+Martin Škrtel|82
+Daniel Agger|82
+Sami Hyypiä|78
+Álvaro Arbeloa|80
+Fábio Aurélio|80
+Andrea Dossena|76
+Emiliano Insúa|75
+Steven Gerrard|93
+Xabi Alonso|88
+Javier Mascherano|86
+Lucas Leiva|77
+Dirk Kuyt|83
+Albert Riera|80
+Yossi Benayoun|82
+Ryan Babel|76
+Fernando Torres|91
+Robbie Keane|79
+David Ngog|72
+
+# FC Porto
+Helton (footballer)|83
+Bruno Alves|85
+Rolando (footballer)|80
+Pedro Emanuel|77
+Jorge Fucile|78
+Cristian Săpunaru|77
+Aly Cissokho|80
+Raul Meireles|83
+Lucho González|86
+Fernando (footballer, born 1987)|80
+Tomás Costa|76
+Mariano González|77
+Cristian Rodríguez|80
+Hulk (footballer)|82
+Lisandro López (footballer, born 1983)|86
+Ernesto Farías|76
+
+# Manchester United F.C.
+Edwin van der Sar|89
+Ben Foster (footballer)|74
+Gary Neville|77
+Rio Ferdinand|89
+Nemanja Vidić|90
+Patrice Evra|86
+Wes Brown|78
+John O'Shea|79
+Jonny Evans|77
+Rafael (footballer, born 1990)|74
+Michael Carrick|86
+Paul Scholes|83
+Darren Fletcher|83
+Anderson (footballer, born 1988)|78
+Ryan Giggs|83
+Park Ji-sung|83
+Nani (footballer)|78
+Cristiano Ronaldo|94
+Wayne Rooney|88
+Carlos Tevez|85
+Dimitar Berbatov|86
+
+# Villarreal CF
+Diego López (Spanish footballer, born 1981)|83
+Sebastián Viera|76
+Gonzalo Rodríguez (footballer, born 1984)|82
+Diego Godín|80
+Joan Capdevila|82
+Ángel López (footballer, born 1981)|76
+Fabricio Fuentes|76
+Javi Venta|75
+Marcos Senna|87
+Sebastián Eguren|78
+Bruno Soriano|78
+Santi Cazorla|85
+Robert Pires|80
+Cani (Spanish footballer)|79
+Ariel Ibagaza|79
+Matías Fernández (footballer, born 1986)|76
+Giuseppe Rossi|83
+Joseba Llorente|77
+Nihat Kahveci|78
+Guillermo Franco|76
+
+# Arsenal F.C.
+Manuel Almunia|80
+Łukasz Fabiański|74
+Bacary Sagna|83
+William Gallas|83
+Kolo Touré|83
+Mikaël Silvestre|76
+Johan Djourou|75
+Gaël Clichy|84
+Kieran Gibbs|74
+Cesc Fàbregas|89
+Alex Song|78|MF
+Denílson (footballer, born 1988)|78
+Abou Diaby|77
+Samir Nasri|83
+Emmanuel Eboué|77
+Andrey Arshavin|85
+Theo Walcott|79
+Aaron Ramsey|74
+Robin van Persie|86
+Emmanuel Adebayor|83
+Nicklas Bendtner|77
+Eduardo (footballer, born 1983)|78
+Carlos Vela|74
+
+# Chelsea F.C.
+Petr Čech|89
+Henrique Hilário|74
+John Terry|89
+Alex (footballer, born June 1982)|82
+Ricardo Carvalho|84
+Branislav Ivanović|82
+José Bosingwa|83
+Ashley Cole|87
+Paulo Ferreira|76
+Juliano Belletti|76
+Frank Lampard|90
+Michael Essien|86
+Michael Ballack|86
+Mikel John Obi|81
+Deco|82
+Florent Malouda|82
+Joe Cole|82
+Didier Drogba|88
+Nicolas Anelka|86
+Salomon Kalou|79
+
+# FC Barcelona
+Víctor Valdés|86
+Dani Alves|89
+Carles Puyol|87
+Gerard Piqué|86
+Rafael Márquez|82
+Eric Abidal|83
+Sylvinho|77
+Martín Cáceres|75
+Xavi (footballer, born 1980)|94
+Andrés Iniesta|93
+Yaya Touré|85
+Sergio Busquets|80
+Seydou Keita|81
+Alexander Hleb|77
+Lionel Messi|96
+Samuel Eto'o|91
+Thierry Henry|88
+Bojan Krkić|79
+Eiður Guðjohnsen|78
+Pedro (footballer, born 1987)|72
+
+# FC Bayern Munich
+Michael Rensing|79
+Hans-Jörg Butt|78
+Philipp Lahm|87
+Lúcio|85
+Daniel Van Buyten|81
+Martín Demichelis|82
+Massimo Oddo|77
+Marcell Jansen|76
+Christian Lell|74
+Franck Ribéry|90
+Bastian Schweinsteiger|83
+Mark van Bommel|84
+Zé Roberto|82
+Hamit Altıntop|80
+Tim Borowski|77
+José Sosa|75
+Luca Toni|86
+Miroslav Klose|84
+Lukas Podolski|79

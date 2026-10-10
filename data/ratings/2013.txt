@@ -1,0 +1,180 @@
+# FC Barcelona
+Víctor Valdés|85
+José Manuel Pinto|73
+Dani Alves|86
+Gerard Piqué|85
+Javier Mascherano|85|DF
+Jordi Alba|85
+Carles Puyol|76
+Marc Bartra|78
+Adriano (footballer, born 1984)|77
+Martín Montoya|74
+Xavi (footballer, born 1980)|88
+Andrés Iniesta|90
+Sergio Busquets|87
+Cesc Fàbregas|86
+Alex Song|76
+Sergi Roberto|72
+Lionel Messi|95
+Neymar|87
+Alexis Sánchez|86
+Pedro (footballer, born 1987)|83
+Cristian Tello|76
+
+# Atlético Madrid
+Thibaut Courtois|90
+Diego Godín|89
+Miranda (footballer, born 1984)|87
+Juanfran (footballer, born 1985)|85
+Filipe Luís|86
+Toby Alderweireld|78
+José María Giménez|72
+Gabi (footballer, born 1983)|86
+Tiago Mendes|84
+Koke (footballer, born 1992)|87
+Arda Turan|86
+Raúl García (footballer, born 1986)|83
+Mario Suárez (footballer)|80
+Diego (footballer, born 1985)|79
+Cristian Rodríguez|77|MF
+Diego Costa|90
+David Villa|83
+Adrián López|76
+Léo Baptistão|73
+
+# Real Madrid CF
+Iker Casillas|86
+Diego López (Spanish footballer, born 1981)|84
+Sergio Ramos|90
+Pepe (footballer, born February 1983)|86
+Raphaël Varane|85
+Dani Carvajal|83
+Marcelo (footballer, born 1988)|85
+Fábio Coentrão|81
+Álvaro Arbeloa|78
+Nacho (footballer, born 1990)|74
+Luka Modrić|89
+Xabi Alonso|86
+Ángel Di María|90
+Sami Khedira|82
+Isco|84
+Asier Illarramendi|78
+Casemiro|74
+Cristiano Ronaldo|98
+Gareth Bale|89
+Karim Benzema|88
+Álvaro Morata|77
+Jesé|78
+
+# Borussia Dortmund
+Roman Weidenfeller|85
+Mitchell Langerak|74
+Mats Hummels|88
+Neven Subotić|83
+Sokratis Papastathopoulos|83
+Łukasz Piszczek|83
+Marcel Schmelzer|81
+Erik Durm|77
+Manuel Friedrich|74
+İlkay Gündoğan|80
+Sven Bender|82
+Sebastian Kehl|80
+Nuri Şahin|80
+Oliver Kirch|74
+Marco Reus|90
+Henrikh Mkhitaryan|86
+Jakub Błaszczykowski|82
+Kevin Großkreutz|80
+Robert Lewandowski|91
+Pierre-Emerick Aubameyang|84
+
+# Paris Saint-Germain FC
+Salvatore Sirigu|85
+Thiago Silva|91
+Alex (footballer, born June 1982)|80
+Marquinhos|81
+Gregory van der Wiel|79
+Maxwell (footballer, born 1981)|82
+Christophe Jallet|77
+Lucas Digne|76
+Blaise Matuidi|86
+Thiago Motta|86
+Marco Verratti|85
+Yohan Cabaye|83
+Adrien Rabiot|76
+Javier Pastore|81
+Lucas Moura|81
+Jérémy Ménez|78
+Zlatan Ibrahimović|93
+Edinson Cavani|87
+Ezequiel Lavezzi|82
+
+# Chelsea F.C.
+Petr Čech|88
+Mark Schwarzer|74
+Branislav Ivanović|86
+César Azpilicueta|84
+John Terry|86
+Gary Cahill|84
+David Luiz|83
+Ashley Cole|80
+Nemanja Matić|83
+Ramires|83
+Frank Lampard|83
+Mikel John Obi|80
+Oscar (footballer, born 1991)|85
+Eden Hazard|90
+Willian (footballer, born 1988)|84
+André Schürrle|81
+Mohamed Salah|74
+Fernando Torres|78
+Samuel Eto'o|80
+Demba Ba|77
+
+# Manchester United F.C.
+David de Gea|86
+Anders Lindegaard|72
+Rafael (footballer, born 1990)|78
+Patrice Evra|81
+Nemanja Vidić|83
+Rio Ferdinand|79
+Jonny Evans|79
+Phil Jones (footballer, born 1992)|78
+Chris Smalling|77
+Alexander Büttner|72
+Michael Carrick|83
+Marouane Fellaini|76
+Tom Cleverley|75
+Darren Fletcher|74
+Ryan Giggs|75
+Shinji Kagawa|80
+Juan Mata|84
+Adnan Januzaj|77
+Antonio Valencia|79
+Ashley Young|76
+Nani (footballer)|77
+Wayne Rooney|87
+Robin van Persie|87
+Javier Hernández|79
+Danny Welbeck|78
+
+# FC Bayern Munich
+Manuel Neuer|92
+Tom Starke|74
+Philipp Lahm|90
+Jérôme Boateng|85
+Dante (footballer)|84
+David Alaba|86
+Rafinha (footballer, born 1985)|79
+Daniel Van Buyten|77
+Bastian Schweinsteiger|87
+Toni Kroos|89
+Thiago Alcântara|85
+Javi Martínez|84
+Mario Götze|85
+Franck Ribéry|89
+Arjen Robben|91
+Thomas Müller|88
+Xherdan Shaqiri|80
+Mario Mandžukić|86
+Claudio Pizarro|77

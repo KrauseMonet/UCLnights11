@@ -1,0 +1,114 @@
+# FC Bayern Munich
+Oliver Kahn|87
+Markus Babbel|82
+Thomas Helmer|80
+Lothar Matthäus|83
+Samuel Kuffour|78
+Bixente Lizarazu|84
+Michael Tarnat|78
+Thomas Strunz|78
+Mario Basler|82
+Mehmet Scholl|83
+Christian Nerlinger|77
+Dietmar Hamann|80
+Thorsten Fink|77
+Giovane Élber|86
+Carsten Jancker|77
+Alexander Zickler|76
+Ruggiero Rizzitelli|75
+
+# Borussia Dortmund
+Stefan Klos|83
+Jürgen Kohler|85
+Júlio César (footballer, born 1963)|78
+Stefan Reuter|81
+Wolfgang Feiersinger|77
+Martin Kree|75
+Matthias Sammer|84
+Jörg Heinrich|80
+Andreas Möller|85
+Michael Zorc|79
+Lars Ricken|79
+Steffen Freund|78
+Knut Reinhardt|74
+Stéphane Chapuisat|84
+Heiko Herrlich|77
+Harry Decheiver|72
+
+# Bayer 04 Leverkusen
+Dirk Heinen|80
+Jens Nowotny|86
+Christian Wörns|82
+Robert Kovač|78
+Markus Happe|76
+Jan Heintze|78
+Carsten Ramelow|80
+Emerson (footballer, born 1976)|85
+Stefan Beinlich|80
+Hans-Peter Lehnhoff|76
+Niko Kovač|78
+Dirk Lottner|76
+Ulf Kirsten|85
+Erik Meijer (footballer)|79
+Paulo Rink|76
+Markus Feldhoff|72
+
+# Real Madrid CF
+Bodo Illgner|83
+Santiago Cañizares|80
+Christian Panucci|83
+Roberto Carlos|90
+Fernando Hierro|88
+Manolo Sanchís|82
+Aitor Karanka|77
+Fernando Redondo|89
+Clarence Seedorf|87
+Christian Karembeu|82
+Guti|78
+Jaime Sánchez (footballer, born 1973)|75
+José Amavisca|76
+Raúl González|88
+Predrag Mijatović|87
+Fernando Morientes|84
+Davor Šuker|85
+Sávio (footballer, born 1974)|79
+
+# Juventus FC
+Angelo Peruzzi|89
+Ciro Ferrara|87
+Paolo Montero|84
+Moreno Torricelli|80
+Mark Iuliano|80
+Gianluca Pessotto|79
+Alessandro Birindelli|76
+Dimas (footballer)|75
+Zinedine Zidane|92
+Edgar Davids|87
+Didier Deschamps|86
+Antonio Conte|83
+Angelo Di Livio|80
+Alessio Tacchinardi|77
+Fabio Pecchia|75
+Alessandro Del Piero|91
+Filippo Inzaghi|87
+Daniel Fonseca|76
+Nicola Amoruso|75
+
+# Manchester United F.C.
+Peter Schmeichel|89
+Gary Neville|83
+Denis Irwin|83
+Gary Pallister|82
+Ronny Johnsen|80
+Henning Berg|78
+Phil Neville|75
+Roy Keane|85
+David Beckham|86
+Ryan Giggs|86
+Paul Scholes|83
+Nicky Butt|80
+Karel Poborský|76
+Teddy Sheringham|82
+Andy Cole|84
+Ole Gunnar Solskjær|81
+

@@ -1,0 +1,322 @@
+{
+ "1994": [
+  "FC Bayern Munich",
+  "IFK Göteborg",
+  "HNK Hajduk Split",
+  "AFC Ajax",
+  "FC Barcelona",
+  "Paris Saint-Germain FC",
+  "AC Milan",
+  "S.L. Benfica"
+ ],
+ "1995": [
+  "Real Madrid CF",
+  "Juventus FC",
+  "FC Nantes",
+  "FC Spartak Moscow",
+  "Borussia Dortmund",
+  "AFC Ajax",
+  "Legia Warsaw",
+  "Panathinaikos F.C."
+ ],
+ "1996": [
+  "Borussia Dortmund",
+  "AJ Auxerre",
+  "Manchester United F.C.",
+  "FC Porto",
+  "AFC Ajax",
+  "Atlético Madrid",
+  "Rosenborg BK",
+  "Juventus FC"
+ ],
+ "1997": [
+  "FC Bayern Munich",
+  "Borussia Dortmund",
+  "Bayer 04 Leverkusen",
+  "Real Madrid CF",
+  "Juventus FC",
+  "FC Dynamo Kyiv",
+  "AS Monaco FC",
+  "Manchester United F.C."
+ ],
+ "1998": [
+  "Real Madrid CF",
+  "FC Dynamo Kyiv",
+  "Manchester United F.C.",
+  "Inter Milan",
+  "Juventus FC",
+  "Olympiacos F.C.",
+  "FC Bayern Munich",
+  "1. FC Kaiserslautern"
+ ],
+ "1999": [
+  "Real Madrid CF",
+  "Manchester United F.C.",
+  "FC Porto",
+  "FC Bayern Munich",
+  "Chelsea F.C.",
+  "FC Barcelona",
+  "Valencia CF",
+  "SS Lazio"
+ ],
+ "2000": [
+  "Leeds United F.C.",
+  "Deportivo de La Coruña",
+  "Arsenal F.C.",
+  "Valencia CF",
+  "Galatasaray S.K. (football)",
+  "Real Madrid CF",
+  "Manchester United F.C.",
+  "FC Bayern Munich"
+ ],
+ "2001": [
+  "Panathinaikos F.C.",
+  "FC Barcelona",
+  "FC Bayern Munich",
+  "Real Madrid CF",
+  "Deportivo de La Coruña",
+  "Manchester United F.C.",
+  "Liverpool F.C.",
+  "Bayer 04 Leverkusen"
+ ],
+ "2002": [
+  "Real Madrid CF",
+  "Manchester United F.C.",
+  "AFC Ajax",
+  "AC Milan",
+  "Inter Milan",
+  "Valencia CF",
+  "Juventus FC",
+  "FC Barcelona"
+ ],
+ "2003": [
+  "Chelsea F.C.",
+  "Arsenal F.C.",
+  "AC Milan",
+  "Deportivo de La Coruña",
+  "FC Porto",
+  "Olympique Lyonnais",
+  "Real Madrid CF",
+  "AS Monaco FC"
+ ],
+ "2004": [
+  "Liverpool F.C.",
+  "Juventus FC",
+  "Olympique Lyonnais",
+  "PSV Eindhoven",
+  "Chelsea F.C.",
+  "FC Bayern Munich",
+  "AC Milan",
+  "Inter Milan"
+ ],
+ "2005": [
+  "Arsenal F.C.",
+  "Juventus FC",
+  "Olympique Lyonnais",
+  "AC Milan",
+  "Inter Milan",
+  "Villarreal CF",
+  "S.L. Benfica",
+  "FC Barcelona"
+ ],
+ "2006": [
+  "AC Milan",
+  "FC Bayern Munich",
+  "PSV Eindhoven",
+  "Liverpool F.C.",
+  "AS Roma",
+  "Manchester United F.C.",
+  "Chelsea F.C.",
+  "Valencia CF"
+ ],
+ "2007": [
+  "Arsenal F.C.",
+  "Liverpool F.C.",
+  "AS Roma",
+  "Manchester United F.C.",
+  "FC Schalke 04",
+  "FC Barcelona",
+  "Fenerbahçe S.K. (football)",
+  "Chelsea F.C."
+ ],
+ "2008": [
+  "Liverpool F.C.",
+  "FC Porto",
+  "Manchester United F.C.",
+  "Villarreal CF",
+  "Arsenal F.C.",
+  "Chelsea F.C.",
+  "FC Barcelona",
+  "FC Bayern Munich"
+ ],
+ "2009": [
+  "Olympique Lyonnais",
+  "FC Girondins de Bordeaux",
+  "FC Bayern Munich",
+  "Manchester United F.C.",
+  "Arsenal F.C.",
+  "FC Barcelona",
+  "Inter Milan",
+  "PFC CSKA Moscow"
+ ],
+ "2010": [
+  "Real Madrid CF",
+  "Tottenham Hotspur F.C.",
+  "Chelsea F.C.",
+  "Manchester United F.C.",
+  "FC Barcelona",
+  "FC Shakhtar Donetsk",
+  "Inter Milan",
+  "FC Schalke 04"
+ ],
+ "2011": [
+  "APOEL FC",
+  "Real Madrid CF",
+  "Olympique de Marseille",
+  "FC Bayern Munich",
+  "S.L. Benfica",
+  "Chelsea F.C.",
+  "AC Milan",
+  "FC Barcelona"
+ ],
+ "2012": [
+  "Málaga CF",
+  "Borussia Dortmund",
+  "Real Madrid CF",
+  "Galatasaray S.K. (football)",
+  "Paris Saint-Germain FC",
+  "FC Barcelona",
+  "FC Bayern Munich",
+  "Juventus FC"
+ ],
+ "2013": [
+  "FC Barcelona",
+  "Atlético Madrid",
+  "Real Madrid CF",
+  "Borussia Dortmund",
+  "Paris Saint-Germain FC",
+  "Chelsea F.C.",
+  "Manchester United F.C.",
+  "FC Bayern Munich"
+ ],
+ "2014": [
+  "Paris Saint-Germain FC",
+  "FC Barcelona",
+  "Atlético Madrid",
+  "Real Madrid CF",
+  "FC Porto",
+  "FC Bayern Munich",
+  "Juventus FC",
+  "AS Monaco FC"
+ ],
+ "2015": [
+  "VfL Wolfsburg",
+  "Real Madrid CF",
+  "FC Bayern Munich",
+  "S.L. Benfica",
+  "FC Barcelona",
+  "Atlético Madrid",
+  "Paris Saint-Germain FC",
+  "Manchester City F.C."
+ ],
+ "2016": [
+  "Atlético Madrid",
+  "Leicester City F.C.",
+  "Borussia Dortmund",
+  "AS Monaco FC",
+  "FC Bayern Munich",
+  "Real Madrid CF",
+  "Juventus FC",
+  "FC Barcelona"
+ ],
+ "2017": [
+  "FC Barcelona",
+  "AS Roma",
+  "Sevilla FC",
+  "FC Bayern Munich",
+  "Juventus FC",
+  "Real Madrid CF",
+  "Liverpool F.C.",
+  "Manchester City F.C."
+ ],
+ "2018": [
+  "AFC Ajax",
+  "Juventus FC",
+  "Liverpool F.C.",
+  "FC Porto",
+  "Tottenham Hotspur F.C.",
+  "Manchester City F.C.",
+  "Manchester United F.C.",
+  "FC Barcelona"
+ ],
+ "2019": [
+  "Manchester City F.C.",
+  "Olympique Lyonnais",
+  "RB Leipzig",
+  "Atlético Madrid",
+  "FC Barcelona",
+  "FC Bayern Munich",
+  "Atalanta BC",
+  "Paris Saint-Germain FC"
+ ],
+ "2020": [
+  "Manchester City F.C.",
+  "Borussia Dortmund",
+  "FC Porto",
+  "Chelsea F.C.",
+  "FC Bayern Munich",
+  "Paris Saint-Germain FC",
+  "Real Madrid CF",
+  "Liverpool F.C."
+ ],
+ "2021": [
+  "Chelsea F.C.",
+  "Real Madrid CF",
+  "Manchester City F.C.",
+  "Atlético Madrid",
+  "Villarreal CF",
+  "FC Bayern Munich",
+  "S.L. Benfica",
+  "Liverpool F.C."
+ ],
+ "2022": [
+  "Real Madrid CF",
+  "Chelsea F.C.",
+  "S.L. Benfica",
+  "Inter Milan",
+  "Manchester City F.C.",
+  "FC Bayern Munich",
+  "AC Milan",
+  "SSC Napoli"
+ ],
+ "2023": [
+  "Arsenal F.C.",
+  "FC Bayern Munich",
+  "Atlético Madrid",
+  "Borussia Dortmund",
+  "Real Madrid CF",
+  "Manchester City F.C.",
+  "Paris Saint-Germain FC",
+  "FC Barcelona"
+ ],
+ "2024": [
+  "Paris Saint-Germain FC",
+  "Aston Villa F.C.",
+  "Arsenal F.C.",
+  "Real Madrid CF",
+  "FC Barcelona",
+  "Borussia Dortmund",
+  "FC Bayern Munich",
+  "Inter Milan"
+ ],
+ "2025": [
+  "Paris Saint-Germain FC",
+  "Liverpool F.C.",
+  "Real Madrid CF",
+  "FC Bayern Munich",
+  "FC Barcelona",
+  "Atlético Madrid",
+  "Sporting CP",
+  "Arsenal F.C."
+ ]
+}

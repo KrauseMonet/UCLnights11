@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "campeones",
+      "runtimeExecutable": "uv",
+      "runtimeArgs": ["run", "uvicorn", "web.app:app", "--port", "8030"],
+      "port": 8030
+    }
+  ]
+}

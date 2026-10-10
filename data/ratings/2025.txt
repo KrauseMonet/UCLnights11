@@ -1,0 +1,186 @@
+// 2025-26 runs past the training data behind these ratings; they lean on reputation
+// more than any other season and are the first to re-check before going public.
+
+# Paris Saint-Germain FC
+Lucas Chevalier|83
+Matvey Safonov|78
+Marquinhos|85
+Willian Pacho|86
+Illia Zabarnyi|81
+Lucas Beraldo|78
+Lucas Hernandez|79
+Achraf Hakimi|89
+Nuno Mendes (footballer, born 2002)|89
+Vitinha|91
+João Neves|88
+Fabián Ruiz|84
+Warren Zaïre-Emery|80
+Senny Mayulu|76
+Lee Kang-in|79
+Ousmane Dembélé|92|FW
+Khvicha Kvaratskhelia|89
+Désiré Doué|86
+Bradley Barcola|83
+Gonçalo Ramos|79
+
+# Liverpool F.C.
+Alisson Becker|88
+Giorgi Mamardashvili|80
+Virgil van Dijk|88
+Ibrahima Konaté|84
+Joe Gomez|78
+Milos Kerkez|80
+Andy Robertson|78
+Jeremie Frimpong|80
+Conor Bradley|78
+Ryan Gravenberch|87
+Alexis Mac Allister|86
+Dominik Szoboszlai|86|MF
+Florian Wirtz|86
+Curtis Jones (footballer, born 2001)|79
+Wataru Endo|74
+Mohamed Salah|87
+Alexander Isak|85
+Hugo Ekitike|84
+Cody Gakpo|83
+Federico Chiesa|76
+
+# Real Madrid CF
+Thibaut Courtois|89
+Andriy Lunin|77
+Dean Huijsen|84
+Antonio Rüdiger|83
+Éder Militão|80
+Raúl Asencio (footballer, born 2003)|78
+Trent Alexander-Arnold|84
+Dani Carvajal|78
+Álvaro Carreras|82
+Ferland Mendy|76
+Federico Valverde|88
+Jude Bellingham|88
+Aurélien Tchouaméni|86
+Eduardo Camavinga|81
+Arda Güler|85
+Franco Mastantuono|78
+Brahim Díaz|79
+Kylian Mbappé|94
+Vinícius Júnior|88
+Rodrygo|81
+Gonzalo García (footballer, born 2004)|78
+
+# FC Bayern Munich
+Manuel Neuer|85
+Jonas Urbig|77
+Dayot Upamecano|85
+Jonathan Tah|84
+Kim Min-jae (footballer)|80
+Hiroki Itō (footballer, born 1999)|78
+Alphonso Davies|80
+Josip Stanišić|81
+Konrad Laimer|82|DF
+Sacha Boey|74
+Joshua Kimmich|90
+Aleksandar Pavlović (footballer)|85
+Leon Goretzka|82
+Tom Bischof|77
+Jamal Musiala|88
+Lennart Karl|77
+Michael Olise|90
+Luis Díaz (footballer, born 1997)|88
+Serge Gnabry|81
+Harry Kane|94
+Nicolas Jackson|78
+
+# FC Barcelona
+Joan Garcia|86
+Wojciech Szczęsny|78
+Pau Cubarsí|86
+Ronald Araújo|80
+Andreas Christensen|78
+Gerard Martín (footballer)|78
+Eric Garcia (footballer, born 2001)|80
+Jules Koundé|86
+Alejandro Balde|83
+João Cancelo|80
+Pedri|92
+Frenkie de Jong|87
+Marc Casadó|79
+Marc Bernal|77
+Dani Olmo|84
+Fermín López|85
+Gavi (footballer)|80
+Lamine Yamal|95
+Raphinha|90
+Robert Lewandowski|85
+Ferran Torres|82
+Marcus Rashford|83
+
+# Atlético Madrid
+Jan Oblak|86
+Juan Musso|78
+Robin Le Normand|82
+José María Giménez|80
+Dávid Hancko|82
+Clément Lenglet|78
+Marc Pubill|78
+Nahuel Molina|78
+Matteo Ruggeri|78
+Koke (footballer, born 1992)|80
+Pablo Barrios (footballer)|82
+Johnny Cardoso|80
+Conor Gallagher|81
+Marcos Llorente|83
+Álex Baena|84
+Thiago Almada|80
+Giuliano Simeone|82
+Nico González (footballer, born 1998)|79
+Antoine Griezmann|83|FW
+Julián Alvarez|89
+Alexander Sørloth|82
+Ademola Lookman|83
+
+# Sporting CP
+Rui Silva (footballer, born 1994)|80
+João Virgínia|74
+Gonçalo Inácio|83
+Ousmane Diomande|83
+Zeno Debast|80
+Eduardo Quaresma|78
+Iván Fresneda|76
+Georgios Vagiannidis|77
+Maximiliano Araújo|80|DF
+Matheus Reis|77
+Morten Hjulmand|85
+Hidemasa Morita|80
+Daniel Bragança|78
+Giorgi Kochorashvili|76
+Pedro Gonçalves|84
+Francisco Trincão|85
+Geovany Quenda|80
+Geny Catamo|79
+Luis Suárez (Colombian footballer)|83
+Fotis Ioannidis|78
+
+# Arsenal F.C.
+David Raya|88
+Kepa Arrizabalaga|78
+William Saliba|89
+Gabriel Magalhães|89
+Piero Hincapié|82
+Cristhian Mosquera|80
+Jurriën Timber|85
+Ben White (footballer)|79
+Riccardo Calafiori|81
+Myles Lewis-Skelly|80
+Declan Rice|91
+Martín Zubimendi|87
+Martin Ødegaard|85
+Eberechi Eze|85
+Mikel Merino|83
+Christian Nørgaard|76
+Bukayo Saka|88
+Gabriel Martinelli|81
+Leandro Trossard|82
+Noni Madueke|81
+Viktor Gyökeres|85
+Kai Havertz|80

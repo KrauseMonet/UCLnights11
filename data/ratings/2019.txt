@@ -1,0 +1,169 @@
+# Manchester City F.C.
+Ederson (footballer, born 1993)|87
+Kyle Walker|84
+John Stones|80
+Aymeric Laporte|86
+Nicolás Otamendi|79
+João Cancelo|80
+Benjamin Mendy|78
+Oleksandr Zinchenko (footballer)|78|DF
+Eric Garcia (footballer, born 2001)|76
+Rodri|86
+Fernandinho (footballer, born May 1985)|83|DF
+Kevin De Bruyne|93
+İlkay Gündoğan|84
+David Silva|85
+Bernardo Silva|85
+Phil Foden|79
+Raheem Sterling|88
+Riyad Mahrez|86
+Sergio Agüero|89
+Gabriel Jesus|84
+
+# Olympique Lyonnais
+Anthony Lopes|84
+Jason Denayer|81
+Marcelo (footballer, born May 1987)|80
+Joachim Andersen (footballer)|78
+Léo Dubois|79
+Fernando Marçal|77
+Rafael (footballer, born 1990)|75
+Houssem Aouar|85
+Bruno Guimarães|82
+Lucas Tousart|79
+Maxence Caqueret|80
+Thiago Mendes|77
+Jeff Reine-Adélaïde|76
+Memphis Depay|86
+Moussa Dembélé (French footballer)|84
+Karl Toko Ekambi|80
+Maxwel Cornet|79|MF
+Bertrand Traoré|79
+
+# RB Leipzig
+Péter Gulácsi|87
+Dayot Upamecano|86
+Ibrahima Konaté|80
+Lukas Klostermann|81
+Marcel Halstenberg|80
+Angeliño|83
+Nordi Mukiele|79
+Willi Orbán|79
+Konrad Laimer|82|MF
+Kevin Kampl|81
+Marcel Sabitzer|86|MF
+Tyler Adams|79
+Dani Olmo|83
+Christopher Nkunku|83
+Emil Forsberg|80
+Timo Werner|89
+Yussuf Poulsen|80
+Patrik Schick|80
+
+# Atlético Madrid
+Jan Oblak|92
+Stefan Savić|83
+Felipe (footballer, born 1989)|81
+José María Giménez|84
+Kieran Trippier|82
+Renan Lodi|81
+Šime Vrsaljko|76
+Mario Hermoso|79
+Koke (footballer, born 1992)|86
+Saúl (footballer, born 1994)|86
+Thomas Partey|86
+Marcos Llorente|85
+Héctor Herrera|78
+Thomas Lemar|78
+Yannick Carrasco|82
+Vitolo (footballer, born 1989)|76
+João Félix|83
+Álvaro Morata|83
+Ángel Correa|82
+Diego Costa|78
+
+# FC Barcelona
+Marc-André ter Stegen|90
+Neto (footballer, born 1989)|77
+Gerard Piqué|86
+Clément Lenglet|82
+Samuel Umtiti|76
+Ronald Araújo|74
+Nélson Semedo|79
+Jordi Alba|85
+Junior Firpo|75
+Sergio Busquets|85
+Frenkie de Jong|85
+Arthur Melo|81
+Ivan Rakitić|80
+Arturo Vidal|82
+Sergi Roberto|80
+Riqui Puig|74
+Lionel Messi|96
+Luis Suárez (Uruguayan footballer)|86
+Antoine Griezmann|85
+Ansu Fati|78
+Ousmane Dembélé|78
+
+# FC Bayern Munich
+Manuel Neuer|91
+Sven Ulreich|76
+Alphonso Davies|86
+David Alaba|86|DF
+Jérôme Boateng|83
+Benjamin Pavard|83
+Niklas Süle|80
+Lucas Hernandez|80
+Álvaro Odriozola|75
+Joshua Kimmich|90
+Leon Goretzka|86
+Thiago Alcântara|89
+Corentin Tolisso|78
+Javi Martínez|78
+Thomas Müller|89|MF
+Philippe Coutinho|80
+Serge Gnabry|88
+Kingsley Coman|85
+Ivan Perišić|82
+Robert Lewandowski|95
+
+# Atalanta BC
+Pierluigi Gollini|81
+Marco Sportiello|74
+Rafael Tolói|82
+Berat Djimsiti|80
+José Luis Palomino|79
+Mattia Caldara|76
+Hans Hateboer|81
+Robin Gosens|84
+Timothy Castagne|79
+Marten de Roon|83
+Remo Freuler|83
+Mario Pašalić|81
+Ruslan Malinovskyi|81
+Papu Gómez|88|MF
+Josip Iličić|87
+Duván Zapata|85
+Luis Muriel|84
+
+# Paris Saint-Germain FC
+Keylor Navas|87
+Sergio Rico|75
+Marquinhos|88
+Presnel Kimpembe|84
+Thiago Silva|86
+Thilo Kehrer|78
+Thomas Meunier|80
+Juan Bernat|80
+Layvin Kurzawa|77
+Marco Verratti|87
+Leandro Paredes|81
+Idrissa Gueye|82
+Ander Herrera|79
+Pablo Sarabia|79
+Ángel Di María|87
+Kylian Mbappé|92
+Neymar|92
+Mauro Icardi|83
+Edinson Cavani|80
+Eric Maxim Choupo-Moting|76

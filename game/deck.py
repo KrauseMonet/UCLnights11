@@ -26,6 +26,7 @@ class Card:
     club_name: str
     short: str
     key: str
+    crest: str
 
 
 @dataclass(frozen=True, eq=False)
@@ -38,6 +39,10 @@ class ClubSeason:
     short: str
     primary: str
     secondary: str
+    crest: str
+    team: str
+    deep: str
+    ink: str
     cards: tuple[Card, ...]
 
     @property
@@ -58,13 +63,14 @@ def build_deck(doc: dict) -> Deck:
             Card(
                 id=p["id"], name=p["name"], title=p["title"], pos=p["pos"], nation=p["nation"],
                 rating=p["rating"], season=s["season"], label=s["label"], club=s["club"],
-                club_name=s["name"], short=s["short"], key=s["key"],
+                club_name=s["name"], short=s["short"], key=s["key"], crest=s["crest"],
             )
             for p in s["players"]
         )
         seasons.append(ClubSeason(
             key=s["key"], season=s["season"], label=s["label"], club=s["club"], name=s["name"],
-            short=s["short"], primary=s["primary"], secondary=s["secondary"], cards=cards,
+            short=s["short"], primary=s["primary"], secondary=s["secondary"], crest=s["crest"],
+            team=s["team"], deep=s["deep"], ink=s["ink"], cards=cards,
         ))
     return Deck(tuple(seasons), {s.key: s for s in seasons})
 

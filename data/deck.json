@@ -2,6 +2,9 @@
  "club_seasons": [
   {
    "club": "AFC Ajax",
+   "crest": "AJA",
+   "deep": "#4c0b14",
+   "ink": "#f15b71",
    "key": "1994-AJA",
    "label": "1994–95",
    "name": "Ajax",
@@ -146,10 +149,14 @@
    "primary": "#D2122E",
    "season": 1994,
    "secondary": "#FFFFFF",
-   "short": "AJA"
+   "short": "AJA",
+   "team": "#D2122E"
   },
   {
    "club": "FC Barcelona",
+   "crest": "BAR",
+   "deep": "#4c0b26",
+   "ink": "#ff4290",
    "key": "1994-BAR",
    "label": "1994–95",
    "name": "Barcelona",
@@ -286,10 +293,14 @@
    "primary": "#A50044",
    "season": 1994,
    "secondary": "#004D98",
-   "short": "BAR"
+   "short": "BAR",
+   "team": "#A50044"
   },
   {
    "club": "FC Bayern Munich",
+   "crest": "BAY-1900",
+   "deep": "#4c0b17",
+   "ink": "#fb4668",
    "key": "1994-BAY",
    "label": "1994–95",
    "name": "Bayern Munich",
@@ -434,10 +445,14 @@
    "primary": "#DC052D",
    "season": 1994,
    "secondary": "#FFFFFF",
-   "short": "BAY"
+   "short": "BAY",
+   "team": "#DC052D"
   },
   {
    "club": "S.L. Benfica",
+   "crest": "BEN",
+   "deep": "#4c0b0b",
+   "ink": "#ed5e5e",
    "key": "1994-BEN",
    "label": "1994–95",
    "name": "Benfica",
@@ -566,10 +581,14 @@
    "primary": "#E83030",
    "season": 1994,
    "secondary": "#FFFFFF",
-   "short": "BEN"
+   "short": "BEN",
+   "team": "#E83030"
   },
   {
    "club": "AC Milan",
+   "crest": "MIL",
+   "deep": "#4c0b0b",
+   "ink": "#fc4f51",
    "key": "1994-MIL",
    "label": "1994–95",
    "name": "Milan",
@@ -722,10 +741,14 @@
    "primary": "#FB090B",
    "season": 1994,
    "secondary": "#000000",
-   "short": "MIL"
+   "short": "MIL",
+   "team": "#FB090B"
   },
   {
    "club": "Paris Saint-Germain FC",
+   "crest": "PSG-1900",
+   "deep": "#0b314c",
+   "ink": "#1a9fff",
    "key": "1994-PSG",
    "label": "1994–95",
    "name": "Paris Saint-Germain",
@@ -862,10 +885,14 @@
    "primary": "#004170",
    "season": 1994,
    "secondary": "#DA291C",
-   "short": "PSG"
+   "short": "PSG",
+   "team": "#004170"
   },
   {
    "club": "AFC Ajax",
+   "crest": "AJA",
+   "deep": "#4c0b14",
+   "ink": "#f15b71",
    "key": "1995-AJA",
    "label": "1995–96",
    "name": "Ajax",
@@ -994,10 +1021,14 @@
    "primary": "#D2122E",
    "season": 1995,
    "secondary": "#FFFFFF",
-   "short": "AJA"
+   "short": "AJA",
+   "team": "#D2122E"
   },
   {
    "club": "Borussia Dortmund",
+   "crest": "BVB",
+   "deep": "#4c450b",
+   "ink": "#ffe61a",
    "key": "1995-BVB",
    "label": "1995–96",
    "name": "Borussia Dortmund",
@@ -1142,10 +1173,14 @@
    "primary": "#FDE100",
    "season": 1995,
    "secondary": "#000000",
-   "short": "BVB"
+   "short": "BVB",
+   "team": "#FDE100"
   },
   {
    "club": "Juventus FC",
+   "crest": "JUV",
+   "deep": "#252932",
+   "ink": "#9aa3b5",
    "key": "1995-JUV",
    "label": "1995–96",
    "name": "Juventus",
@@ -1298,10 +1333,14 @@
    "primary": "#FFFFFF",
    "season": 1995,
    "secondary": "#000000",
-   "short": "JUV"
+   "short": "JUV",
+   "team": "#9aa3b5"
   },
   {
    "club": "Panathinaikos F.C.",
+   "crest": "PAO",
+   "deep": "#0b4c2e",
+   "ink": "#1aff96",
    "key": "1995-PAO",
    "label": "1995–96",
    "name": "Panathinaikos",
@@ -1438,10 +1477,14 @@
    "primary": "#007841",
    "season": 1995,
    "secondary": "#FFFFFF",
-   "short": "PAO"
+   "short": "PAO",
+   "team": "#007841"
   },
   {
    "club": "Real Madrid CF",
+   "crest": "RMA",
+   "deep": "#0b2c4c",
+   "ink": "#2495ff",
    "key": "1995-RMA",
    "label": "1995–96",
    "name": "Real Madrid",
@@ -1594,10 +1637,14 @@
    "primary": "#FFFFFF",
    "season": 1995,
    "secondary": "#00529F",
-   "short": "RMA"
+   "short": "RMA",
+   "team": "#00529F"
   },
   {
    "club": "Atlético Madrid",
+   "crest": "ATM",
+   "deep": "#4a130d",
+   "ink": "#e36c5f",
    "key": "1996-ATM",
    "label": "1996–97",
    "name": "Atlético Madrid",
@@ -1726,10 +1773,14 @@
    "primary": "#CB3524",
    "season": 1996,
    "secondary": "#272E61",
-   "short": "ATM"
+   "short": "ATM",
+   "team": "#CB3524"
   },
   {
    "club": "Borussia Dortmund",
+   "crest": "BVB",
+   "deep": "#4c450b",
+   "ink": "#ffe61a",
    "key": "1996-BVB",
    "label": "1996–97",
    "name": "Borussia Dortmund",
@@ -1890,10 +1941,14 @@
    "primary": "#FDE100",
    "season": 1996,
    "secondary": "#000000",
-   "short": "BVB"
+   "short": "BVB",
+   "team": "#FDE100"
   },
   {
    "club": "Juventus FC",
+   "crest": "JUV",
+   "deep": "#252932",
+   "ink": "#9aa3b5",
    "key": "1996-JUV",
    "label": "1996–97",
    "name": "Juventus",
@@ -2062,10 +2117,14 @@
    "primary": "#FFFFFF",
    "season": 1996,
    "secondary": "#000000",
-   "short": "JUV"
+   "short": "JUV",
+   "team": "#9aa3b5"
   },
   {
    "club": "Manchester United F.C.",
+   "crest": "MUN",
+   "deep": "#4c0f0b",
+   "ink": "#ea6258",
    "key": "1996-MUN",
    "label": "1996–97",
    "name": "Manchester United",
@@ -2202,10 +2261,14 @@
    "primary": "#DA291C",
    "season": 1996,
    "secondary": "#FBE122",
-   "short": "MUN"
+   "short": "MUN",
+   "team": "#DA291C"
   },
   {
    "club": "Bayer 04 Leverkusen",
+   "crest": "LEV",
+   "deep": "#4c0b0b",
+   "ink": "#eb6160",
    "key": "1997-LEV",
    "label": "1997–98",
    "name": "Bayer Leverkusen",
@@ -2342,10 +2405,14 @@
    "primary": "#E32221",
    "season": 1997,
    "secondary": "#000000",
-   "short": "LEV"
+   "short": "LEV",
+   "team": "#E32221"
   },
   {
    "club": "FC Bayern Munich",
+   "crest": "BAY-1996",
+   "deep": "#4c0b17",
+   "ink": "#fb4668",
    "key": "1997-BAY",
    "label": "1997–98",
    "name": "Bayern Munich",
@@ -2490,10 +2557,14 @@
    "primary": "#DC052D",
    "season": 1997,
    "secondary": "#FFFFFF",
-   "short": "BAY"
+   "short": "BAY",
+   "team": "#DC052D"
   },
   {
    "club": "Borussia Dortmund",
+   "crest": "BVB",
+   "deep": "#4c450b",
+   "ink": "#ffe61a",
    "key": "1997-BVB",
    "label": "1997–98",
    "name": "Borussia Dortmund",
@@ -2630,10 +2701,14 @@
    "primary": "#FDE100",
    "season": 1997,
    "secondary": "#000000",
-   "short": "BVB"
+   "short": "BVB",
+   "team": "#FDE100"
   },
   {
    "club": "Juventus FC",
+   "crest": "JUV",
+   "deep": "#252932",
+   "ink": "#9aa3b5",
    "key": "1997-JUV",
    "label": "1997–98",
    "name": "Juventus",
@@ -2794,10 +2869,14 @@
    "primary": "#FFFFFF",
    "season": 1997,
    "secondary": "#000000",
-   "short": "JUV"
+   "short": "JUV",
+   "team": "#9aa3b5"
   },
   {
    "club": "Manchester United F.C.",
+   "crest": "MUN",
+   "deep": "#4c0f0b",
+   "ink": "#ea6258",
    "key": "1997-MUN",
    "label": "1997–98",
    "name": "Manchester United",
@@ -2934,10 +3013,14 @@
    "primary": "#DA291C",
    "season": 1997,
    "secondary": "#FBE122",
-   "short": "MUN"
+   "short": "MUN",
+   "team": "#DA291C"
   },
   {
    "club": "Real Madrid CF",
+   "crest": "RMA",
+   "deep": "#0b2c4c",
+   "ink": "#2495ff",
    "key": "1997-RMA",
    "label": "1997–98",
    "name": "Real Madrid",
@@ -3090,10 +3173,14 @@
    "primary": "#FFFFFF",
    "season": 1997,
    "secondary": "#00529F",
-   "short": "RMA"
+   "short": "RMA",
+   "team": "#00529F"
   },
   {
    "club": "FC Bayern Munich",
+   "crest": "BAY-1996",
+   "deep": "#4c0b17",
+   "ink": "#fb4668",
    "key": "1998-BAY",
    "label": "1998–99",
    "name": "Bayern Munich",
@@ -3254,10 +3341,14 @@
    "primary": "#DC052D",
    "season": 1998,
    "secondary": "#FFFFFF",
-   "short": "BAY"
+   "short": "BAY",
+   "team": "#DC052D"
   },
   {
    "club": "FC Dynamo Kyiv",
+   "crest": "DYN",
+   "deep": "#0b2c4c",
+   "ink": "#2495ff",
    "key": "1998-DYN",
    "label": "1998–99",
    "name": "Dynamo Kyiv",
@@ -3378,10 +3469,14 @@
    "primary": "#FFFFFF",
    "season": 1998,
    "secondary": "#0055A5",
-   "short": "DYN"
+   "short": "DYN",
+   "team": "#0055A5"
   },
   {
    "club": "Inter Milan",
+   "crest": "INT-1900",
+   "deep": "#0b334c",
+   "ink": "#1aa8ff",
    "key": "1998-INT",
    "label": "1998–99",
    "name": "Inter",
@@ -3542,10 +3637,14 @@
    "primary": "#0068A8",
    "season": 1998,
    "secondary": "#000000",
-   "short": "INT"
+   "short": "INT",
+   "team": "#0068A8"
   },
   {
    "club": "Juventus FC",
+   "crest": "JUV",
+   "deep": "#252932",
+   "ink": "#9aa3b5",
    "key": "1998-JUV",
    "label": "1998–99",
    "name": "Juventus",
@@ -3714,10 +3813,14 @@
    "primary": "#FFFFFF",
    "season": 1998,
    "secondary": "#000000",
-   "short": "JUV"
+   "short": "JUV",
+   "team": "#9aa3b5"
   },
   {
    "club": "1. FC Kaiserslautern",
+   "crest": "FCK",
+   "deep": "#4c0b12",
+   "ink": "#ff4258",
    "key": "1998-FCK",
    "label": "1998–99",
    "name": "Kaiserslautern",
@@ -3846,10 +3949,14 @@
    "primary": "#E2001A",
    "season": 1998,
    "secondary": "#FFFFFF",
-   "short": "FCK"
+   "short": "FCK",
+   "team": "#E2001A"
   },
   {
    "club": "Manchester United F.C.",
+   "crest": "MUN",
+   "deep": "#4c0f0b",
+   "ink": "#ea6258",
    "key": "1998-MUN",
    "label": "1998–99",
    "name": "Manchester United",
@@ -4002,10 +4109,14 @@
    "primary": "#DA291C",
    "season": 1998,
    "secondary": "#FBE122",
-   "short": "MUN"
+   "short": "MUN",
+   "team": "#DA291C"
   },
   {
    "club": "Olympiacos F.C.",
+   "crest": "OLY",
+   "deep": "#4c0b12",
+   "ink": "#ff4258",
    "key": "1998-OLY",
    "label": "1998–99",
    "name": "Olympiacos",
@@ -4134,10 +4245,14 @@
    "primary": "#E2001A",
    "season": 1998,
    "secondary": "#FFFFFF",
-   "short": "OLY"
+   "short": "OLY",
+   "team": "#E2001A"
   },
   {
    "club": "Real Madrid CF",
+   "crest": "RMA",
+   "deep": "#0b2c4c",
+   "ink": "#2495ff",
    "key": "1998-RMA",
    "label": "1998–99",
    "name": "Real Madrid",
@@ -4290,10 +4405,14 @@
    "primary": "#FFFFFF",
    "season": 1998,
    "secondary": "#00529F",
-   "short": "RMA"
+   "short": "RMA",
+   "team": "#00529F"
   },
   {
    "club": "FC Barcelona",
+   "crest": "BAR",
+   "deep": "#4c0b26",
+   "ink": "#ff4290",
    "key": "1999-BAR",
    "label": "1999–2000",
    "name": "Barcelona",
@@ -4470,10 +4589,14 @@
    "primary": "#A50044",
    "season": 1999,
    "secondary": "#004D98",
-   "short": "BAR"
+   "short": "BAR",
+   "team": "#A50044"
   },
   {
    "club": "FC Bayern Munich",
+   "crest": "BAY-1996",
+   "deep": "#4c0b17",
+   "ink": "#fb4668",
    "key": "1999-BAY",
    "label": "1999–2000",
    "name": "Bayern Munich",
@@ -4634,10 +4757,14 @@
    "primary": "#DC052D",
    "season": 1999,
    "secondary": "#FFFFFF",
-   "short": "BAY"
+   "short": "BAY",
+   "team": "#DC052D"
   },
   {
    "club": "Chelsea F.C.",
+   "crest": "CHE",
+   "deep": "#0b294c",
+   "ink": "#3c94fb",
    "key": "1999-CHE",
    "label": "1999–2000",
    "name": "Chelsea",
@@ -4774,10 +4901,14 @@
    "primary": "#034694",
    "season": 1999,
    "secondary": "#FFFFFF",
-   "short": "CHE"
+   "short": "CHE",
+   "team": "#034694"
   },
   {
    "club": "SS Lazio",
+   "crest": "LAZ",
+   "deep": "#0b3a4c",
+   "ink": "#87d8f7",
    "key": "1999-LAZ",
    "label": "1999–2000",
    "name": "Lazio",
@@ -4922,10 +5053,14 @@
    "primary": "#87D8F7",
    "season": 1999,
    "secondary": "#FFFFFF",
-   "short": "LAZ"
+   "short": "LAZ",
+   "team": "#87D8F7"
   },
   {
    "club": "Manchester United F.C.",
+   "crest": "MUN",
+   "deep": "#4c0f0b",
+   "ink": "#ea6258",
    "key": "1999-MUN",
    "label": "1999–2000",
    "name": "Manchester United",
@@ -5102,10 +5237,14 @@
    "primary": "#DA291C",
    "season": 1999,
    "secondary": "#FBE122",
-   "short": "MUN"
+   "short": "MUN",
+   "team": "#DA291C"
   },
   {
    "club": "FC Porto",
+   "crest": "POR",
+   "deep": "#0b294c",
+   "ink": "#2e90ff",
    "key": "1999-POR",
    "label": "1999–2000",
    "name": "Porto",
@@ -5234,10 +5373,14 @@
    "primary": "#00428C",
    "season": 1999,
    "secondary": "#FFFFFF",
-   "short": "POR"
+   "short": "POR",
+   "team": "#00428C"
   },
   {
    "club": "Real Madrid CF",
+   "crest": "RMA",
+   "deep": "#0b2c4c",
+   "ink": "#2495ff",
    "key": "1999-RMA",
    "label": "1999–2000",
    "name": "Real Madrid",
@@ -5406,10 +5549,14 @@
    "primary": "#FFFFFF",
    "season": 1999,
    "secondary": "#00529F",
-   "short": "RMA"
+   "short": "RMA",
+   "team": "#00529F"
   },
   {
    "club": "Valencia CF",
+   "crest": "VAL",
+   "deep": "#4c100b",
+   "ink": "#f15d50",
    "key": "1999-VAL",
    "label": "1999–2000",
    "name": "Valencia",
@@ -5538,10 +5685,14 @@
    "primary": "#FFFFFF",
    "season": 1999,
    "secondary": "#EE3524",
-   "short": "VAL"
+   "short": "VAL",
+   "team": "#EE3524"
   },
   {
    "club": "Arsenal F.C.",
+   "crest": "ARS-1900",
+   "deep": "#4c0b0c",
+   "ink": "#fe4d52",
    "key": "2000-ARS",
    "label": "2000–01",
    "name": "Arsenal",
@@ -5702,10 +5853,14 @@
    "primary": "#EF0107",
    "season": 2000,
    "secondary": "#FFFFFF",
-   "short": "ARS"
+   "short": "ARS",
+   "team": "#EF0107"
   },
   {
    "club": "FC Bayern Munich",
+   "crest": "BAY-1996",
+   "deep": "#4c0b17",
+   "ink": "#fb4668",
    "key": "2000-BAY",
    "label": "2000–01",
    "name": "Bayern Munich",
@@ -5866,10 +6021,14 @@
    "primary": "#DC052D",
    "season": 2000,
    "secondary": "#FFFFFF",
-   "short": "BAY"
+   "short": "BAY",
+   "team": "#DC052D"
   },
   {
    "club": "Deportivo de La Coruña",
+   "crest": "DEP",
+   "deep": "#0b304c",
+   "ink": "#1a9bff",
    "key": "2000-DEP",
    "label": "2000–01",
    "name": "Deportivo La Coruña",
@@ -6022,10 +6181,14 @@
    "primary": "#0060AA",
    "season": 2000,
    "secondary": "#FFFFFF",
-   "short": "DEP"
+   "short": "DEP",
+   "team": "#0060AA"
   },
   {
    "club": "Galatasaray S.K. (football)",
+   "crest": "GAL-1900",
+   "deep": "#4c0b1d",
+   "ink": "#fb4779",
    "key": "2000-GAL",
    "label": "2000–01",
    "name": "Galatasaray",
@@ -6162,10 +6325,14 @@
    "primary": "#A90432",
    "season": 2000,
    "secondary": "#FDB912",
-   "short": "GAL"
+   "short": "GAL",
+   "team": "#A90432"
   },
   {
    "club": "Leeds United F.C.",
+   "crest": "LEE",
+   "deep": "#0f2248",
+   "ink": "#638dde",
    "key": "2000-LEE",
    "label": "2000–01",
    "name": "Leeds United",
@@ -6334,10 +6501,14 @@
    "primary": "#FFFFFF",
    "season": 2000,
    "secondary": "#1D428A",
-   "short": "LEE"
+   "short": "LEE",
+   "team": "#1D428A"
   },
   {
    "club": "Manchester United F.C.",
+   "crest": "MUN",
+   "deep": "#4c0f0b",
+   "ink": "#ea6258",
    "key": "2000-MUN",
    "label": "2000–01",
    "name": "Manchester United",
@@ -6498,10 +6669,14 @@
    "primary": "#DA291C",
    "season": 2000,
    "secondary": "#FBE122",
-   "short": "MUN"
+   "short": "MUN",
+   "team": "#DA291C"
   },
   {
    "club": "Real Madrid CF",
+   "crest": "RMA",
+   "deep": "#0b2c4c",
+   "ink": "#2495ff",
    "key": "2000-RMA",
    "label": "2000–01",
    "name": "Real Madrid",
@@ -6662,10 +6837,14 @@
    "primary": "#FFFFFF",
    "season": 2000,
    "secondary": "#00529F",
-   "short": "RMA"
+   "short": "RMA",
+   "team": "#00529F"
   },
   {
    "club": "Valencia CF",
+   "crest": "VAL",
+   "deep": "#4c100b",
+   "ink": "#f15d50",
    "key": "2000-VAL",
    "label": "2000–01",
    "name": "Valencia",
@@ -6826,10 +7005,14 @@
    "primary": "#FFFFFF",
    "season": 2000,
    "secondary": "#EE3524",
-   "short": "VAL"
+   "short": "VAL",
+   "team": "#EE3524"
   },
   {
    "club": "FC Barcelona",
+   "crest": "BAR",
+   "deep": "#4c0b26",
+   "ink": "#ff4290",
    "key": "2001-BAR",
    "label": "2001–02",
    "name": "Barcelona",
@@ -6982,10 +7165,14 @@
    "primary": "#A50044",
    "season": 2001,
    "secondary": "#004D98",
-   "short": "BAR"
+   "short": "BAR",
+   "team": "#A50044"
   },
   {
    "club": "Bayer 04 Leverkusen",
+   "crest": "LEV",
+   "deep": "#4c0b0b",
+   "ink": "#eb6160",
    "key": "2001-LEV",
    "label": "2001–02",
    "name": "Bayer Leverkusen",
@@ -7114,10 +7301,14 @@
    "primary": "#E32221",
    "season": 2001,
    "secondary": "#000000",
-   "short": "LEV"
+   "short": "LEV",
+   "team": "#E32221"
   },
   {
    "club": "FC Bayern Munich",
+   "crest": "BAY-1996",
+   "deep": "#4c0b17",
+   "ink": "#fb4668",
    "key": "2001-BAY",
    "label": "2001–02",
    "name": "Bayern Munich",
@@ -7286,10 +7477,14 @@
    "primary": "#DC052D",
    "season": 2001,
    "secondary": "#FFFFFF",
-   "short": "BAY"
+   "short": "BAY",
+   "team": "#DC052D"
   },
   {
    "club": "Deportivo de La Coruña",
+   "crest": "DEP",
+   "deep": "#0b304c",
+   "ink": "#1a9bff",
    "key": "2001-DEP",
    "label": "2001–02",
    "name": "Deportivo La Coruña",
@@ -7442,10 +7637,14 @@
    "primary": "#0060AA",
    "season": 2001,
    "secondary": "#FFFFFF",
-   "short": "DEP"
+   "short": "DEP",
+   "team": "#0060AA"
   },
   {
    "club": "Liverpool F.C.",
+   "crest": "LIV",
+   "deep": "#4c0b15",
+   "ink": "#f25a73",
    "key": "2001-LIV",
    "label": "2001–02",
    "name": "Liverpool",
@@ -7614,10 +7813,14 @@
    "primary": "#C8102E",
    "season": 2001,
    "secondary": "#F6EB61",
-   "short": "LIV"
+   "short": "LIV",
+   "team": "#C8102E"
   },
   {
    "club": "Manchester United F.C.",
+   "crest": "MUN",
+   "deep": "#4c0f0b",
+   "ink": "#ea6258",
    "key": "2001-MUN",
    "label": "2001–02",
    "name": "Manchester United",
@@ -7794,10 +7997,14 @@
    "primary": "#DA291C",
    "season": 2001,
    "secondary": "#FBE122",
-   "short": "MUN"
+   "short": "MUN",
+   "team": "#DA291C"
   },
   {
    "club": "Panathinaikos F.C.",
+   "crest": "PAO",
+   "deep": "#0b4c2e",
+   "ink": "#1aff96",
    "key": "2001-PAO",
    "label": "2001–02",
    "name": "Panathinaikos",
@@ -7942,10 +8149,14 @@
    "primary": "#007841",
    "season": 2001,
    "secondary": "#FFFFFF",
-   "short": "PAO"
+   "short": "PAO",
+   "team": "#007841"
   },
   {
    "club": "Real Madrid CF",
+   "crest": "RMA",
+   "deep": "#0b2c4c",
+   "ink": "#2495ff",
    "key": "2001-RMA",
    "label": "2001–02",
    "name": "Real Madrid",
@@ -8106,10 +8317,14 @@
    "primary": "#FFFFFF",
    "season": 2001,
    "secondary": "#00529F",
-   "short": "RMA"
+   "short": "RMA",
+   "team": "#00529F"
   },
   {
    "club": "AFC Ajax",
+   "crest": "AJA",
+   "deep": "#4c0b14",
+   "ink": "#f15b71",
    "key": "2002-AJA",
    "label": "2002–03",
    "name": "Ajax",
@@ -8254,10 +8469,14 @@
    "primary": "#D2122E",
    "season": 2002,
    "secondary": "#FFFFFF",
-   "short": "AJA"
+   "short": "AJA",
+   "team": "#D2122E"
   },
   {
    "club": "FC Barcelona",
+   "crest": "BAR",
+   "deep": "#4c0b26",
+   "ink": "#ff4290",
    "key": "2002-BAR",
    "label": "2002–03",
    "name": "Barcelona",
@@ -8418,10 +8637,14 @@
    "primary": "#A50044",
    "season": 2002,
    "secondary": "#004D98",
-   "short": "BAR"
+   "short": "BAR",
+   "team": "#A50044"
   },
   {
    "club": "Inter Milan",
+   "crest": "INT-1900",
+   "deep": "#0b334c",
+   "ink": "#1aa8ff",
    "key": "2002-INT",
    "label": "2002–03",
    "name": "Inter",
@@ -8590,10 +8813,14 @@
    "primary": "#0068A8",
    "season": 2002,
    "secondary": "#000000",
-   "short": "INT"
+   "short": "INT",
+   "team": "#0068A8"
   },
   {
    "club": "Juventus FC",
+   "crest": "JUV",
+   "deep": "#252932",
+   "ink": "#9aa3b5",
    "key": "2002-JUV",
    "label": "2002–03",
    "name": "Juventus",
@@ -8754,10 +8981,14 @@
    "primary": "#FFFFFF",
    "season": 2002,
    "secondary": "#000000",
-   "short": "JUV"
+   "short": "JUV",
+   "team": "#9aa3b5"
   },
   {
    "club": "Manchester United F.C.",
+   "crest": "MUN",
+   "deep": "#4c0f0b",
+   "ink": "#ea6258",
    "key": "2002-MUN",
    "label": "2002–03",
    "name": "Manchester United",
@@ -8902,10 +9133,14 @@
    "primary": "#DA291C",
    "season": 2002,
    "secondary": "#FBE122",
-   "short": "MUN"
+   "short": "MUN",
+   "team": "#DA291C"
   },
   {
    "club": "AC Milan",
+   "crest": "MIL",
+   "deep": "#4c0b0b",
+   "ink": "#fc4f51",
    "key": "2002-MIL",
    "label": "2002–03",
    "name": "Milan",
@@ -9074,10 +9309,14 @@
    "primary": "#FB090B",
    "season": 2002,
    "secondary": "#000000",
-   "short": "MIL"
+   "short": "MIL",
+   "team": "#FB090B"
   },
   {
    "club": "Real Madrid CF",
+   "crest": "RMA",
+   "deep": "#0b2c4c",
+   "ink": "#2495ff",
    "key": "2002-RMA",
    "label": "2002–03",
    "name": "Real Madrid",
@@ -9238,10 +9477,14 @@
    "primary": "#FFFFFF",
    "season": 2002,
    "secondary": "#00529F",
-   "short": "RMA"
+   "short": "RMA",
+   "team": "#00529F"
   },
   {
    "club": "Valencia CF",
+   "crest": "VAL",
+   "deep": "#4c100b",
+   "ink": "#f15d50",
    "key": "2002-VAL",
    "label": "2002–03",
    "name": "Valencia",
@@ -9394,10 +9637,14 @@
    "primary": "#FFFFFF",
    "season": 2002,
    "secondary": "#EE3524",
-   "short": "VAL"
+   "short": "VAL",
+   "team": "#EE3524"
   },
   {
    "club": "Arsenal F.C.",
+   "crest": "ARS",
+   "deep": "#4c0b0c",
+   "ink": "#fe4d52",
    "key": "2003-ARS",
    "label": "2003–04",
    "name": "Arsenal",
@@ -9558,10 +9805,14 @@
    "primary": "#EF0107",
    "season": 2003,
    "secondary": "#FFFFFF",
-   "short": "ARS"
+   "short": "ARS",
+   "team": "#EF0107"
   },
   {
    "club": "Chelsea F.C.",
+   "crest": "CHE",
+   "deep": "#0b294c",
+   "ink": "#3c94fb",
    "key": "2003-CHE",
    "label": "2003–04",
    "name": "Chelsea",
@@ -9746,10 +9997,14 @@
    "primary": "#034694",
    "season": 2003,
    "secondary": "#FFFFFF",
-   "short": "CHE"
+   "short": "CHE",
+   "team": "#034694"
   },
   {
    "club": "Deportivo de La Coruña",
+   "crest": "DEP",
+   "deep": "#0b304c",
+   "ink": "#1a9bff",
    "key": "2003-DEP",
    "label": "2003–04",
    "name": "Deportivo La Coruña",
@@ -9910,10 +10165,14 @@
    "primary": "#0060AA",
    "season": 2003,
    "secondary": "#FFFFFF",
-   "short": "DEP"
+   "short": "DEP",
+   "team": "#0060AA"
   },
   {
    "club": "Olympique Lyonnais",
+   "crest": "LYO",
+   "deep": "#0c214b",
+   "ink": "#5c8ae5",
    "key": "2003-LYO",
    "label": "2003–04",
    "name": "Lyon",
@@ -10042,10 +10301,14 @@
    "primary": "#FFFFFF",
    "season": 2003,
    "secondary": "#14387F",
-   "short": "LYO"
+   "short": "LYO",
+   "team": "#14387F"
   },
   {
    "club": "AC Milan",
+   "crest": "MIL",
+   "deep": "#4c0b0b",
+   "ink": "#fc4f51",
    "key": "2003-MIL",
    "label": "2003–04",
    "name": "Milan",
@@ -10222,10 +10485,14 @@
    "primary": "#FB090B",
    "season": 2003,
    "secondary": "#000000",
-   "short": "MIL"
+   "short": "MIL",
+   "team": "#FB090B"
   },
   {
    "club": "AS Monaco FC",
+   "crest": "MON",
+   "deep": "#4c0b0d",
+   "ink": "#ef5d62",
    "key": "2003-MON",
    "label": "2003–04",
    "name": "Monaco",
@@ -10370,10 +10637,14 @@
    "primary": "#E7171E",
    "season": 2003,
    "secondary": "#FFFFFF",
-   "short": "MON"
+   "short": "MON",
+   "team": "#E7171E"
   },
   {
    "club": "FC Porto",
+   "crest": "POR",
+   "deep": "#0b294c",
+   "ink": "#2e90ff",
    "key": "2003-POR",
    "label": "2003–04",
    "name": "Porto",
@@ -10518,10 +10789,14 @@
    "primary": "#00428C",
    "season": 2003,
    "secondary": "#FFFFFF",
-   "short": "POR"
+   "short": "POR",
+   "team": "#00428C"
   },
   {
    "club": "Real Madrid CF",
+   "crest": "RMA",
+   "deep": "#0b2c4c",
+   "ink": "#2495ff",
    "key": "2003-RMA",
    "label": "2003–04",
    "name": "Real Madrid",
@@ -10666,10 +10941,14 @@
    "primary": "#FFFFFF",
    "season": 2003,
    "secondary": "#00529F",
-   "short": "RMA"
+   "short": "RMA",
+   "team": "#00529F"
   },
   {
    "club": "FC Bayern Munich",
+   "crest": "BAY-2002",
+   "deep": "#4c0b17",
+   "ink": "#fb4668",
    "key": "2004-BAY",
    "label": "2004–05",
    "name": "Bayern Munich",
@@ -10838,10 +11117,14 @@
    "primary": "#DC052D",
    "season": 2004,
    "secondary": "#FFFFFF",
-   "short": "BAY"
+   "short": "BAY",
+   "team": "#DC052D"
   },
   {
    "club": "Chelsea F.C.",
+   "crest": "CHE",
+   "deep": "#0b294c",
+   "ink": "#3c94fb",
    "key": "2004-CHE",
    "label": "2004–05",
    "name": "Chelsea",
@@ -11010,10 +11293,14 @@
    "primary": "#034694",
    "season": 2004,
    "secondary": "#FFFFFF",
-   "short": "CHE"
+   "short": "CHE",
+   "team": "#034694"
   },
   {
    "club": "Inter Milan",
+   "crest": "INT-1900",
+   "deep": "#0b334c",
+   "ink": "#1aa8ff",
    "key": "2004-INT",
    "label": "2004–05",
    "name": "Inter",
@@ -11190,10 +11477,14 @@
    "primary": "#0068A8",
    "season": 2004,
    "secondary": "#000000",
-   "short": "INT"
+   "short": "INT",
+   "team": "#0068A8"
   },
   {
    "club": "Juventus FC",
+   "crest": "JUV",
+   "deep": "#252932",
+   "ink": "#9aa3b5",
    "key": "2004-JUV",
    "label": "2004–05",
    "name": "Juventus",
@@ -11346,10 +11637,14 @@
    "primary": "#FFFFFF",
    "season": 2004,
    "secondary": "#000000",
-   "short": "JUV"
+   "short": "JUV",
+   "team": "#9aa3b5"
   },
   {
    "club": "Liverpool F.C.",
+   "crest": "LIV",
+   "deep": "#4c0b15",
+   "ink": "#f25a73",
    "key": "2004-LIV",
    "label": "2004–05",
    "name": "Liverpool",
@@ -11518,10 +11813,14 @@
    "primary": "#C8102E",
    "season": 2004,
    "secondary": "#F6EB61",
-   "short": "LIV"
+   "short": "LIV",
+   "team": "#C8102E"
   },
   {
    "club": "Olympique Lyonnais",
+   "crest": "LYO",
+   "deep": "#0c214b",
+   "ink": "#5c8ae5",
    "key": "2004-LYO",
    "label": "2004–05",
    "name": "Lyon",
@@ -11650,10 +11949,14 @@
    "primary": "#FFFFFF",
    "season": 2004,
    "secondary": "#14387F",
-   "short": "LYO"
+   "short": "LYO",
+   "team": "#14387F"
   },
   {
    "club": "AC Milan",
+   "crest": "MIL",
+   "deep": "#4c0b0b",
+   "ink": "#fc4f51",
    "key": "2004-MIL",
    "label": "2004–05",
    "name": "Milan",
@@ -11814,10 +12117,14 @@
    "primary": "#FB090B",
    "season": 2004,
    "secondary": "#000000",
-   "short": "MIL"
+   "short": "MIL",
+   "team": "#FB090B"
   },
   {
    "club": "PSV Eindhoven",
+   "crest": "PSV",
+   "deep": "#4c0b0d",
+   "ink": "#f25a5f",
    "key": "2004-PSV",
    "label": "2004–05",
    "name": "PSV",
@@ -11946,10 +12253,14 @@
    "primary": "#ED1C24",
    "season": 2004,
    "secondary": "#FFFFFF",
-   "short": "PSV"
+   "short": "PSV",
+   "team": "#ED1C24"
   },
   {
    "club": "Arsenal F.C.",
+   "crest": "ARS",
+   "deep": "#4c0b0c",
+   "ink": "#fe4d52",
    "key": "2005-ARS",
    "label": "2005–06",
    "name": "Arsenal",
@@ -12134,10 +12445,14 @@
    "primary": "#EF0107",
    "season": 2005,
    "secondary": "#FFFFFF",
-   "short": "ARS"
+   "short": "ARS",
+   "team": "#EF0107"
   },
   {
    "club": "FC Barcelona",
+   "crest": "BAR",
+   "deep": "#4c0b26",
+   "ink": "#ff4290",
    "key": "2005-BAR",
    "label": "2005–06",
    "name": "Barcelona",
@@ -12298,10 +12613,14 @@
    "primary": "#A50044",
    "season": 2005,
    "secondary": "#004D98",
-   "short": "BAR"
+   "short": "BAR",
+   "team": "#A50044"
   },
   {
    "club": "S.L. Benfica",
+   "crest": "BEN",
+   "deep": "#4c0b0b",
+   "ink": "#ed5e5e",
    "key": "2005-BEN",
    "label": "2005–06",
    "name": "Benfica",
@@ -12446,10 +12765,14 @@
    "primary": "#E83030",
    "season": 2005,
    "secondary": "#FFFFFF",
-   "short": "BEN"
+   "short": "BEN",
+   "team": "#E83030"
   },
   {
    "club": "Inter Milan",
+   "crest": "INT-1900",
+   "deep": "#0b334c",
+   "ink": "#1aa8ff",
    "key": "2005-INT",
    "label": "2005–06",
    "name": "Inter",
@@ -12610,10 +12933,14 @@
    "primary": "#0068A8",
    "season": 2005,
    "secondary": "#000000",
-   "short": "INT"
+   "short": "INT",
+   "team": "#0068A8"
   },
   {
    "club": "Juventus FC",
+   "crest": "JUV",
+   "deep": "#252932",
+   "ink": "#9aa3b5",
    "key": "2005-JUV",
    "label": "2005–06",
    "name": "Juventus",
@@ -12766,10 +13093,14 @@
    "primary": "#FFFFFF",
    "season": 2005,
    "secondary": "#000000",
-   "short": "JUV"
+   "short": "JUV",
+   "team": "#9aa3b5"
   },
   {
    "club": "Olympique Lyonnais",
+   "crest": "LYO",
+   "deep": "#0c214b",
+   "ink": "#5c8ae5",
    "key": "2005-LYO",
    "label": "2005–06",
    "name": "Lyon",
@@ -12914,10 +13245,14 @@
    "primary": "#FFFFFF",
    "season": 2005,
    "secondary": "#14387F",
-   "short": "LYO"
+   "short": "LYO",
+   "team": "#14387F"
   },
   {
    "club": "AC Milan",
+   "crest": "MIL",
+   "deep": "#4c0b0b",
+   "ink": "#fc4f51",
    "key": "2005-MIL",
    "label": "2005–06",
    "name": "Milan",
@@ -13086,10 +13421,14 @@
    "primary": "#FB090B",
    "season": 2005,
    "secondary": "#000000",
-   "short": "MIL"
+   "short": "MIL",
+   "team": "#FB090B"
   },
   {
    "club": "Villarreal CF",
+   "crest": "VIL",
+   "deep": "#4c410b",
+   "ink": "#ffe667",
    "key": "2005-VIL",
    "label": "2005–06",
    "name": "Villarreal",
@@ -13234,10 +13573,14 @@
    "primary": "#FFE667",
    "season": 2005,
    "secondary": "#005187",
-   "short": "VIL"
+   "short": "VIL",
+   "team": "#FFE667"
   },
   {
    "club": "FC Bayern Munich",
+   "crest": "BAY-2002",
+   "deep": "#4c0b17",
+   "ink": "#fb4668",
    "key": "2006-BAY",
    "label": "2006–07",
    "name": "Bayern Munich",
@@ -13406,10 +13749,14 @@
    "primary": "#DC052D",
    "season": 2006,
    "secondary": "#FFFFFF",
-   "short": "BAY"
+   "short": "BAY",
+   "team": "#DC052D"
   },
   {
    "club": "Chelsea F.C.",
+   "crest": "CHE",
+   "deep": "#0b294c",
+   "ink": "#3c94fb",
    "key": "2006-CHE",
    "label": "2006–07",
    "name": "Chelsea",
@@ -13578,10 +13925,14 @@
    "primary": "#034694",
    "season": 2006,
    "secondary": "#FFFFFF",
-   "short": "CHE"
+   "short": "CHE",
+   "team": "#034694"
   },
   {
    "club": "Liverpool F.C.",
+   "crest": "LIV",
+   "deep": "#4c0b15",
+   "ink": "#f25a73",
    "key": "2006-LIV",
    "label": "2006–07",
    "name": "Liverpool",
@@ -13766,10 +14117,14 @@
    "primary": "#C8102E",
    "season": 2006,
    "secondary": "#F6EB61",
-   "short": "LIV"
+   "short": "LIV",
+   "team": "#C8102E"
   },
   {
    "club": "Manchester United F.C.",
+   "crest": "MUN",
+   "deep": "#4c0f0b",
+   "ink": "#ea6258",
    "key": "2006-MUN",
    "label": "2006–07",
    "name": "Manchester United",
@@ -13954,10 +14309,14 @@
    "primary": "#DA291C",
    "season": 2006,
    "secondary": "#FBE122",
-   "short": "MUN"
+   "short": "MUN",
+   "team": "#DA291C"
   },
   {
    "club": "AC Milan",
+   "crest": "MIL",
+   "deep": "#4c0b0b",
+   "ink": "#fc4f51",
    "key": "2006-MIL",
    "label": "2006–07",
    "name": "Milan",
@@ -14134,10 +14493,14 @@
    "primary": "#FB090B",
    "season": 2006,
    "secondary": "#000000",
-   "short": "MIL"
+   "short": "MIL",
+   "team": "#FB090B"
   },
   {
    "club": "PSV Eindhoven",
+   "crest": "PSV",
+   "deep": "#4c0b0d",
+   "ink": "#f25a5f",
    "key": "2006-PSV",
    "label": "2006–07",
    "name": "PSV",
@@ -14274,10 +14637,14 @@
    "primary": "#ED1C24",
    "season": 2006,
    "secondary": "#FFFFFF",
-   "short": "PSV"
+   "short": "PSV",
+   "team": "#ED1C24"
   },
   {
    "club": "AS Roma",
+   "crest": "ROM",
+   "deep": "#471018",
+   "ink": "#dd6476",
    "key": "2006-ROM",
    "label": "2006–07",
    "name": "Roma",
@@ -14422,10 +14789,14 @@
    "primary": "#8E1F2F",
    "season": 2006,
    "secondary": "#F0BC42",
-   "short": "ROM"
+   "short": "ROM",
+   "team": "#8E1F2F"
   },
   {
    "club": "Valencia CF",
+   "crest": "VAL",
+   "deep": "#4c100b",
+   "ink": "#f15d50",
    "key": "2006-VAL",
    "label": "2006–07",
    "name": "Valencia",
@@ -14586,10 +14957,14 @@
    "primary": "#FFFFFF",
    "season": 2006,
    "secondary": "#EE3524",
-   "short": "VAL"
+   "short": "VAL",
+   "team": "#EE3524"
   },
   {
    "club": "Arsenal F.C.",
+   "crest": "ARS",
+   "deep": "#4c0b0c",
+   "ink": "#fe4d52",
    "key": "2007-ARS",
    "label": "2007–08",
    "name": "Arsenal",
@@ -14774,10 +15149,14 @@
    "primary": "#EF0107",
    "season": 2007,
    "secondary": "#FFFFFF",
-   "short": "ARS"
+   "short": "ARS",
+   "team": "#EF0107"
   },
   {
    "club": "FC Barcelona",
+   "crest": "BAR",
+   "deep": "#4c0b26",
+   "ink": "#ff4290",
    "key": "2007-BAR",
    "label": "2007–08",
    "name": "Barcelona",
@@ -14954,10 +15333,14 @@
    "primary": "#A50044",
    "season": 2007,
    "secondary": "#004D98",
-   "short": "BAR"
+   "short": "BAR",
+   "team": "#A50044"
   },
   {
    "club": "Chelsea F.C.",
+   "crest": "CHE",
+   "deep": "#0b294c",
+   "ink": "#3c94fb",
    "key": "2007-CHE",
    "label": "2007–08",
    "name": "Chelsea",
@@ -15134,10 +15517,14 @@
    "primary": "#034694",
    "season": 2007,
    "secondary": "#FFFFFF",
-   "short": "CHE"
+   "short": "CHE",
+   "team": "#034694"
   },
   {
    "club": "Fenerbahçe S.K. (football)",
+   "crest": "FEN",
+   "deep": "#4c470b",
+   "ink": "#ffef1a",
    "key": "2007-FEN",
    "label": "2007–08",
    "name": "Fenerbahçe",
@@ -15282,10 +15669,14 @@
    "primary": "#FFED00",
    "season": 2007,
    "secondary": "#163962",
-   "short": "FEN"
+   "short": "FEN",
+   "team": "#FFED00"
   },
   {
    "club": "Liverpool F.C.",
+   "crest": "LIV",
+   "deep": "#4c0b15",
+   "ink": "#f25a73",
    "key": "2007-LIV",
    "label": "2007–08",
    "name": "Liverpool",
@@ -15462,10 +15853,14 @@
    "primary": "#C8102E",
    "season": 2007,
    "secondary": "#F6EB61",
-   "short": "LIV"
+   "short": "LIV",
+   "team": "#C8102E"
   },
   {
    "club": "Manchester United F.C.",
+   "crest": "MUN",
+   "deep": "#4c0f0b",
+   "ink": "#ea6258",
    "key": "2007-MUN",
    "label": "2007–08",
    "name": "Manchester United",
@@ -15642,10 +16037,14 @@
    "primary": "#DA291C",
    "season": 2007,
    "secondary": "#FBE122",
-   "short": "MUN"
+   "short": "MUN",
+   "team": "#DA291C"
   },
   {
    "club": "AS Roma",
+   "crest": "ROM",
+   "deep": "#471018",
+   "ink": "#dd6476",
    "key": "2007-ROM",
    "label": "2007–08",
    "name": "Roma",
@@ -15798,10 +16197,14 @@
    "primary": "#8E1F2F",
    "season": 2007,
    "secondary": "#F0BC42",
-   "short": "ROM"
+   "short": "ROM",
+   "team": "#8E1F2F"
   },
   {
    "club": "FC Schalke 04",
+   "crest": "S04",
+   "deep": "#0b2b4c",
+   "ink": "#2e94ff",
    "key": "2007-S04",
    "label": "2007–08",
    "name": "Schalke 04",
@@ -15954,10 +16357,14 @@
    "primary": "#004D9D",
    "season": 2007,
    "secondary": "#FFFFFF",
-   "short": "S04"
+   "short": "S04",
+   "team": "#004D9D"
   },
   {
    "club": "Arsenal F.C.",
+   "crest": "ARS",
+   "deep": "#4c0b0c",
+   "ink": "#fe4d52",
    "key": "2008-ARS",
    "label": "2008–09",
    "name": "Arsenal",
@@ -16150,10 +16557,14 @@
    "primary": "#EF0107",
    "season": 2008,
    "secondary": "#FFFFFF",
-   "short": "ARS"
+   "short": "ARS",
+   "team": "#EF0107"
   },
   {
    "club": "FC Barcelona",
+   "crest": "BAR",
+   "deep": "#4c0b26",
+   "ink": "#ff4290",
    "key": "2008-BAR",
    "label": "2008–09",
    "name": "Barcelona",
@@ -16322,10 +16733,14 @@
    "primary": "#A50044",
    "season": 2008,
    "secondary": "#004D98",
-   "short": "BAR"
+   "short": "BAR",
+   "team": "#A50044"
   },
   {
    "club": "FC Bayern Munich",
+   "crest": "BAY-2002",
+   "deep": "#4c0b17",
+   "ink": "#fb4668",
    "key": "2008-BAY",
    "label": "2008–09",
    "name": "Bayern Munich",
@@ -16486,10 +16901,14 @@
    "primary": "#DC052D",
    "season": 2008,
    "secondary": "#FFFFFF",
-   "short": "BAY"
+   "short": "BAY",
+   "team": "#DC052D"
   },
   {
    "club": "Chelsea F.C.",
+   "crest": "CHE",
+   "deep": "#0b294c",
+   "ink": "#3c94fb",
    "key": "2008-CHE",
    "label": "2008–09",
    "name": "Chelsea",
@@ -16658,10 +17077,14 @@
    "primary": "#034694",
    "season": 2008,
    "secondary": "#FFFFFF",
-   "short": "CHE"
+   "short": "CHE",
+   "team": "#034694"
   },
   {
    "club": "Liverpool F.C.",
+   "crest": "LIV",
+   "deep": "#4c0b15",
+   "ink": "#f25a73",
    "key": "2008-LIV",
    "label": "2008–09",
    "name": "Liverpool",
@@ -16830,10 +17253,14 @@
    "primary": "#C8102E",
    "season": 2008,
    "secondary": "#F6EB61",
-   "short": "LIV"
+   "short": "LIV",
+   "team": "#C8102E"
   },
   {
    "club": "Manchester United F.C.",
+   "crest": "MUN",
+   "deep": "#4c0f0b",
+   "ink": "#ea6258",
    "key": "2008-MUN",
    "label": "2008–09",
    "name": "Manchester United",
@@ -17010,10 +17437,14 @@
    "primary": "#DA291C",
    "season": 2008,
    "secondary": "#FBE122",
-   "short": "MUN"
+   "short": "MUN",
+   "team": "#DA291C"
   },
   {
    "club": "FC Porto",
+   "crest": "POR",
+   "deep": "#0b294c",
+   "ink": "#2e90ff",
    "key": "2008-POR",
    "label": "2008–09",
    "name": "Porto",
@@ -17150,10 +17581,14 @@
    "primary": "#00428C",
    "season": 2008,
    "secondary": "#FFFFFF",
-   "short": "POR"
+   "short": "POR",
+   "team": "#00428C"
   },
   {
    "club": "Villarreal CF",
+   "crest": "VIL",
+   "deep": "#4c410b",
+   "ink": "#ffe667",
    "key": "2008-VIL",
    "label": "2008–09",
    "name": "Villarreal",
@@ -17322,10 +17757,14 @@
    "primary": "#FFE667",
    "season": 2008,
    "secondary": "#005187",
-   "short": "VIL"
+   "short": "VIL",
+   "team": "#FFE667"
   },
   {
    "club": "Arsenal F.C.",
+   "crest": "ARS",
+   "deep": "#4c0b0c",
+   "ink": "#fe4d52",
    "key": "2009-ARS",
    "label": "2009–10",
    "name": "Arsenal",
@@ -17510,10 +17949,14 @@
    "primary": "#EF0107",
    "season": 2009,
    "secondary": "#FFFFFF",
-   "short": "ARS"
+   "short": "ARS",
+   "team": "#EF0107"
   },
   {
    "club": "FC Barcelona",
+   "crest": "BAR",
+   "deep": "#4c0b26",
+   "ink": "#ff4290",
    "key": "2009-BAR",
    "label": "2009–10",
    "name": "Barcelona",
@@ -17666,10 +18109,14 @@
    "primary": "#A50044",
    "season": 2009,
    "secondary": "#004D98",
-   "short": "BAR"
+   "short": "BAR",
+   "team": "#A50044"
   },
   {
    "club": "FC Bayern Munich",
+   "crest": "BAY-2002",
+   "deep": "#4c0b17",
+   "ink": "#fb4668",
    "key": "2009-BAY",
    "label": "2009–10",
    "name": "Bayern Munich",
@@ -17846,10 +18293,14 @@
    "primary": "#DC052D",
    "season": 2009,
    "secondary": "#FFFFFF",
-   "short": "BAY"
+   "short": "BAY",
+   "team": "#DC052D"
   },
   {
    "club": "FC Girondins de Bordeaux",
+   "crest": "BOR",
+   "deep": "#0b224c",
+   "ink": "#4d8bff",
    "key": "2009-BOR",
    "label": "2009–10",
    "name": "Bordeaux",
@@ -18002,10 +18453,14 @@
    "primary": "#001C50",
    "season": 2009,
    "secondary": "#FFFFFF",
-   "short": "BOR"
+   "short": "BOR",
+   "team": "#001C50"
   },
   {
    "club": "Inter Milan",
+   "crest": "INT-2007",
+   "deep": "#0b334c",
+   "ink": "#1aa8ff",
    "key": "2009-INT",
    "label": "2009–10",
    "name": "Inter",
@@ -18190,10 +18645,14 @@
    "primary": "#0068A8",
    "season": 2009,
    "secondary": "#000000",
-   "short": "INT"
+   "short": "INT",
+   "team": "#0068A8"
   },
   {
    "club": "Olympique Lyonnais",
+   "crest": "LYO",
+   "deep": "#0c214b",
+   "ink": "#5c8ae5",
    "key": "2009-LYO",
    "label": "2009–10",
    "name": "Lyon",
@@ -18354,10 +18813,14 @@
    "primary": "#FFFFFF",
    "season": 2009,
    "secondary": "#14387F",
-   "short": "LYO"
+   "short": "LYO",
+   "team": "#14387F"
   },
   {
    "club": "Manchester United F.C.",
+   "crest": "MUN",
+   "deep": "#4c0f0b",
+   "ink": "#ea6258",
    "key": "2009-MUN",
    "label": "2009–10",
    "name": "Manchester United",
@@ -18550,10 +19013,14 @@
    "primary": "#DA291C",
    "season": 2009,
    "secondary": "#FBE122",
-   "short": "MUN"
+   "short": "MUN",
+   "team": "#DA291C"
   },
   {
    "club": "FC Barcelona",
+   "crest": "BAR",
+   "deep": "#4c0b26",
+   "ink": "#ff4290",
    "key": "2010-BAR",
    "label": "2010–11",
    "name": "Barcelona",
@@ -18706,10 +19173,14 @@
    "primary": "#A50044",
    "season": 2010,
    "secondary": "#004D98",
-   "short": "BAR"
+   "short": "BAR",
+   "team": "#A50044"
   },
   {
    "club": "Chelsea F.C.",
+   "crest": "CHE",
+   "deep": "#0b294c",
+   "ink": "#3c94fb",
    "key": "2010-CHE",
    "label": "2010–11",
    "name": "Chelsea",
@@ -18886,10 +19357,14 @@
    "primary": "#034694",
    "season": 2010,
    "secondary": "#FFFFFF",
-   "short": "CHE"
+   "short": "CHE",
+   "team": "#034694"
   },
   {
    "club": "Inter Milan",
+   "crest": "INT-2007",
+   "deep": "#0b334c",
+   "ink": "#1aa8ff",
    "key": "2010-INT",
    "label": "2010–11",
    "name": "Inter",
@@ -19058,10 +19533,14 @@
    "primary": "#0068A8",
    "season": 2010,
    "secondary": "#000000",
-   "short": "INT"
+   "short": "INT",
+   "team": "#0068A8"
   },
   {
    "club": "Manchester United F.C.",
+   "crest": "MUN",
+   "deep": "#4c0f0b",
+   "ink": "#ea6258",
    "key": "2010-MUN",
    "label": "2010–11",
    "name": "Manchester United",
@@ -19254,10 +19733,14 @@
    "primary": "#DA291C",
    "season": 2010,
    "secondary": "#FBE122",
-   "short": "MUN"
+   "short": "MUN",
+   "team": "#DA291C"
   },
   {
    "club": "Real Madrid CF",
+   "crest": "RMA",
+   "deep": "#0b2c4c",
+   "ink": "#2495ff",
    "key": "2010-RMA",
    "label": "2010–11",
    "name": "Real Madrid",
@@ -19442,10 +19925,14 @@
    "primary": "#FFFFFF",
    "season": 2010,
    "secondary": "#00529F",
-   "short": "RMA"
+   "short": "RMA",
+   "team": "#00529F"
   },
   {
    "club": "FC Schalke 04",
+   "crest": "S04",
+   "deep": "#0b2b4c",
+   "ink": "#2e94ff",
    "key": "2010-S04",
    "label": "2010–11",
    "name": "Schalke 04",
@@ -19598,10 +20085,14 @@
    "primary": "#004D9D",
    "season": 2010,
    "secondary": "#FFFFFF",
-   "short": "S04"
+   "short": "S04",
+   "team": "#004D9D"
   },
   {
    "club": "FC Shakhtar Donetsk",
+   "crest": "SHA",
+   "deep": "#4c200b",
+   "ink": "#f36f30",
    "key": "2010-SHA",
    "label": "2010–11",
    "name": "Shakhtar Donetsk",
@@ -19746,10 +20237,14 @@
    "primary": "#F26522",
    "season": 2010,
    "secondary": "#000000",
-   "short": "SHA"
+   "short": "SHA",
+   "team": "#F26522"
   },
   {
    "club": "Tottenham Hotspur F.C.",
+   "crest": "TOT",
+   "deep": "#101c47",
+   "ink": "#6c86df",
    "key": "2010-TOT",
    "label": "2010–11",
    "name": "Tottenham Hotspur",
@@ -19926,10 +20421,14 @@
    "primary": "#FFFFFF",
    "season": 2010,
    "secondary": "#132257",
-   "short": "TOT"
+   "short": "TOT",
+   "team": "#132257"
   },
   {
    "club": "APOEL FC",
+   "crest": "APO",
+   "deep": "#4c420b",
+   "ink": "#ffdb1a",
    "key": "2011-APO",
    "label": "2011–12",
    "name": "APOEL",
@@ -20074,10 +20573,14 @@
    "primary": "#FFD700",
    "season": 2011,
    "secondary": "#0033A0",
-   "short": "APO"
+   "short": "APO",
+   "team": "#FFD700"
   },
   {
    "club": "FC Barcelona",
+   "crest": "BAR",
+   "deep": "#4c0b26",
+   "ink": "#ff4290",
    "key": "2011-BAR",
    "label": "2011–12",
    "name": "Barcelona",
@@ -20238,10 +20741,14 @@
    "primary": "#A50044",
    "season": 2011,
    "secondary": "#004D98",
-   "short": "BAR"
+   "short": "BAR",
+   "team": "#A50044"
   },
   {
    "club": "FC Bayern Munich",
+   "crest": "BAY-2002",
+   "deep": "#4c0b17",
+   "ink": "#fb4668",
    "key": "2011-BAY",
    "label": "2011–12",
    "name": "Bayern Munich",
@@ -20402,10 +20909,14 @@
    "primary": "#DC052D",
    "season": 2011,
    "secondary": "#FFFFFF",
-   "short": "BAY"
+   "short": "BAY",
+   "team": "#DC052D"
   },
   {
    "club": "S.L. Benfica",
+   "crest": "BEN",
+   "deep": "#4c0b0b",
+   "ink": "#ed5e5e",
    "key": "2011-BEN",
    "label": "2011–12",
    "name": "Benfica",
@@ -20566,10 +21077,14 @@
    "primary": "#E83030",
    "season": 2011,
    "secondary": "#FFFFFF",
-   "short": "BEN"
+   "short": "BEN",
+   "team": "#E83030"
   },
   {
    "club": "Chelsea F.C.",
+   "crest": "CHE",
+   "deep": "#0b294c",
+   "ink": "#3c94fb",
    "key": "2011-CHE",
    "label": "2011–12",
    "name": "Chelsea",
@@ -20746,10 +21261,14 @@
    "primary": "#034694",
    "season": 2011,
    "secondary": "#FFFFFF",
-   "short": "CHE"
+   "short": "CHE",
+   "team": "#034694"
   },
   {
    "club": "Olympique de Marseille",
+   "crest": "OM-1900",
+   "deep": "#0b394b",
+   "ink": "#37b1e1",
    "key": "2011-OM",
    "label": "2011–12",
    "name": "Marseille",
@@ -20902,10 +21421,14 @@
    "primary": "#2FAEE0",
    "season": 2011,
    "secondary": "#FFFFFF",
-   "short": "OM"
+   "short": "OM",
+   "team": "#2FAEE0"
   },
   {
    "club": "Real Madrid CF",
+   "crest": "RMA",
+   "deep": "#0b2c4c",
+   "ink": "#2495ff",
    "key": "2011-RMA",
    "label": "2011–12",
    "name": "Real Madrid",
@@ -21082,10 +21605,14 @@
    "primary": "#FFFFFF",
    "season": 2011,
    "secondary": "#00529F",
-   "short": "RMA"
+   "short": "RMA",
+   "team": "#00529F"
   },
   {
    "club": "FC Barcelona",
+   "crest": "BAR",
+   "deep": "#4c0b26",
+   "ink": "#ff4290",
    "key": "2012-BAR",
    "label": "2012–13",
    "name": "Barcelona",
@@ -21254,10 +21781,14 @@
    "primary": "#A50044",
    "season": 2012,
    "secondary": "#004D98",
-   "short": "BAR"
+   "short": "BAR",
+   "team": "#A50044"
   },
   {
    "club": "FC Bayern Munich",
+   "crest": "BAY-2002",
+   "deep": "#4c0b17",
+   "ink": "#fb4668",
    "key": "2012-BAY",
    "label": "2012–13",
    "name": "Bayern Munich",
@@ -21434,10 +21965,14 @@
    "primary": "#DC052D",
    "season": 2012,
    "secondary": "#FFFFFF",
-   "short": "BAY"
+   "short": "BAY",
+   "team": "#DC052D"
   },
   {
    "club": "Borussia Dortmund",
+   "crest": "BVB",
+   "deep": "#4c450b",
+   "ink": "#ffe61a",
    "key": "2012-BVB",
    "label": "2012–13",
    "name": "Borussia Dortmund",
@@ -21582,10 +22117,14 @@
    "primary": "#FDE100",
    "season": 2012,
    "secondary": "#000000",
-   "short": "BVB"
+   "short": "BVB",
+   "team": "#FDE100"
   },
   {
    "club": "Galatasaray S.K. (football)",
+   "crest": "GAL-1900",
+   "deep": "#4c0b1d",
+   "ink": "#fb4779",
    "key": "2012-GAL",
    "label": "2012–13",
    "name": "Galatasaray",
@@ -21730,10 +22269,14 @@
    "primary": "#A90432",
    "season": 2012,
    "secondary": "#FDB912",
-   "short": "GAL"
+   "short": "GAL",
+   "team": "#A90432"
   },
   {
    "club": "Juventus FC",
+   "crest": "JUV",
+   "deep": "#252932",
+   "ink": "#9aa3b5",
    "key": "2012-JUV",
    "label": "2012–13",
    "name": "Juventus",
@@ -21910,10 +22453,14 @@
    "primary": "#FFFFFF",
    "season": 2012,
    "secondary": "#000000",
-   "short": "JUV"
+   "short": "JUV",
+   "team": "#9aa3b5"
   },
   {
    "club": "Málaga CF",
+   "crest": "MAL",
+   "deep": "#0b324c",
+   "ink": "#1aa2ff",
    "key": "2012-MAL",
    "label": "2012–13",
    "name": "Málaga",
@@ -22058,10 +22605,14 @@
    "primary": "#0077C8",
    "season": 2012,
    "secondary": "#FFFFFF",
-   "short": "MAL"
+   "short": "MAL",
+   "team": "#0077C8"
   },
   {
    "club": "Paris Saint-Germain FC",
+   "crest": "PSG-2002",
+   "deep": "#0b314c",
+   "ink": "#1a9fff",
    "key": "2012-PSG",
    "label": "2012–13",
    "name": "Paris Saint-Germain",
@@ -22214,10 +22765,14 @@
    "primary": "#004170",
    "season": 2012,
    "secondary": "#DA291C",
-   "short": "PSG"
+   "short": "PSG",
+   "team": "#004170"
   },
   {
    "club": "Real Madrid CF",
+   "crest": "RMA",
+   "deep": "#0b2c4c",
+   "ink": "#2495ff",
    "key": "2012-RMA",
    "label": "2012–13",
    "name": "Real Madrid",
@@ -22386,10 +22941,14 @@
    "primary": "#FFFFFF",
    "season": 2012,
    "secondary": "#00529F",
-   "short": "RMA"
+   "short": "RMA",
+   "team": "#00529F"
   },
   {
    "club": "Atlético Madrid",
+   "crest": "ATM",
+   "deep": "#4a130d",
+   "ink": "#e36c5f",
    "key": "2013-ATM",
    "label": "2013–14",
    "name": "Atlético Madrid",
@@ -22550,10 +23109,14 @@
    "primary": "#CB3524",
    "season": 2013,
    "secondary": "#272E61",
-   "short": "ATM"
+   "short": "ATM",
+   "team": "#CB3524"
   },
   {
    "club": "FC Barcelona",
+   "crest": "BAR",
+   "deep": "#4c0b26",
+   "ink": "#ff4290",
    "key": "2013-BAR",
    "label": "2013–14",
    "name": "Barcelona",
@@ -22730,10 +23293,14 @@
    "primary": "#A50044",
    "season": 2013,
    "secondary": "#004D98",
-   "short": "BAR"
+   "short": "BAR",
+   "team": "#A50044"
   },
   {
    "club": "FC Bayern Munich",
+   "crest": "BAY-2002",
+   "deep": "#4c0b17",
+   "ink": "#fb4668",
    "key": "2013-BAY",
    "label": "2013–14",
    "name": "Bayern Munich",
@@ -22894,10 +23461,14 @@
    "primary": "#DC052D",
    "season": 2013,
    "secondary": "#FFFFFF",
-   "short": "BAY"
+   "short": "BAY",
+   "team": "#DC052D"
   },
   {
    "club": "Borussia Dortmund",
+   "crest": "BVB",
+   "deep": "#4c450b",
+   "ink": "#ffe61a",
    "key": "2013-BVB",
    "label": "2013–14",
    "name": "Borussia Dortmund",
@@ -23066,10 +23637,14 @@
    "primary": "#FDE100",
    "season": 2013,
    "secondary": "#000000",
-   "short": "BVB"
+   "short": "BVB",
+   "team": "#FDE100"
   },
   {
    "club": "Chelsea F.C.",
+   "crest": "CHE",
+   "deep": "#0b294c",
+   "ink": "#3c94fb",
    "key": "2013-CHE",
    "label": "2013–14",
    "name": "Chelsea",
@@ -23238,10 +23813,14 @@
    "primary": "#034694",
    "season": 2013,
    "secondary": "#FFFFFF",
-   "short": "CHE"
+   "short": "CHE",
+   "team": "#034694"
   },
   {
    "club": "Manchester United F.C.",
+   "crest": "MUN",
+   "deep": "#4c0f0b",
+   "ink": "#ea6258",
    "key": "2013-MUN",
    "label": "2013–14",
    "name": "Manchester United",
@@ -23450,10 +24029,14 @@
    "primary": "#DA291C",
    "season": 2013,
    "secondary": "#FBE122",
-   "short": "MUN"
+   "short": "MUN",
+   "team": "#DA291C"
   },
   {
    "club": "Paris Saint-Germain FC",
+   "crest": "PSG",
+   "deep": "#0b314c",
+   "ink": "#1a9fff",
    "key": "2013-PSG",
    "label": "2013–14",
    "name": "Paris Saint-Germain",
@@ -23614,10 +24197,14 @@
    "primary": "#004170",
    "season": 2013,
    "secondary": "#DA291C",
-   "short": "PSG"
+   "short": "PSG",
+   "team": "#004170"
   },
   {
    "club": "Real Madrid CF",
+   "crest": "RMA",
+   "deep": "#0b2c4c",
+   "ink": "#2495ff",
    "key": "2013-RMA",
    "label": "2013–14",
    "name": "Real Madrid",
@@ -23802,10 +24389,14 @@
    "primary": "#FFFFFF",
    "season": 2013,
    "secondary": "#00529F",
-   "short": "RMA"
+   "short": "RMA",
+   "team": "#00529F"
   },
   {
    "club": "Atlético Madrid",
+   "crest": "ATM",
+   "deep": "#4a130d",
+   "ink": "#e36c5f",
    "key": "2014-ATM",
    "label": "2014–15",
    "name": "Atlético Madrid",
@@ -23958,10 +24549,14 @@
    "primary": "#CB3524",
    "season": 2014,
    "secondary": "#272E61",
-   "short": "ATM"
+   "short": "ATM",
+   "team": "#CB3524"
   },
   {
    "club": "FC Barcelona",
+   "crest": "BAR",
+   "deep": "#4c0b26",
+   "ink": "#ff4290",
    "key": "2014-BAR",
    "label": "2014–15",
    "name": "Barcelona",
@@ -24122,10 +24717,14 @@
    "primary": "#A50044",
    "season": 2014,
    "secondary": "#004D98",
-   "short": "BAR"
+   "short": "BAR",
+   "team": "#A50044"
   },
   {
    "club": "FC Bayern Munich",
+   "crest": "BAY-2002",
+   "deep": "#4c0b17",
+   "ink": "#fb4668",
    "key": "2014-BAY",
    "label": "2014–15",
    "name": "Bayern Munich",
@@ -24294,10 +24893,14 @@
    "primary": "#DC052D",
    "season": 2014,
    "secondary": "#FFFFFF",
-   "short": "BAY"
+   "short": "BAY",
+   "team": "#DC052D"
   },
   {
    "club": "Juventus FC",
+   "crest": "JUV",
+   "deep": "#252932",
+   "ink": "#9aa3b5",
    "key": "2014-JUV",
    "label": "2014–15",
    "name": "Juventus",
@@ -24458,10 +25061,14 @@
    "primary": "#FFFFFF",
    "season": 2014,
    "secondary": "#000000",
-   "short": "JUV"
+   "short": "JUV",
+   "team": "#9aa3b5"
   },
   {
    "club": "AS Monaco FC",
+   "crest": "MON",
+   "deep": "#4c0b0d",
+   "ink": "#ef5d62",
    "key": "2014-MON",
    "label": "2014–15",
    "name": "Monaco",
@@ -24622,10 +25229,14 @@
    "primary": "#E7171E",
    "season": 2014,
    "secondary": "#FFFFFF",
-   "short": "MON"
+   "short": "MON",
+   "team": "#E7171E"
   },
   {
    "club": "Paris Saint-Germain FC",
+   "crest": "PSG",
+   "deep": "#0b314c",
+   "ink": "#1a9fff",
    "key": "2014-PSG",
    "label": "2014–15",
    "name": "Paris Saint-Germain",
@@ -24778,10 +25389,14 @@
    "primary": "#004170",
    "season": 2014,
    "secondary": "#DA291C",
-   "short": "PSG"
+   "short": "PSG",
+   "team": "#004170"
   },
   {
    "club": "FC Porto",
+   "crest": "POR",
+   "deep": "#0b294c",
+   "ink": "#2e90ff",
    "key": "2014-POR",
    "label": "2014–15",
    "name": "Porto",
@@ -24934,10 +25549,14 @@
    "primary": "#00428C",
    "season": 2014,
    "secondary": "#FFFFFF",
-   "short": "POR"
+   "short": "POR",
+   "team": "#00428C"
   },
   {
    "club": "Real Madrid CF",
+   "crest": "RMA",
+   "deep": "#0b2c4c",
+   "ink": "#2495ff",
    "key": "2014-RMA",
    "label": "2014–15",
    "name": "Real Madrid",
@@ -25106,10 +25725,14 @@
    "primary": "#FFFFFF",
    "season": 2014,
    "secondary": "#00529F",
-   "short": "RMA"
+   "short": "RMA",
+   "team": "#00529F"
   },
   {
    "club": "Atlético Madrid",
+   "crest": "ATM",
+   "deep": "#4a130d",
+   "ink": "#e36c5f",
    "key": "2015-ATM",
    "label": "2015–16",
    "name": "Atlético Madrid",
@@ -25270,10 +25893,14 @@
    "primary": "#CB3524",
    "season": 2015,
    "secondary": "#272E61",
-   "short": "ATM"
+   "short": "ATM",
+   "team": "#CB3524"
   },
   {
    "club": "FC Barcelona",
+   "crest": "BAR",
+   "deep": "#4c0b26",
+   "ink": "#ff4290",
    "key": "2015-BAR",
    "label": "2015–16",
    "name": "Barcelona",
@@ -25442,10 +26069,14 @@
    "primary": "#A50044",
    "season": 2015,
    "secondary": "#004D98",
-   "short": "BAR"
+   "short": "BAR",
+   "team": "#A50044"
   },
   {
    "club": "FC Bayern Munich",
+   "crest": "BAY-2002",
+   "deep": "#4c0b17",
+   "ink": "#fb4668",
    "key": "2015-BAY",
    "label": "2015–16",
    "name": "Bayern Munich",
@@ -25622,10 +26253,14 @@
    "primary": "#DC052D",
    "season": 2015,
    "secondary": "#FFFFFF",
-   "short": "BAY"
+   "short": "BAY",
+   "team": "#DC052D"
   },
   {
    "club": "S.L. Benfica",
+   "crest": "BEN",
+   "deep": "#4c0b0b",
+   "ink": "#ed5e5e",
    "key": "2015-BEN",
    "label": "2015–16",
    "name": "Benfica",
@@ -25786,10 +26421,14 @@
    "primary": "#E83030",
    "season": 2015,
    "secondary": "#FFFFFF",
-   "short": "BEN"
+   "short": "BEN",
+   "team": "#E83030"
   },
   {
    "club": "Manchester City F.C.",
+   "crest": "MCI",
+   "deep": "#102e46",
+   "ink": "#6cabdd",
    "key": "2015-MCI",
    "label": "2015–16",
    "name": "Manchester City",
@@ -25974,10 +26613,14 @@
    "primary": "#6CABDD",
    "season": 2015,
    "secondary": "#1C2C5B",
-   "short": "MCI"
+   "short": "MCI",
+   "team": "#6CABDD"
   },
   {
    "club": "Paris Saint-Germain FC",
+   "crest": "PSG",
+   "deep": "#0b314c",
+   "ink": "#1a9fff",
    "key": "2015-PSG",
    "label": "2015–16",
    "name": "Paris Saint-Germain",
@@ -26130,10 +26773,14 @@
    "primary": "#004170",
    "season": 2015,
    "secondary": "#DA291C",
-   "short": "PSG"
+   "short": "PSG",
+   "team": "#004170"
   },
   {
    "club": "Real Madrid CF",
+   "crest": "RMA",
+   "deep": "#0b2c4c",
+   "ink": "#2495ff",
    "key": "2015-RMA",
    "label": "2015–16",
    "name": "Real Madrid",
@@ -26302,10 +26949,14 @@
    "primary": "#FFFFFF",
    "season": 2015,
    "secondary": "#00529F",
-   "short": "RMA"
+   "short": "RMA",
+   "team": "#00529F"
   },
   {
    "club": "VfL Wolfsburg",
+   "crest": "WOB-1900",
+   "deep": "#274512",
+   "ink": "#81d048",
    "key": "2015-WOB",
    "label": "2015–16",
    "name": "Wolfsburg",
@@ -26466,10 +27117,14 @@
    "primary": "#65B32E",
    "season": 2015,
    "secondary": "#FFFFFF",
-   "short": "WOB"
+   "short": "WOB",
+   "team": "#65B32E"
   },
   {
    "club": "Atlético Madrid",
+   "crest": "ATM",
+   "deep": "#4a130d",
+   "ink": "#e36c5f",
    "key": "2016-ATM",
    "label": "2016–17",
    "name": "Atlético Madrid",
@@ -26638,10 +27293,14 @@
    "primary": "#CB3524",
    "season": 2016,
    "secondary": "#272E61",
-   "short": "ATM"
+   "short": "ATM",
+   "team": "#CB3524"
   },
   {
    "club": "FC Barcelona",
+   "crest": "BAR",
+   "deep": "#4c0b26",
+   "ink": "#ff4290",
    "key": "2016-BAR",
    "label": "2016–17",
    "name": "Barcelona",
@@ -26818,10 +27477,14 @@
    "primary": "#A50044",
    "season": 2016,
    "secondary": "#004D98",
-   "short": "BAR"
+   "short": "BAR",
+   "team": "#A50044"
   },
   {
    "club": "FC Bayern Munich",
+   "crest": "BAY-2002",
+   "deep": "#4c0b17",
+   "ink": "#fb4668",
    "key": "2016-BAY",
    "label": "2016–17",
    "name": "Bayern Munich",
@@ -26990,10 +27653,14 @@
    "primary": "#DC052D",
    "season": 2016,
    "secondary": "#FFFFFF",
-   "short": "BAY"
+   "short": "BAY",
+   "team": "#DC052D"
   },
   {
    "club": "Borussia Dortmund",
+   "crest": "BVB",
+   "deep": "#4c450b",
+   "ink": "#ffe61a",
    "key": "2016-BVB",
    "label": "2016–17",
    "name": "Borussia Dortmund",
@@ -27178,10 +27845,14 @@
    "primary": "#FDE100",
    "season": 2016,
    "secondary": "#000000",
-   "short": "BVB"
+   "short": "BVB",
+   "team": "#FDE100"
   },
   {
    "club": "Juventus FC",
+   "crest": "JUV",
+   "deep": "#252932",
+   "ink": "#9aa3b5",
    "key": "2016-JUV",
    "label": "2016–17",
    "name": "Juventus",
@@ -27350,10 +28021,14 @@
    "primary": "#FFFFFF",
    "season": 2016,
    "secondary": "#000000",
-   "short": "JUV"
+   "short": "JUV",
+   "team": "#9aa3b5"
   },
   {
    "club": "Leicester City F.C.",
+   "crest": "LEI",
+   "deep": "#0b214c",
+   "ink": "#4d88ff",
    "key": "2016-LEI",
    "label": "2016–17",
    "name": "Leicester City",
@@ -27514,10 +28189,14 @@
    "primary": "#003090",
    "season": 2016,
    "secondary": "#FDBE11",
-   "short": "LEI"
+   "short": "LEI",
+   "team": "#003090"
   },
   {
    "club": "AS Monaco FC",
+   "crest": "MON",
+   "deep": "#4c0b0d",
+   "ink": "#ef5d62",
    "key": "2016-MON",
    "label": "2016–17",
    "name": "Monaco",
@@ -27662,10 +28341,14 @@
    "primary": "#E7171E",
    "season": 2016,
    "secondary": "#FFFFFF",
-   "short": "MON"
+   "short": "MON",
+   "team": "#E7171E"
   },
   {
    "club": "Real Madrid CF",
+   "crest": "RMA",
+   "deep": "#0b2c4c",
+   "ink": "#2495ff",
    "key": "2016-RMA",
    "label": "2016–17",
    "name": "Real Madrid",
@@ -27842,10 +28525,14 @@
    "primary": "#FFFFFF",
    "season": 2016,
    "secondary": "#00529F",
-   "short": "RMA"
+   "short": "RMA",
+   "team": "#00529F"
   },
   {
    "club": "FC Barcelona",
+   "crest": "BAR",
+   "deep": "#4c0b26",
+   "ink": "#ff4290",
    "key": "2017-BAR",
    "label": "2017–18",
    "name": "Barcelona",
@@ -28006,10 +28693,14 @@
    "primary": "#A50044",
    "season": 2017,
    "secondary": "#004D98",
-   "short": "BAR"
+   "short": "BAR",
+   "team": "#A50044"
   },
   {
    "club": "FC Bayern Munich",
+   "crest": "BAY-2017",
+   "deep": "#4c0b17",
+   "ink": "#fb4668",
    "key": "2017-BAY",
    "label": "2017–18",
    "name": "Bayern Munich",
@@ -28186,10 +28877,14 @@
    "primary": "#DC052D",
    "season": 2017,
    "secondary": "#FFFFFF",
-   "short": "BAY"
+   "short": "BAY",
+   "team": "#DC052D"
   },
   {
    "club": "Juventus FC",
+   "crest": "JUV",
+   "deep": "#252932",
+   "ink": "#9aa3b5",
    "key": "2017-JUV",
    "label": "2017–18",
    "name": "Juventus",
@@ -28366,10 +29061,14 @@
    "primary": "#FFFFFF",
    "season": 2017,
    "secondary": "#000000",
-   "short": "JUV"
+   "short": "JUV",
+   "team": "#9aa3b5"
   },
   {
    "club": "Liverpool F.C.",
+   "crest": "LIV",
+   "deep": "#4c0b15",
+   "ink": "#f25a73",
    "key": "2017-LIV",
    "label": "2017–18",
    "name": "Liverpool",
@@ -28538,10 +29237,14 @@
    "primary": "#C8102E",
    "season": 2017,
    "secondary": "#F6EB61",
-   "short": "LIV"
+   "short": "LIV",
+   "team": "#C8102E"
   },
   {
    "club": "Manchester City F.C.",
+   "crest": "MCI",
+   "deep": "#102e46",
+   "ink": "#6cabdd",
    "key": "2017-MCI",
    "label": "2017–18",
    "name": "Manchester City",
@@ -28710,10 +29413,14 @@
    "primary": "#6CABDD",
    "season": 2017,
    "secondary": "#1C2C5B",
-   "short": "MCI"
+   "short": "MCI",
+   "team": "#6CABDD"
   },
   {
    "club": "Real Madrid CF",
+   "crest": "RMA",
+   "deep": "#0b2c4c",
+   "ink": "#2495ff",
    "key": "2017-RMA",
    "label": "2017–18",
    "name": "Real Madrid",
@@ -28866,10 +29573,14 @@
    "primary": "#FFFFFF",
    "season": 2017,
    "secondary": "#00529F",
-   "short": "RMA"
+   "short": "RMA",
+   "team": "#00529F"
   },
   {
    "club": "AS Roma",
+   "crest": "ROM",
+   "deep": "#471018",
+   "ink": "#dd6476",
    "key": "2017-ROM",
    "label": "2017–18",
    "name": "Roma",
@@ -29014,10 +29725,14 @@
    "primary": "#8E1F2F",
    "season": 2017,
    "secondary": "#F0BC42",
-   "short": "ROM"
+   "short": "ROM",
+   "team": "#8E1F2F"
   },
   {
    "club": "Sevilla FC",
+   "crest": "SEV",
+   "deep": "#4c0b0d",
+   "ink": "#ec5f64",
    "key": "2017-SEV",
    "label": "2017–18",
    "name": "Sevilla",
@@ -29154,10 +29869,14 @@
    "primary": "#FFFFFF",
    "season": 2017,
    "secondary": "#D71920",
-   "short": "SEV"
+   "short": "SEV",
+   "team": "#D71920"
   },
   {
    "club": "AFC Ajax",
+   "crest": "AJA",
+   "deep": "#4c0b14",
+   "ink": "#f15b71",
    "key": "2018-AJA",
    "label": "2018–19",
    "name": "Ajax",
@@ -29286,10 +30005,14 @@
    "primary": "#D2122E",
    "season": 2018,
    "secondary": "#FFFFFF",
-   "short": "AJA"
+   "short": "AJA",
+   "team": "#D2122E"
   },
   {
    "club": "FC Barcelona",
+   "crest": "BAR",
+   "deep": "#4c0b26",
+   "ink": "#ff4290",
    "key": "2018-BAR",
    "label": "2018–19",
    "name": "Barcelona",
@@ -29442,10 +30165,14 @@
    "primary": "#A50044",
    "season": 2018,
    "secondary": "#004D98",
-   "short": "BAR"
+   "short": "BAR",
+   "team": "#A50044"
   },
   {
    "club": "Juventus FC",
+   "crest": "JUV",
+   "deep": "#252932",
+   "ink": "#9aa3b5",
    "key": "2018-JUV",
    "label": "2018–19",
    "name": "Juventus",
@@ -29630,10 +30357,14 @@
    "primary": "#FFFFFF",
    "season": 2018,
    "secondary": "#000000",
-   "short": "JUV"
+   "short": "JUV",
+   "team": "#9aa3b5"
   },
   {
    "club": "Liverpool F.C.",
+   "crest": "LIV",
+   "deep": "#4c0b15",
+   "ink": "#f25a73",
    "key": "2018-LIV",
    "label": "2018–19",
    "name": "Liverpool",
@@ -29802,10 +30533,14 @@
    "primary": "#C8102E",
    "season": 2018,
    "secondary": "#F6EB61",
-   "short": "LIV"
+   "short": "LIV",
+   "team": "#C8102E"
   },
   {
    "club": "Manchester City F.C.",
+   "crest": "MCI",
+   "deep": "#102e46",
+   "ink": "#6cabdd",
    "key": "2018-MCI",
    "label": "2018–19",
    "name": "Manchester City",
@@ -29974,10 +30709,14 @@
    "primary": "#6CABDD",
    "season": 2018,
    "secondary": "#1C2C5B",
-   "short": "MCI"
+   "short": "MCI",
+   "team": "#6CABDD"
   },
   {
    "club": "Manchester United F.C.",
+   "crest": "MUN",
+   "deep": "#4c0f0b",
+   "ink": "#ea6258",
    "key": "2018-MUN",
    "label": "2018–19",
    "name": "Manchester United",
@@ -30162,10 +30901,14 @@
    "primary": "#DA291C",
    "season": 2018,
    "secondary": "#FBE122",
-   "short": "MUN"
+   "short": "MUN",
+   "team": "#DA291C"
   },
   {
    "club": "FC Porto",
+   "crest": "POR",
+   "deep": "#0b294c",
+   "ink": "#2e90ff",
    "key": "2018-POR",
    "label": "2018–19",
    "name": "Porto",
@@ -30310,10 +31053,14 @@
    "primary": "#00428C",
    "season": 2018,
    "secondary": "#FFFFFF",
-   "short": "POR"
+   "short": "POR",
+   "team": "#00428C"
   },
   {
    "club": "Tottenham Hotspur F.C.",
+   "crest": "TOT",
+   "deep": "#101c47",
+   "ink": "#6c86df",
    "key": "2018-TOT",
    "label": "2018–19",
    "name": "Tottenham Hotspur",
@@ -30490,10 +31237,14 @@
    "primary": "#FFFFFF",
    "season": 2018,
    "secondary": "#132257",
-   "short": "TOT"
+   "short": "TOT",
+   "team": "#132257"
   },
   {
    "club": "Atalanta BC",
+   "crest": "ATA-1900",
+   "deep": "#0c2e4b",
+   "ink": "#4b9ce2",
    "key": "2019-ATA",
    "label": "2019–20",
    "name": "Atalanta",
@@ -30638,10 +31389,14 @@
    "primary": "#1E71B8",
    "season": 2019,
    "secondary": "#000000",
-   "short": "ATA"
+   "short": "ATA",
+   "team": "#1E71B8"
   },
   {
    "club": "Atlético Madrid",
+   "crest": "ATM",
+   "deep": "#4a130d",
+   "ink": "#e36c5f",
    "key": "2019-ATM",
    "label": "2019–20",
    "name": "Atlético Madrid",
@@ -30810,10 +31565,14 @@
    "primary": "#CB3524",
    "season": 2019,
    "secondary": "#272E61",
-   "short": "ATM"
+   "short": "ATM",
+   "team": "#CB3524"
   },
   {
    "club": "FC Barcelona",
+   "crest": "BAR",
+   "deep": "#4c0b26",
+   "ink": "#ff4290",
    "key": "2019-BAR",
    "label": "2019–20",
    "name": "Barcelona",
@@ -30990,10 +31749,14 @@
    "primary": "#A50044",
    "season": 2019,
    "secondary": "#004D98",
-   "short": "BAR"
+   "short": "BAR",
+   "team": "#A50044"
   },
   {
    "club": "FC Bayern Munich",
+   "crest": "BAY-2017",
+   "deep": "#4c0b17",
+   "ink": "#fb4668",
    "key": "2019-BAY",
    "label": "2019–20",
    "name": "Bayern Munich",
@@ -31162,10 +31925,14 @@
    "primary": "#DC052D",
    "season": 2019,
    "secondary": "#FFFFFF",
-   "short": "BAY"
+   "short": "BAY",
+   "team": "#DC052D"
   },
   {
    "club": "Olympique Lyonnais",
+   "crest": "LYO",
+   "deep": "#0c214b",
+   "ink": "#5c8ae5",
    "key": "2019-LYO",
    "label": "2019–20",
    "name": "Lyon",
@@ -31318,10 +32085,14 @@
    "primary": "#FFFFFF",
    "season": 2019,
    "secondary": "#14387F",
-   "short": "LYO"
+   "short": "LYO",
+   "team": "#14387F"
   },
   {
    "club": "Manchester City F.C.",
+   "crest": "MCI",
+   "deep": "#102e46",
+   "ink": "#6cabdd",
    "key": "2019-MCI",
    "label": "2019–20",
    "name": "Manchester City",
@@ -31490,10 +32261,14 @@
    "primary": "#6CABDD",
    "season": 2019,
    "secondary": "#1C2C5B",
-   "short": "MCI"
+   "short": "MCI",
+   "team": "#6CABDD"
   },
   {
    "club": "Paris Saint-Germain FC",
+   "crest": "PSG",
+   "deep": "#0b314c",
+   "ink": "#1a9fff",
    "key": "2019-PSG",
    "label": "2019–20",
    "name": "Paris Saint-Germain",
@@ -31662,10 +32437,14 @@
    "primary": "#004170",
    "season": 2019,
    "secondary": "#DA291C",
-   "short": "PSG"
+   "short": "PSG",
+   "team": "#004170"
   },
   {
    "club": "RB Leipzig",
+   "crest": "RBL",
+   "deep": "#4c0b1c",
+   "ink": "#f94878",
    "key": "2019-RBL",
    "label": "2019–20",
    "name": "RB Leipzig",
@@ -31818,10 +32597,14 @@
    "primary": "#FFFFFF",
    "season": 2019,
    "secondary": "#DD0741",
-   "short": "RBL"
+   "short": "RBL",
+   "team": "#DD0741"
   },
   {
    "club": "FC Bayern Munich",
+   "crest": "BAY-2017",
+   "deep": "#4c0b17",
+   "ink": "#fb4668",
    "key": "2020-BAY",
    "label": "2020–21",
    "name": "Bayern Munich",
@@ -31998,10 +32781,14 @@
    "primary": "#DC052D",
    "season": 2020,
    "secondary": "#FFFFFF",
-   "short": "BAY"
+   "short": "BAY",
+   "team": "#DC052D"
   },
   {
    "club": "Borussia Dortmund",
+   "crest": "BVB",
+   "deep": "#4c450b",
+   "ink": "#ffe61a",
    "key": "2020-BVB",
    "label": "2020–21",
    "name": "Borussia Dortmund",
@@ -32178,10 +32965,14 @@
    "primary": "#FDE100",
    "season": 2020,
    "secondary": "#000000",
-   "short": "BVB"
+   "short": "BVB",
+   "team": "#FDE100"
   },
   {
    "club": "Chelsea F.C.",
+   "crest": "CHE",
+   "deep": "#0b294c",
+   "ink": "#3c94fb",
    "key": "2020-CHE",
    "label": "2020–21",
    "name": "Chelsea",
@@ -32358,10 +33149,14 @@
    "primary": "#034694",
    "season": 2020,
    "secondary": "#FFFFFF",
-   "short": "CHE"
+   "short": "CHE",
+   "team": "#034694"
   },
   {
    "club": "Liverpool F.C.",
+   "crest": "LIV",
+   "deep": "#4c0b15",
+   "ink": "#f25a73",
    "key": "2020-LIV",
    "label": "2020–21",
    "name": "Liverpool",
@@ -32546,10 +33341,14 @@
    "primary": "#C8102E",
    "season": 2020,
    "secondary": "#F6EB61",
-   "short": "LIV"
+   "short": "LIV",
+   "team": "#C8102E"
   },
   {
    "club": "Manchester City F.C.",
+   "crest": "MCI",
+   "deep": "#102e46",
+   "ink": "#6cabdd",
    "key": "2020-MCI",
    "label": "2020–21",
    "name": "Manchester City",
@@ -32726,10 +33525,14 @@
    "primary": "#6CABDD",
    "season": 2020,
    "secondary": "#1C2C5B",
-   "short": "MCI"
+   "short": "MCI",
+   "team": "#6CABDD"
   },
   {
    "club": "Paris Saint-Germain FC",
+   "crest": "PSG",
+   "deep": "#0b314c",
+   "ink": "#1a9fff",
    "key": "2020-PSG",
    "label": "2020–21",
    "name": "Paris Saint-Germain",
@@ -32914,10 +33717,14 @@
    "primary": "#004170",
    "season": 2020,
    "secondary": "#DA291C",
-   "short": "PSG"
+   "short": "PSG",
+   "team": "#004170"
   },
   {
    "club": "FC Porto",
+   "crest": "POR",
+   "deep": "#0b294c",
+   "ink": "#2e90ff",
    "key": "2020-POR",
    "label": "2020–21",
    "name": "Porto",
@@ -33054,10 +33861,14 @@
    "primary": "#00428C",
    "season": 2020,
    "secondary": "#FFFFFF",
-   "short": "POR"
+   "short": "POR",
+   "team": "#00428C"
   },
   {
    "club": "Real Madrid CF",
+   "crest": "RMA",
+   "deep": "#0b2c4c",
+   "ink": "#2495ff",
    "key": "2020-RMA",
    "label": "2020–21",
    "name": "Real Madrid",
@@ -33234,10 +34045,14 @@
    "primary": "#FFFFFF",
    "season": 2020,
    "secondary": "#00529F",
-   "short": "RMA"
+   "short": "RMA",
+   "team": "#00529F"
   },
   {
    "club": "Atlético Madrid",
+   "crest": "ATM",
+   "deep": "#4a130d",
+   "ink": "#e36c5f",
    "key": "2021-ATM",
    "label": "2021–22",
    "name": "Atlético Madrid",
@@ -33422,10 +34237,14 @@
    "primary": "#CB3524",
    "season": 2021,
    "secondary": "#272E61",
-   "short": "ATM"
+   "short": "ATM",
+   "team": "#CB3524"
   },
   {
    "club": "FC Bayern Munich",
+   "crest": "BAY-2017",
+   "deep": "#4c0b17",
+   "ink": "#fb4668",
    "key": "2021-BAY",
    "label": "2021–22",
    "name": "Bayern Munich",
@@ -33586,10 +34405,14 @@
    "primary": "#DC052D",
    "season": 2021,
    "secondary": "#FFFFFF",
-   "short": "BAY"
+   "short": "BAY",
+   "team": "#DC052D"
   },
   {
    "club": "S.L. Benfica",
+   "crest": "BEN",
+   "deep": "#4c0b0b",
+   "ink": "#ed5e5e",
    "key": "2021-BEN",
    "label": "2021–22",
    "name": "Benfica",
@@ -33750,10 +34573,14 @@
    "primary": "#E83030",
    "season": 2021,
    "secondary": "#FFFFFF",
-   "short": "BEN"
+   "short": "BEN",
+   "team": "#E83030"
   },
   {
    "club": "Chelsea F.C.",
+   "crest": "CHE",
+   "deep": "#0b294c",
+   "ink": "#3c94fb",
    "key": "2021-CHE",
    "label": "2021–22",
    "name": "Chelsea",
@@ -33938,10 +34765,14 @@
    "primary": "#034694",
    "season": 2021,
    "secondary": "#FFFFFF",
-   "short": "CHE"
+   "short": "CHE",
+   "team": "#034694"
   },
   {
    "club": "Liverpool F.C.",
+   "crest": "LIV",
+   "deep": "#4c0b15",
+   "ink": "#f25a73",
    "key": "2021-LIV",
    "label": "2021–22",
    "name": "Liverpool",
@@ -34126,10 +34957,14 @@
    "primary": "#C8102E",
    "season": 2021,
    "secondary": "#F6EB61",
-   "short": "LIV"
+   "short": "LIV",
+   "team": "#C8102E"
   },
   {
    "club": "Manchester City F.C.",
+   "crest": "MCI",
+   "deep": "#102e46",
+   "ink": "#6cabdd",
    "key": "2021-MCI",
    "label": "2021–22",
    "name": "Manchester City",
@@ -34258,10 +35093,14 @@
    "primary": "#6CABDD",
    "season": 2021,
    "secondary": "#1C2C5B",
-   "short": "MCI"
+   "short": "MCI",
+   "team": "#6CABDD"
   },
   {
    "club": "Real Madrid CF",
+   "crest": "RMA",
+   "deep": "#0b2c4c",
+   "ink": "#2495ff",
    "key": "2021-RMA",
    "label": "2021–22",
    "name": "Real Madrid",
@@ -34446,10 +35285,14 @@
    "primary": "#FFFFFF",
    "season": 2021,
    "secondary": "#00529F",
-   "short": "RMA"
+   "short": "RMA",
+   "team": "#00529F"
   },
   {
    "club": "Villarreal CF",
+   "crest": "VIL",
+   "deep": "#4c410b",
+   "ink": "#ffe667",
    "key": "2021-VIL",
    "label": "2021–22",
    "name": "Villarreal",
@@ -34618,10 +35461,14 @@
    "primary": "#FFE667",
    "season": 2021,
    "secondary": "#005187",
-   "short": "VIL"
+   "short": "VIL",
+   "team": "#FFE667"
   },
   {
    "club": "FC Bayern Munich",
+   "crest": "BAY-2017",
+   "deep": "#4c0b17",
+   "ink": "#fb4668",
    "key": "2022-BAY",
    "label": "2022–23",
    "name": "Bayern Munich",
@@ -34806,10 +35653,14 @@
    "primary": "#DC052D",
    "season": 2022,
    "secondary": "#FFFFFF",
-   "short": "BAY"
+   "short": "BAY",
+   "team": "#DC052D"
   },
   {
    "club": "S.L. Benfica",
+   "crest": "BEN",
+   "deep": "#4c0b0b",
+   "ink": "#ed5e5e",
    "key": "2022-BEN",
    "label": "2022–23",
    "name": "Benfica",
@@ -34946,10 +35797,14 @@
    "primary": "#E83030",
    "season": 2022,
    "secondary": "#FFFFFF",
-   "short": "BEN"
+   "short": "BEN",
+   "team": "#E83030"
   },
   {
    "club": "Chelsea F.C.",
+   "crest": "CHE",
+   "deep": "#0b294c",
+   "ink": "#3c94fb",
    "key": "2022-CHE",
    "label": "2022–23",
    "name": "Chelsea",
@@ -35134,10 +35989,14 @@
    "primary": "#034694",
    "season": 2022,
    "secondary": "#FFFFFF",
-   "short": "CHE"
+   "short": "CHE",
+   "team": "#034694"
   },
   {
    "club": "Inter Milan",
+   "crest": "INT",
+   "deep": "#0b334c",
+   "ink": "#1aa8ff",
    "key": "2022-INT",
    "label": "2022–23",
    "name": "Inter",
@@ -35298,10 +36157,14 @@
    "primary": "#0068A8",
    "season": 2022,
    "secondary": "#000000",
-   "short": "INT"
+   "short": "INT",
+   "team": "#0068A8"
   },
   {
    "club": "Manchester City F.C.",
+   "crest": "MCI",
+   "deep": "#102e46",
+   "ink": "#6cabdd",
    "key": "2022-MCI",
    "label": "2022–23",
    "name": "Manchester City",
@@ -35470,10 +36333,14 @@
    "primary": "#6CABDD",
    "season": 2022,
    "secondary": "#1C2C5B",
-   "short": "MCI"
+   "short": "MCI",
+   "team": "#6CABDD"
   },
   {
    "club": "AC Milan",
+   "crest": "MIL",
+   "deep": "#4c0b0b",
+   "ink": "#fc4f51",
    "key": "2022-MIL",
    "label": "2022–23",
    "name": "Milan",
@@ -35634,10 +36501,14 @@
    "primary": "#FB090B",
    "season": 2022,
    "secondary": "#000000",
-   "short": "MIL"
+   "short": "MIL",
+   "team": "#FB090B"
   },
   {
    "club": "SSC Napoli",
+   "crest": "NAP-1900",
+   "deep": "#0b3a4c",
+   "ink": "#2bb7ed",
    "key": "2022-NAP",
    "label": "2022–23",
    "name": "Napoli",
@@ -35790,10 +36661,14 @@
    "primary": "#12A0D7",
    "season": 2022,
    "secondary": "#FFFFFF",
-   "short": "NAP"
+   "short": "NAP",
+   "team": "#12A0D7"
   },
   {
    "club": "Real Madrid CF",
+   "crest": "RMA",
+   "deep": "#0b2c4c",
+   "ink": "#2495ff",
    "key": "2022-RMA",
    "label": "2022–23",
    "name": "Real Madrid",
@@ -35962,10 +36837,14 @@
    "primary": "#FFFFFF",
    "season": 2022,
    "secondary": "#00529F",
-   "short": "RMA"
+   "short": "RMA",
+   "team": "#00529F"
   },
   {
    "club": "Arsenal F.C.",
+   "crest": "ARS",
+   "deep": "#4c0b0c",
+   "ink": "#fe4d52",
    "key": "2023-ARS",
    "label": "2023–24",
    "name": "Arsenal",
@@ -36126,10 +37005,14 @@
    "primary": "#EF0107",
    "season": 2023,
    "secondary": "#FFFFFF",
-   "short": "ARS"
+   "short": "ARS",
+   "team": "#EF0107"
   },
   {
    "club": "Atlético Madrid",
+   "crest": "ATM",
+   "deep": "#4a130d",
+   "ink": "#e36c5f",
    "key": "2023-ATM",
    "label": "2023–24",
    "name": "Atlético Madrid",
@@ -36290,10 +37173,14 @@
    "primary": "#CB3524",
    "season": 2023,
    "secondary": "#272E61",
-   "short": "ATM"
+   "short": "ATM",
+   "team": "#CB3524"
   },
   {
    "club": "FC Barcelona",
+   "crest": "BAR",
+   "deep": "#4c0b26",
+   "ink": "#ff4290",
    "key": "2023-BAR",
    "label": "2023–24",
    "name": "Barcelona",
@@ -36462,10 +37349,14 @@
    "primary": "#A50044",
    "season": 2023,
    "secondary": "#004D98",
-   "short": "BAR"
+   "short": "BAR",
+   "team": "#A50044"
   },
   {
    "club": "FC Bayern Munich",
+   "crest": "BAY-2017",
+   "deep": "#4c0b17",
+   "ink": "#fb4668",
    "key": "2023-BAY",
    "label": "2023–24",
    "name": "Bayern Munich",
@@ -36634,10 +37525,14 @@
    "primary": "#DC052D",
    "season": 2023,
    "secondary": "#FFFFFF",
-   "short": "BAY"
+   "short": "BAY",
+   "team": "#DC052D"
   },
   {
    "club": "Borussia Dortmund",
+   "crest": "BVB",
+   "deep": "#4c450b",
+   "ink": "#ffe61a",
    "key": "2023-BVB",
    "label": "2023–24",
    "name": "Borussia Dortmund",
@@ -36806,10 +37701,14 @@
    "primary": "#FDE100",
    "season": 2023,
    "secondary": "#000000",
-   "short": "BVB"
+   "short": "BVB",
+   "team": "#FDE100"
   },
   {
    "club": "Manchester City F.C.",
+   "crest": "MCI",
+   "deep": "#102e46",
+   "ink": "#6cabdd",
    "key": "2023-MCI",
    "label": "2023–24",
    "name": "Manchester City",
@@ -36970,10 +37869,14 @@
    "primary": "#6CABDD",
    "season": 2023,
    "secondary": "#1C2C5B",
-   "short": "MCI"
+   "short": "MCI",
+   "team": "#6CABDD"
   },
   {
    "club": "Paris Saint-Germain FC",
+   "crest": "PSG",
+   "deep": "#0b314c",
+   "ink": "#1a9fff",
    "key": "2023-PSG",
    "label": "2023–24",
    "name": "Paris Saint-Germain",
@@ -37142,10 +38045,14 @@
    "primary": "#004170",
    "season": 2023,
    "secondary": "#DA291C",
-   "short": "PSG"
+   "short": "PSG",
+   "team": "#004170"
   },
   {
    "club": "Real Madrid CF",
+   "crest": "RMA",
+   "deep": "#0b2c4c",
+   "ink": "#2495ff",
    "key": "2023-RMA",
    "label": "2023–24",
    "name": "Real Madrid",
@@ -37322,10 +38229,14 @@
    "primary": "#FFFFFF",
    "season": 2023,
    "secondary": "#00529F",
-   "short": "RMA"
+   "short": "RMA",
+   "team": "#00529F"
   },
   {
    "club": "Arsenal F.C.",
+   "crest": "ARS",
+   "deep": "#4c0b0c",
+   "ink": "#fe4d52",
    "key": "2024-ARS",
    "label": "2024–25",
    "name": "Arsenal",
@@ -37494,10 +38405,14 @@
    "primary": "#EF0107",
    "season": 2024,
    "secondary": "#FFFFFF",
-   "short": "ARS"
+   "short": "ARS",
+   "team": "#EF0107"
   },
   {
    "club": "Aston Villa F.C.",
+   "crest": "AVL",
+   "deep": "#4c0b28",
+   "ink": "#e85999",
    "key": "2024-AVL",
    "label": "2024–25",
    "name": "Aston Villa",
@@ -37674,10 +38589,14 @@
    "primary": "#670E36",
    "season": 2024,
    "secondary": "#95BFE5",
-   "short": "AVL"
+   "short": "AVL",
+   "team": "#670E36"
   },
   {
    "club": "FC Barcelona",
+   "crest": "BAR",
+   "deep": "#4c0b26",
+   "ink": "#ff4290",
    "key": "2024-BAR",
    "label": "2024–25",
    "name": "Barcelona",
@@ -37838,10 +38757,14 @@
    "primary": "#A50044",
    "season": 2024,
    "secondary": "#004D98",
-   "short": "BAR"
+   "short": "BAR",
+   "team": "#A50044"
   },
   {
    "club": "FC Bayern Munich",
+   "crest": "BAY",
+   "deep": "#4c0b17",
+   "ink": "#fb4668",
    "key": "2024-BAY",
    "label": "2024–25",
    "name": "Bayern Munich",
@@ -38034,10 +38957,14 @@
    "primary": "#DC052D",
    "season": 2024,
    "secondary": "#FFFFFF",
-   "short": "BAY"
+   "short": "BAY",
+   "team": "#DC052D"
   },
   {
    "club": "Borussia Dortmund",
+   "crest": "BVB",
+   "deep": "#4c450b",
+   "ink": "#ffe61a",
    "key": "2024-BVB",
    "label": "2024–25",
    "name": "Borussia Dortmund",
@@ -38182,10 +39109,14 @@
    "primary": "#FDE100",
    "season": 2024,
    "secondary": "#000000",
-   "short": "BVB"
+   "short": "BVB",
+   "team": "#FDE100"
   },
   {
    "club": "Inter Milan",
+   "crest": "INT",
+   "deep": "#0b334c",
+   "ink": "#1aa8ff",
    "key": "2024-INT",
    "label": "2024–25",
    "name": "Inter",
@@ -38362,10 +39293,14 @@
    "primary": "#0068A8",
    "season": 2024,
    "secondary": "#000000",
-   "short": "INT"
+   "short": "INT",
+   "team": "#0068A8"
   },
   {
    "club": "Paris Saint-Germain FC",
+   "crest": "PSG",
+   "deep": "#0b314c",
+   "ink": "#1a9fff",
    "key": "2024-PSG",
    "label": "2024–25",
    "name": "Paris Saint-Germain",
@@ -38518,10 +39453,14 @@
    "primary": "#004170",
    "season": 2024,
    "secondary": "#DA291C",
-   "short": "PSG"
+   "short": "PSG",
+   "team": "#004170"
   },
   {
    "club": "Real Madrid CF",
+   "crest": "RMA",
+   "deep": "#0b2c4c",
+   "ink": "#2495ff",
    "key": "2024-RMA",
    "label": "2024–25",
    "name": "Real Madrid",
@@ -38706,10 +39645,14 @@
    "primary": "#FFFFFF",
    "season": 2024,
    "secondary": "#00529F",
-   "short": "RMA"
+   "short": "RMA",
+   "team": "#00529F"
   },
   {
    "club": "Arsenal F.C.",
+   "crest": "ARS",
+   "deep": "#4c0b0c",
+   "ink": "#fe4d52",
    "key": "2025-ARS",
    "label": "2025–26",
    "name": "Arsenal",
@@ -38894,10 +39837,14 @@
    "primary": "#EF0107",
    "season": 2025,
    "secondary": "#FFFFFF",
-   "short": "ARS"
+   "short": "ARS",
+   "team": "#EF0107"
   },
   {
    "club": "Atlético Madrid",
+   "crest": "ATM",
+   "deep": "#4a130d",
+   "ink": "#e36c5f",
    "key": "2025-ATM",
    "label": "2025–26",
    "name": "Atlético Madrid",
@@ -39082,10 +40029,14 @@
    "primary": "#CB3524",
    "season": 2025,
    "secondary": "#272E61",
-   "short": "ATM"
+   "short": "ATM",
+   "team": "#CB3524"
   },
   {
    "club": "FC Barcelona",
+   "crest": "BAR",
+   "deep": "#4c0b26",
+   "ink": "#ff4290",
    "key": "2025-BAR",
    "label": "2025–26",
    "name": "Barcelona",
@@ -39270,10 +40221,14 @@
    "primary": "#A50044",
    "season": 2025,
    "secondary": "#004D98",
-   "short": "BAR"
+   "short": "BAR",
+   "team": "#A50044"
   },
   {
    "club": "FC Bayern Munich",
+   "crest": "BAY",
+   "deep": "#4c0b17",
+   "ink": "#fb4668",
    "key": "2025-BAY",
    "label": "2025–26",
    "name": "Bayern Munich",
@@ -39450,10 +40405,14 @@
    "primary": "#DC052D",
    "season": 2025,
    "secondary": "#FFFFFF",
-   "short": "BAY"
+   "short": "BAY",
+   "team": "#DC052D"
   },
   {
    "club": "Liverpool F.C.",
+   "crest": "LIV",
+   "deep": "#4c0b15",
+   "ink": "#f25a73",
    "key": "2025-LIV",
    "label": "2025–26",
    "name": "Liverpool",
@@ -39622,10 +40581,14 @@
    "primary": "#C8102E",
    "season": 2025,
    "secondary": "#F6EB61",
-   "short": "LIV"
+   "short": "LIV",
+   "team": "#C8102E"
   },
   {
    "club": "Paris Saint-Germain FC",
+   "crest": "PSG",
+   "deep": "#0b314c",
+   "ink": "#1a9fff",
    "key": "2025-PSG",
    "label": "2025–26",
    "name": "Paris Saint-Germain",
@@ -39794,10 +40757,14 @@
    "primary": "#004170",
    "season": 2025,
    "secondary": "#DA291C",
-   "short": "PSG"
+   "short": "PSG",
+   "team": "#004170"
   },
   {
    "club": "Real Madrid CF",
+   "crest": "RMA",
+   "deep": "#0b2c4c",
+   "ink": "#2495ff",
    "key": "2025-RMA",
    "label": "2025–26",
    "name": "Real Madrid",
@@ -39974,10 +40941,14 @@
    "primary": "#FFFFFF",
    "season": 2025,
    "secondary": "#00529F",
-   "short": "RMA"
+   "short": "RMA",
+   "team": "#00529F"
   },
   {
    "club": "Sporting CP",
+   "crest": "SCP",
+   "deep": "#0b4c37",
+   "ink": "#1affb5",
    "key": "2025-SCP",
    "label": "2025–26",
    "name": "Sporting CP",
@@ -40146,7 +41117,8 @@
    "primary": "#008057",
    "season": 2025,
    "secondary": "#FFFFFF",
-   "short": "SCP"
+   "short": "SCP",
+   "team": "#008057"
   }
  ],
  "skipped": [],

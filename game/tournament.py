@@ -40,13 +40,17 @@ class Side:
     key: str
     name: str
     short: str
-    primary: str
-    secondary: str
     formation: Formation
     xi: list[Card]
     you: bool = False
     club: str | None = None
     season: int | None = None
+    label: str | None = None       # "2004–05"
+    club_name: str | None = None   # "Milan"
+    crest: str | None = None       # a crest key (game.crests), None for your own XI
+    team: str = "#f5b83d"
+    deep: str = "#3a2a08"
+    ink: str = "#ffd873"
 
     @property
     def strength(self) -> float:
@@ -74,8 +78,9 @@ def best_xi(cs: ClubSeason) -> tuple[Formation, list[Card]]:
 
 def club_side(cs: ClubSeason) -> Side:
     f, xi = best_xi(cs)
-    return Side(cs.key, cs.title, cs.short, cs.primary, cs.secondary, f, xi,
-                club=cs.club, season=cs.season)
+    return Side(cs.key, cs.title, cs.short, f, xi, club=cs.club, season=cs.season,
+                label=cs.label, club_name=cs.name, crest=cs.crest,
+                team=cs.team, deep=cs.deep, ink=cs.ink)
 
 
 def league_of(deck: Deck) -> match.League:

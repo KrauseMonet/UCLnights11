@@ -59,7 +59,7 @@ def play(seed: int) -> None:
                    key=lambda i: s.deal.cards[i].rating)
         moves.append(Pick(best))
         s = replay(deck, seed, "433", moves)
-    you = Side("YOU", "Your XI", "YOU", "#d4af37", "#111111", s.formation, s.picks, you=True)
+    you = Side("YOU", "Your XI", "YOU", s.formation, s.picks, you=True)
     t = play_tournament(deck, league_of(deck), seed, you)
     for c in s.picks:
         print(f"  {c.pos} {c.name:28} {c.rating} ({c.club_name} {c.label})")

@@ -102,6 +102,7 @@ def _tiny_deck():
     b = [p(i, "GK") for i in range(20, 25)]
     cs = lambda key, players: {"key": key, "season": 2000, "label": "2000–01", "club": key,
                                "name": key, "short": key, "primary": "#000", "secondary": "#fff",
+                               "crest": key, "team": "#000", "deep": "#000", "ink": "#fff",
                                "players": players}
     return build_deck({"club_seasons": [cs("A", a), cs("B", b)]})
 

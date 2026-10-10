@@ -136,6 +136,7 @@ Means are calibrated by construction; draw rate, result split and spread are
 
 ## 8. Not in scope yet
 
-Puzzle games, rooms, accounts, the daily challenge, auctions, crests. The engine,
-draft and deck are built so each can be added without changing their contracts.
-No club crest or UEFA mark is used; colours are design data.
+Puzzle games, rooms, accounts, the daily challenge, auctions. The engine, draft and
+deck are built so each can be added without changing their contracts. No UEFA mark is
+used. Club crests are used on a non-commercial basis, era-correct where a dated file
+exists (`data/crest_eras.csv`), with every source named in `CREDITS.md`.

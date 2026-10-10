@@ -93,3 +93,41 @@ def test_a_squad_that_cannot_field_an_eleven_is_left_out_and_reported(sources):
 def test_the_committed_deck_is_current():
     """data/deck.json is regenerated from its inputs, so a stale one serves old ratings."""
     assert build.OUT.read_text() == build.serialise(build.build())
+
+
+def test_every_club_season_in_the_deck_has_a_built_crest():
+    """A crest key with no served file is a broken image on every card of that side."""
+    from game.deck import load_deck
+    served = build.ROOT / "web" / "static" / "crests"
+    missing = sorted({cs.crest for cs in load_deck().club_seasons if not (served / f"{cs.crest}.webp").exists()})
+    assert missing == []
+
+
+def test_a_season_wears_its_own_crest_where_one_is_recorded():
+    from game.crests import crest_key
+    assert crest_key("BAY", 1994) == "BAY-1900"      # 1979-1996 crest
+    assert crest_key("BAY", 1998) == "BAY-1996"
+    assert crest_key("BAY", 2010) == "BAY-2002"
+    assert crest_key("BAY", 2025) == "BAY"           # the current one
+    assert crest_key("PSG", 2012) == "PSG-2002"      # the 2013 redesign came after 2012-13
+    assert crest_key("LIV", 2004) == "LIV"           # no era recorded: the current crest
+
+
+def test_club_colours_read_at_wcag_aa():
+    """Computed from clubs.csv, not read from deck.json: a test of the derivation itself."""
+    import csv
+    from game.colours import contrast, palette
+    with build.CLUBS.open(newline="", encoding="utf-8") as f:
+        clubs = list(csv.DictReader(f))
+    bad = []
+    for c in clubs:
+        p = palette(c["primary"], c["secondary"])
+        if contrast(p["ink"], p["deep"]) < 4.5:
+            bad.append(c["short"])
+    assert bad == []
+
+
+def test_a_near_white_primary_hands_over_to_the_secondary():
+    from game.colours import palette
+    assert palette("#FFFFFF", "#00529F")["team"] == "#00529F"     # Real Madrid: blue, not white
+    assert palette("#DA291C", "#FBE122")["team"] == "#DA291C"     # Manchester United: red, not yellow

@@ -3,65 +3,54 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Campeones · Draft a European night</title>
-<meta name="description" content="Draft an eleven from three decades of European Cup quarter-finalists, then take it through a full tournament.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/static/style.css?v=2">
+<title>Campeones · draft a European night</title>
+<meta name="description" content="Every Champions League quarter-finalist since 1994–95. Take one player from each squad you're dealt, then play a 32-team tournament against the real sides.">
+<link rel="preload" href="/static/fonts/Anton.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/static/style.css?v=7">
 </head>
 <body>
-<header class="top">
-  <a class="brand" href="/" aria-label="Campeones home"><span class="star">✦</span> Campeones</a>
-  <span class="deckstat" id="deckstat"></span>
-</header>
-
-<main>
-  <!-- HOME -->
-  <section id="home" class="screen">
-    <div class="hero">
-      <p class="kicker">Thirty-two seasons · every quarter-finalist</p>
-      <h1>Draft a European night</h1>
-      <p class="lede">Each turn deals you one real squad that reached the last eight, from
-        Ajax 1994–95 to this year's. Take one player. Eleven turns later your side
-        enters a 32-team tournament against the real thing.</p>
-      <div class="formations" id="formations" role="radiogroup" aria-label="Formation"></div>
-      <button class="go" id="start">Start the draft</button>
-      <ol class="how">
-        <li><b>Deal.</b> A random club-season appears. Bayern reached 24 quarter-finals, APOEL one, so some sides are rarer than others.</li>
-        <li><b>Pick.</b> Take one player into an open slot in his own line. Two rerolls if a deal does nothing for you.</li>
-        <li><b>Play.</b> Groups, then two-legged knockouts, extra time and penalties, and a final at a neutral ground.</li>
-      </ol>
+<main class="sheet">
+  <section class="home-hero">
+    <div>
+      <div class="kicker">1994–95 → 2025–26 · every quarter-finalist</div>
+      <h1 class="home-title">Build the XI Europe never <em>saw</em>.</h1>
+      <p class="home-lede">Barcelona 2010–11 gives up Messi. Milan 2004–05 gives up Kaká. Manchester United
+        1998–99 gives up Keane. Take <b>one player from each squad you're dealt</b>, then take your eleven
+        through a 32-team tournament against the real sides of history.</p>
+      <div class="home-cta">
+        <button class="btn primary" id="start">Start a draft</button>
+        <a class="btn ghost" href="/archive">Browse every squad</a>
+      </div>
+      <div class="home-form">
+        <span class="label">Formation</span>
+        <div class="chips" id="formations" role="radiogroup" aria-label="Formation"></div>
+      </div>
     </div>
+    <div class="home-fan" id="fan" aria-label="Three of the squads in the deck"></div>
   </section>
 
-  <!-- DRAFT -->
-  <section id="draft" class="screen" hidden>
-    <div class="draftbar">
-      <div><span class="label">Pick</span> <b id="pickno">1</b>/11</div>
-      <div class="formation-name" id="formname"></div>
-      <button class="ghost" id="reroll">Reroll <span id="rerolls"></span></button>
-    </div>
-    <div class="draftgrid">
-      <div class="deal" id="deal"></div>
-      <div class="pitchwrap"><div class="pitch" id="pitch"></div></div>
-    </div>
-  </section>
+  <div class="crest-marquee" aria-hidden="true"><div class="crest-track" id="marquee"></div></div>
+  <div class="home-stats" id="stats"></div>
 
-  <!-- TOURNAMENT -->
-  <section id="cup" class="screen" hidden>
-    <div class="cuphead" id="cuphead"></div>
-    <div class="match" id="match" hidden></div>
-    <div class="cupnav" id="cupnav"></div>
-    <div class="cupbody" id="cupbody"></div>
-  </section>
+  <h2 class="h2">How it plays</h2>
+  <p class="sub">Eleven deals, eleven picks, one tournament.</p>
+  <div class="steps">
+    <div class="step"><div class="n">01</div><h3>The deal</h3>
+      <p>A real quarter-final squad lands in front of you. Bayern reached 24 of them and APOEL one, so some
+        sides come round far more often than others.</p></div>
+    <div class="step"><div class="n">02</div><h3>The pick</h3>
+      <p>Take one player into an open place in his own line, or ask for another squad (twice per draft).
+        The same man can't be picked twice, whichever season he's from.</p></div>
+    <div class="step"><div class="n">03</div><h3>The nights</h3>
+      <p>Groups of four, then two-legged knockouts with extra time and penalties, and a final at a neutral
+        ground. Thirty-one real sides, each fielding its best eleven.</p></div>
+  </div>
+
+  <h2 class="h2">The latest last eight</h2>
+  <p class="sub" id="latest-sub">Every quarter-finalist is in the deck. <a href="/archive">See all of them</a>.</p>
+  <div class="latest" id="latest"></div>
 </main>
-
-<footer class="foot">
-  Squads from Wikipedia (CC BY-SA) · ratings are this game's own judgement · results data from openfootball (CC0).
-  An independent fan game, not affiliated with UEFA or any club.
-</footer>
-<div class="toast" id="toast" role="status" aria-live="polite"></div>
-<script src="/static/app.js?v=2"></script>
+<script src="/static/common.js?v=7"></script>
+<script src="/static/home.js?v=7"></script>
 </body>
 </html>

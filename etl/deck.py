@@ -29,6 +29,8 @@ import re
 import sys
 from pathlib import Path
 
+from game.colours import palette
+from game.crests import crest_key
 from game.formations import FORMATIONS
 from game.nations import nation
 
@@ -159,6 +161,8 @@ def build() -> dict:
             "short": club["short"],
             "primary": club["primary"],
             "secondary": club["secondary"],
+            "crest": crest_key(club["short"], squad["season"]),
+            **palette(club["primary"], club["secondary"]),
             "players": players,
         })
     if errors:

@@ -1,0 +1,362 @@
+{
+ "AJA": {
+  "club": "AFC Ajax",
+  "file": "File:Logo AFC Ajax (1928-1991, 2025-).png",
+  "page": "https://commons.wikimedia.org/wiki/File:Logo_AFC_Ajax_(1928-1991,_2025-).png"
+ },
+ "APO": {
+  "club": "APOEL FC",
+  "file": "File:APOEL (logo with stars).svg",
+  "page": "https://commons.wikimedia.org/wiki/File:APOEL_(logo_with_stars).svg"
+ },
+ "ARS": {
+  "club": "Arsenal F.C.",
+  "file": "File:Arsenal FC.svg",
+  "page": "https://en.wikipedia.org/wiki/File:Arsenal_FC.svg"
+ },
+ "ARS-1900": {
+  "club": "ARS",
+  "file": "File:Arsenal Crest 1996-2001.svg",
+  "page": "https://commons.wikimedia.org/wiki/File:Arsenal_Crest_1996-2001.svg"
+ },
+ "ATA": {
+  "club": "Atalanta BC",
+  "file": "File:Atalanta_BC_new_logo.svg",
+  "page": "https://en.wikipedia.org/wiki/File:Atalanta_BC_new_logo.svg"
+ },
+ "ATA-1900": {
+  "club": "ATA",
+  "file": "File:AtalantaBC.svg",
+  "page": "https://en.wikipedia.org/wiki/File:AtalantaBC.svg"
+ },
+ "ATM": {
+  "club": "Atlético Madrid",
+  "file": "File:Atletico Madrid Logo 2024.svg",
+  "page": "https://en.wikipedia.org/wiki/File:Atletico_Madrid_Logo_2024.svg"
+ },
+ "AUX": {
+  "club": "AJ Auxerre",
+  "file": "File:AJAuxerreLogo.svg",
+  "page": "https://en.wikipedia.org/wiki/File:AJAuxerreLogo.svg"
+ },
+ "AVL": {
+  "club": "Aston Villa F.C.",
+  "file": "File:Aston Villa FC new crest.svg",
+  "page": "https://en.wikipedia.org/wiki/File:Aston_Villa_FC_new_crest.svg"
+ },
+ "BAR": {
+  "club": "FC Barcelona",
+  "file": "File:FC Barcelona (crest).svg",
+  "page": "https://en.wikipedia.org/wiki/File:FC_Barcelona_(crest).svg"
+ },
+ "BAY": {
+  "club": "FC Bayern Munich",
+  "file": "File:FC Bayern München logo (2024).svg",
+  "page": "https://commons.wikimedia.org/wiki/File:FC_Bayern_M%C3%BCnchen_logo_(2024).svg"
+ },
+ "BAY-1900": {
+  "club": "BAY",
+  "file": "File:Logo Bayern Munchen(1979-1996).gif",
+  "page": "https://commons.wikimedia.org/wiki/File:Logo_Bayern_Munchen(1979-1996).gif"
+ },
+ "BAY-1996": {
+  "club": "BAY",
+  "file": "File:Bayern München Logo (1996-2002).svg",
+  "page": "https://commons.wikimedia.org/wiki/File:Bayern_M%C3%BCnchen_Logo_(1996-2002).svg"
+ },
+ "BAY-2002": {
+  "club": "BAY",
+  "file": "File:Logo FC Bayern München (2002–2017).svg",
+  "page": "https://commons.wikimedia.org/wiki/File:Logo_FC_Bayern_M%C3%BCnchen_(2002%E2%80%932017).svg"
+ },
+ "BAY-2017": {
+  "club": "BAY",
+  "file": "File:FC Bayern München logo (2017).svg",
+  "page": "https://commons.wikimedia.org/wiki/File:FC_Bayern_M%C3%BCnchen_logo_(2017).svg"
+ },
+ "BEN": {
+  "club": "S.L. Benfica",
+  "file": "File:SL Benfica logo.svg",
+  "page": "https://en.wikipedia.org/wiki/File:SL_Benfica_logo.svg"
+ },
+ "BOR": {
+  "club": "FC Girondins de Bordeaux",
+  "file": "File:FC Girondins de Bordeaux logo.svg",
+  "page": "https://en.wikipedia.org/wiki/File:FC_Girondins_de_Bordeaux_logo.svg"
+ },
+ "BVB": {
+  "club": "Borussia Dortmund",
+  "file": "File:Borussia Dortmund logo.svg",
+  "page": "https://commons.wikimedia.org/wiki/File:Borussia_Dortmund_logo.svg"
+ },
+ "CHE": {
+  "club": "Chelsea F.C.",
+  "file": "File:Chelsea FC.svg",
+  "page": "https://en.wikipedia.org/wiki/File:Chelsea_FC.svg"
+ },
+ "CSK": {
+  "club": "PFC CSKA Moscow",
+  "file": "File:PFK CSKA Logo.svg",
+  "page": "https://en.wikipedia.org/wiki/File:PFK_CSKA_Logo.svg"
+ },
+ "DEP": {
+  "club": "Deportivo de La Coruña",
+  "file": "File:RC Deportivo A Coruña logo 2026.svg",
+  "page": "https://en.wikipedia.org/wiki/File:RC_Deportivo_A_Coru%C3%B1a_logo_2026.svg"
+ },
+ "DYN": {
+  "club": "FC Dynamo Kyiv",
+  "file": "File:Futbolny Klub Dynamo Kyiv logo.svg",
+  "page": "https://commons.wikimedia.org/wiki/File:Futbolny_Klub_Dynamo_Kyiv_logo.svg"
+ },
+ "FCK": {
+  "club": "1. FC Kaiserslautern",
+  "file": "File:Logo 1 FC Kaiserslautern.svg",
+  "page": "https://commons.wikimedia.org/wiki/File:Logo_1_FC_Kaiserslautern.svg"
+ },
+ "FEN": {
+  "club": "Fenerbahçe S.K. (football)",
+  "file": "File:Fenerbahçe.svg",
+  "page": "https://en.wikipedia.org/wiki/File:Fenerbah%C3%A7e.svg"
+ },
+ "GAL": {
+  "club": "Galatasaray S.K. (football)",
+  "file": "File:Galatasaray S.K. Logo 2026 5-stars.svg",
+  "page": "https://commons.wikimedia.org/wiki/File:Galatasaray_S.K._Logo_2026_5-stars.svg"
+ },
+ "GAL-1900": {
+  "club": "GAL",
+  "file": "File:Galatasaray Sports Club Logo.svg",
+  "page": "https://commons.wikimedia.org/wiki/File:Galatasaray_Sports_Club_Logo.svg"
+ },
+ "GOT": {
+  "club": "IFK Göteborg",
+  "file": "File:IFK Goteborg logo.svg",
+  "page": "https://en.wikipedia.org/wiki/File:IFK_Goteborg_logo.svg"
+ },
+ "HAJ": {
+  "club": "HNK Hajduk Split",
+  "file": "File:HNK Hajduk Split logo.svg",
+  "page": "https://commons.wikimedia.org/wiki/File:HNK_Hajduk_Split_logo.svg"
+ },
+ "INT": {
+  "club": "Inter Milan",
+  "file": "File:FC Internazionale Milano 2021.svg",
+  "page": "https://commons.wikimedia.org/wiki/File:FC_Internazionale_Milano_2021.svg"
+ },
+ "INT-1900": {
+  "club": "INT",
+  "file": "File:Inter old logo (1999-2007).png",
+  "page": "https://commons.wikimedia.org/wiki/File:Inter_old_logo_(1999-2007).png"
+ },
+ "INT-2007": {
+  "club": "INT",
+  "file": "File:Inter Old Logo (2007-2014).svg",
+  "page": "https://commons.wikimedia.org/wiki/File:Inter_Old_Logo_(2007-2014).svg"
+ },
+ "INT-2014": {
+  "club": "INT",
+  "file": "File:FC Internazionale Milano 2014.svg",
+  "page": "https://commons.wikimedia.org/wiki/File:FC_Internazionale_Milano_2014.svg"
+ },
+ "JUV": {
+  "club": "Juventus FC",
+  "file": "File:Juventus FC - logo black (Italy, 2020).svg",
+  "page": "https://commons.wikimedia.org/wiki/File:Juventus_FC_-_logo_black_(Italy,_2020).svg"
+ },
+ "LAZ": {
+  "club": "SS Lazio",
+  "file": "File:S.S. Lazio badge.svg",
+  "page": "https://en.wikipedia.org/wiki/File:S.S._Lazio_badge.svg"
+ },
+ "LEE": {
+  "club": "Leeds United F.C.",
+  "file": "File:Leeds United F.C. logo.svg",
+  "page": "https://en.wikipedia.org/wiki/File:Leeds_United_F.C._logo.svg"
+ },
+ "LEG": {
+  "club": "Legia Warsaw",
+  "file": "File:Legia Warsaw logo.svg",
+  "page": "https://en.wikipedia.org/wiki/File:Legia_Warsaw_logo.svg"
+ },
+ "LEI": {
+  "club": "Leicester City F.C.",
+  "file": "File:Leicester City crest.svg",
+  "page": "https://en.wikipedia.org/wiki/File:Leicester_City_crest.svg"
+ },
+ "LEV": {
+  "club": "Bayer 04 Leverkusen",
+  "file": "File:Bayer 04 Leverkusen logo.svg",
+  "page": "https://en.wikipedia.org/wiki/File:Bayer_04_Leverkusen_logo.svg"
+ },
+ "LIV": {
+  "club": "Liverpool F.C.",
+  "file": "File:Liverpool FC.svg",
+  "page": "https://en.wikipedia.org/wiki/File:Liverpool_FC.svg"
+ },
+ "LYO": {
+  "club": "Olympique Lyonnais",
+  "file": "File:Olympique Lyonnais logo.svg",
+  "page": "https://en.wikipedia.org/wiki/File:Olympique_Lyonnais_logo.svg"
+ },
+ "MAL": {
+  "club": "Málaga CF",
+  "file": "File:Málaga CF.svg",
+  "page": "https://en.wikipedia.org/wiki/File:M%C3%A1laga_CF.svg"
+ },
+ "MCI": {
+  "club": "Manchester City F.C.",
+  "file": "File:Manchester City FC badge.svg",
+  "page": "https://en.wikipedia.org/wiki/File:Manchester_City_FC_badge.svg"
+ },
+ "MIL": {
+  "club": "AC Milan",
+  "file": "File:Logo of AC Milan.svg",
+  "page": "https://commons.wikimedia.org/wiki/File:Logo_of_AC_Milan.svg"
+ },
+ "MON": {
+  "club": "AS Monaco FC",
+  "file": "File:LogoASMonacoFC2021.svg",
+  "page": "https://en.wikipedia.org/wiki/File:LogoASMonacoFC2021.svg"
+ },
+ "MUN": {
+  "club": "Manchester United F.C.",
+  "file": "File:Manchester United FC crest.svg",
+  "page": "https://en.wikipedia.org/wiki/File:Manchester_United_FC_crest.svg"
+ },
+ "NAN": {
+  "club": "FC Nantes",
+  "file": "File:Logo FC Nantes (avec fond) - 2019.svg",
+  "page": "https://commons.wikimedia.org/wiki/File:Logo_FC_Nantes_(avec_fond)_-_2019.svg"
+ },
+ "NAP": {
+  "club": "SSC Napoli",
+  "file": "File:SSC Napoli 2025 (white and azure).svg",
+  "page": "https://commons.wikimedia.org/wiki/File:SSC_Napoli_2025_(white_and_azure).svg"
+ },
+ "NAP-1900": {
+  "club": "NAP",
+  "file": "File:SSC Napoli 2007.svg",
+  "page": "https://commons.wikimedia.org/wiki/File:SSC_Napoli_2007.svg"
+ },
+ "OLY": {
+  "club": "Olympiacos F.C.",
+  "file": "File:Olympiacos FC crest.svg",
+  "page": "https://en.wikipedia.org/wiki/File:Olympiacos_FC_crest.svg"
+ },
+ "OM": {
+  "club": "Olympique de Marseille",
+  "file": "File:Olympique de Marseille 2026 logo.svg",
+  "page": "https://commons.wikimedia.org/wiki/File:Olympique_de_Marseille_2026_logo.svg"
+ },
+ "OM-1900": {
+  "club": "OM",
+  "file": "File:Olympique Marseille logo.svg",
+  "page": "https://commons.wikimedia.org/wiki/File:Olympique_Marseille_logo.svg"
+ },
+ "PAO": {
+  "club": "Panathinaikos F.C.",
+  "file": "File:Panathinaikos F.C. logo.svg",
+  "page": "https://en.wikipedia.org/wiki/File:Panathinaikos_F.C._logo.svg"
+ },
+ "POR": {
+  "club": "FC Porto",
+  "file": "File:FC Porto.svg",
+  "page": "https://en.wikipedia.org/wiki/File:FC_Porto.svg"
+ },
+ "PSG": {
+  "club": "Paris Saint-Germain FC",
+  "file": "File:Paris Saint-Germain F.C..svg",
+  "page": "https://en.wikipedia.org/wiki/File:Paris_Saint-Germain_F.C..svg"
+ },
+ "PSG-1900": {
+  "club": "PSG",
+  "file": "File:Paris Saint-Germain (1992-1996).gif",
+  "page": "https://commons.wikimedia.org/wiki/File:Paris_Saint-Germain_(1992-1996).gif"
+ },
+ "PSG-1996": {
+  "club": "PSG",
+  "file": "File:Paris Saint-Germain logo (1996-2002).svg",
+  "page": "https://en.wikipedia.org/wiki/File:Paris_Saint-Germain_logo_(1996-2002).svg"
+ },
+ "PSG-2002": {
+  "club": "PSG",
+  "file": "File:Paris Saint-Germain Football Club logo (2002-2013).svg",
+  "page": "https://en.wikipedia.org/wiki/File:Paris_Saint-Germain_Football_Club_logo_(2002-2013).svg"
+ },
+ "PSV": {
+  "club": "PSV Eindhoven",
+  "file": "File:PSV Eindhoven.svg",
+  "page": "https://en.wikipedia.org/wiki/File:PSV_Eindhoven.svg"
+ },
+ "RBK": {
+  "club": "Rosenborg BK",
+  "file": "File:Rosenborg logo RGB.svg",
+  "page": "https://commons.wikimedia.org/wiki/File:Rosenborg_logo_RGB.svg"
+ },
+ "RBL": {
+  "club": "RB Leipzig",
+  "file": "File:RB Leipzig 2014 logo.svg",
+  "page": "https://en.wikipedia.org/wiki/File:RB_Leipzig_2014_logo.svg"
+ },
+ "RMA": {
+  "club": "Real Madrid CF",
+  "file": "File:Real Madrid CF.svg",
+  "page": "https://en.wikipedia.org/wiki/File:Real_Madrid_CF.svg"
+ },
+ "ROM": {
+  "club": "AS Roma",
+  "file": "File:AS Roma logo (2017).svg",
+  "page": "https://en.wikipedia.org/wiki/File:AS_Roma_logo_(2017).svg"
+ },
+ "S04": {
+  "club": "FC Schalke 04",
+  "file": "File:FC Schalke 04 Logo.svg",
+  "page": "https://commons.wikimedia.org/wiki/File:FC_Schalke_04_Logo.svg"
+ },
+ "SCP": {
+  "club": "Sporting CP",
+  "file": "File:Sporting Clube de Portugal logo (2026).svg",
+  "page": "https://en.wikipedia.org/wiki/File:Sporting_Clube_de_Portugal_logo_(2026).svg"
+ },
+ "SEV": {
+  "club": "Sevilla FC",
+  "file": "File:Sevilla_FC_logo.svg",
+  "page": "https://en.wikipedia.org/wiki/File:Sevilla_FC_logo.svg"
+ },
+ "SHA": {
+  "club": "FC Shakhtar Donetsk",
+  "file": "File:FC Shakhtar Donetsk.svg",
+  "page": "https://en.wikipedia.org/wiki/File:FC_Shakhtar_Donetsk.svg"
+ },
+ "SPA": {
+  "club": "FC Spartak Moscow",
+  "file": "File:FC Spartak Moscow crest.svg",
+  "page": "https://en.wikipedia.org/wiki/File:FC_Spartak_Moscow_crest.svg"
+ },
+ "TOT": {
+  "club": "Tottenham Hotspur F.C.",
+  "file": "File:Tottenham Hotspur.svg",
+  "page": "https://en.wikipedia.org/wiki/File:Tottenham_Hotspur.svg"
+ },
+ "VAL": {
+  "club": "Valencia CF",
+  "file": "File:Valenciacf.svg",
+  "page": "https://en.wikipedia.org/wiki/File:Valenciacf.svg"
+ },
+ "VIL": {
+  "club": "Villarreal CF",
+  "file": "File:Villarreal CF logo-en.svg",
+  "page": "https://en.wikipedia.org/wiki/File:Villarreal_CF_logo-en.svg"
+ },
+ "WOB": {
+  "club": "VfL Wolfsburg",
+  "file": "File:VfL Wolfsburg logo 2026.svg",
+  "page": "https://commons.wikimedia.org/wiki/File:VfL_Wolfsburg_logo_2026.svg"
+ },
+ "WOB-1900": {
+  "club": "WOB",
+  "file": "File:Logo-VfL-Wolfsburg.svg",
+  "page": "https://commons.wikimedia.org/wiki/File:Logo-VfL-Wolfsburg.svg"
+ }
+}

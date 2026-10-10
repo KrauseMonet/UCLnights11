@@ -17,7 +17,7 @@ def cup():
         moves.append(Pick(next(i for i, c in enumerate(s.deal.cards)
                                if why_not(c, s.formation, s.picks) is None)))
         s = replay(deck, 2024, "433", moves)
-    you = Side("YOU", "Your XI", "YOU", "#c9a227", "#0b1026", s.formation, s.picks, you=True)
+    you = Side("YOU", "Your XI", "YOU", s.formation, s.picks, you=True)
     return play_tournament(deck, league_of(deck), 2024, you)
 
 

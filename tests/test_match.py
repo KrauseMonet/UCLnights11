@@ -13,7 +13,7 @@ LEAGUE = match.League(attack=80.0, defence=80.0)
 
 def card(pos, rating=80, n=0):
     return Card(id=f"{pos}{n}", name=f"{pos} {n}", title=f"{pos} {n}", pos=pos, nation=None,
-                rating=rating, season=2004, label="2004–05", club="T", club_name="T", short="T", key="k")
+                rating=rating, season=2004, label="2004–05", club="T", club_name="T", short="T", key="k", crest="T")
 
 
 def eleven(rating=80):

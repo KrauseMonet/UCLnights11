@@ -1281,6 +1281,17 @@ def daily_today(request: Request, day: str | None = None) -> dict:
             "mine": mine, "board": board, "streak": None if streak is None else {"current": streak[0], "best": streak[1]}}
 
 
+@app.post("/api/daily/prepare")
+def daily_prepare() -> dict:
+    """For the scheduled job (.github/workflows/prepare-daily.yml): today's and tomorrow's
+    challenges made now rather than by the day's first visitor. Open to anyone, since it
+    can only make what the next visitor would have made anyway, and once both days are
+    stored it is two cheap queries. It names the days, never what is in them."""
+    with db.connection() as conn:
+        days = daily.prepare(conn, load_deck(), league())
+    return {"ready": [d.isoformat() for d in days]}
+
+
 @app.get("/api/daily/draft")
 def daily_draft(request: Request, moves: str = "", day: str | None = None) -> dict:
     d = daily.parse_day(day)

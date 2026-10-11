@@ -325,3 +325,21 @@ def test_the_automatic_plan_is_stored_written_out():
     import re
     assert re.fullmatch(r"p\da60\.\da70\.\da80", stored)
     assert c.get("/api/daily").json()["mine"]["fixture"]["subs"] == out["fixture"]["subs"]
+
+
+# -- made ahead of the day's first visitor (C49) -----------------------------------
+
+def test_prepare_makes_today_and_tomorrow_once_and_keeps_tomorrow_hidden(monkeypatch):
+    day = date(2031, 3, 14)
+    monkeypatch.setattr(daily, "today", lambda: day)
+    made = []
+    real = rules.make_challenge
+    monkeypatch.setattr(rules, "make_challenge", lambda *a, **k: made.append(a[2]) or real(*a, **k))
+    c = TestClient(app)
+    r = c.post("/api/daily/prepare").json()
+    assert r == {"ready": ["2031-03-14", "2031-03-15"]} and made == ["2031-03-14", "2031-03-15"]
+    assert c.post("/api/daily/prepare").json() == r and len(made) == 2          # stored: nothing made again
+    assert c.get("/api/daily").json()["challenge"]["day"] == "2031-03-14" and len(made) == 2
+    assert c.get("/api/daily", params={"day": "2031-03-15"}).status_code == 400  # not yet
+    monkeypatch.setattr(daily, "today", lambda: day + timedelta(days=1))         # midnight
+    assert c.get("/api/daily").json()["challenge"]["day"] == "2031-03-15" and len(made) == 2

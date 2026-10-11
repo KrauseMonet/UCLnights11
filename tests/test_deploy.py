@@ -109,3 +109,15 @@ def test_no_two_scripts_on_a_page_declare_the_same_top_level_name():
         for i, (a, na) in enumerate(names):
             for b, nb in names[i + 1:]:
                 assert not na & nb, (page.name, a, b, na & nb)
+
+
+def test_every_page_preloads_both_fonts_it_draws_with():
+    """The headline and the reading font are both preloaded, so neither waits for the
+    stylesheet to be parsed before it is fetched (C49). Each names a file that exists."""
+    fonts = ["/static/fonts/Unbounded.woff2", "/static/fonts/InstrumentSans.woff2"]
+    for f in fonts:
+        assert (ROOT / "web" / f.lstrip("/")).is_file(), f
+    for page in sorted((ROOT / "web" / "static").glob("*.html")):
+        html = page.read_text()
+        for f in fonts:
+            assert f'<link rel="preload" href="{f}" as="font" type="font/woff2" crossorigin>' in html, (page.name, f)

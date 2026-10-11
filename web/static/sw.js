@@ -7,6 +7,10 @@
       be a wrong answer, not a stale one.
    2. Pages are network first; the cache is only for being offline. Pages are served
       must-revalidate so a deploy shows at once, and a cache-first worker would undo that.
+      On a connection that is there but stalling (a phone on a weak signal), waiting for
+      the browser to give up can take a minute, so after NAV_TIMEOUT_MS a page already
+      cached is shown instead, and the network's reply, when it comes, refreshes the
+      cache for next time. A page never cached keeps waiting for the network.
    3. Scripts and styles carry a content hash in their URL (tools.stamp_assets), so they
       are cache first: a hit is by definition the right file for the page that asked.
       Other static files (crests, brand, fonts) are shown from the cache and refreshed
@@ -17,6 +21,7 @@ const SHELL = `${VERSION}-shell`;
 const ASSETS = `${VERSION}-assets`;
 const PAGES = `${VERSION}-pages`;
 const PRECACHE = ["/offline", "/static/brand/icon-192.png"];
+const NAV_TIMEOUT_MS = 4000;
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(SHELL).then((c) => c.addAll(PRECACHE)).catch(() => {}).then(() => self.skipWaiting()));
@@ -55,7 +60,13 @@ self.addEventListener("fetch", (event) => {
   }
 
   if (req.mode === "navigate") {                        // rule 2
-    event.respondWith(fetch(req).then((res) => keep(PAGES, req, res))
-      .catch(() => caches.match(req).then((hit) => hit || caches.match("/offline"))));
+    const network = fetch(req).then((res) => keep(PAGES, req, res));
+    event.waitUntil(network.catch(() => {}));           // let a late reply still refresh the cache
+    event.respondWith(new Promise((resolve) => {
+      let settled = false;
+      const settle = (res) => { if (!settled) { settled = true; clearTimeout(slow); resolve(res); } };
+      const slow = setTimeout(() => caches.match(req).then((hit) => { if (hit) settle(hit); }), NAV_TIMEOUT_MS);
+      network.then(settle, () => caches.match(req).then((hit) => settle(hit || caches.match("/offline"))));
+    }));
   }
 });

@@ -7,7 +7,9 @@ signed-out PRACTICE match uses a third seed, so practising says nothing about th
 ranked result either.
 
 **The day is UTC.** One challenge a day, made the first time anyone asks for it and
-stored, so a later change to the code can't change a day already played. One ranked
+stored, so a later change to the code can't change a day already played. A scheduled
+job makes today's and tomorrow's ahead of anyone asking (`prepare`, C49), so the first
+visitor of a day doesn't wait for one to be measured. One ranked
 attempt per account per day; the result is replayed on the server from the moves.
 """
 
@@ -15,7 +17,7 @@ from __future__ import annotations
 
 import hashlib
 import hmac
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 
 from game import daily as rules
 from game import match
@@ -76,6 +78,18 @@ def get_challenge(conn, deck: Deck, league: match.League, day: date) -> rules.Ch
         row = conn.execute(f"select {columns} from daily_challenges where day = %s", (day,)).fetchone()
     d, seed, formation, opponent, kind, target, rate, bench = row
     return rules.Challenge(d.isoformat(), seed, formation, opponent, kind, target, rate, bench)
+
+
+def prepare(conn, deck: Deck, league: match.League) -> list[date]:
+    """Today's and tomorrow's challenges made and stored ahead of anyone asking: making one
+    measures it against 200 matches (0.5 s on average, 2 s at worst), which the first
+    visitor of the day used to wait for. Tomorrow's stays out of sight until it comes,
+    since parse_day refuses a day that hasn't, and the only reads are by day. A day
+    already stored is one query, so running this again changes nothing."""
+    days = [today(), today() + timedelta(days=1)]
+    for d in days:
+        get_challenge(conn, deck, league, d)
+    return days
 
 
 def moves_of(ch: rules.Challenge, text: str) -> list[Pick]:

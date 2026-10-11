@@ -1,0 +1,20 @@
+# Make the daily challenge before anyone asks for it (C49). The first request of a UTC
+# day used to make that day's challenge, measuring it against 200 matches, so its
+# visitor waited 0.5-2 s. This makes today's and tomorrow's; tomorrow's stays hidden
+# until midnight UTC. GitHub runs schedules on a best-effort basis and can be late, so
+# it runs three times: twice the evening before, and once just after midnight in case
+# both were missed. Each run after the first changes nothing.
+name: prepare-daily
+on:
+  schedule:
+    - cron: "30 21 * * *"
+    - cron: "15 23 * * *"
+    - cron: "5 0 * * *"
+  workflow_dispatch:
+permissions: {}
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - run: curl -fsS --max-time 90 -X POST https://uclnights11.vercel.app/api/daily/prepare

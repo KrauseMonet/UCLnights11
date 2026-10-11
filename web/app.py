@@ -166,7 +166,15 @@ def fixture_out(f: Fixture, timeline: bool = False) -> dict:
     }
     if timeline:
         out["shots"] = [[x.minute, x.side, int(x.on_target), int(x.goal)] for x in r.shots]
+        out["lineups"] = [lineup_out(f.home), lineup_out(f.away)]
     return out
+
+
+def lineup_out(side: Side) -> dict:
+    """A side's eleven for the match screen (C38): where each man stands, in its formation's
+    slot order. Names and slots only: no rating, so a blind daily stays blind (C33)."""
+    return {"formation": side.formation.label, "slots": list(side.formation.slots),
+            "xi": [{"name": c.name, "slot": c.slot} for c in side.xi]}
 
 
 def stats_out(r) -> dict | None:

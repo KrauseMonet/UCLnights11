@@ -18,9 +18,47 @@ function matchCardHtml(f, score, clock, look) {
     <div class="mid"><div class="stage-tag">${esc(look.stage(f))}</div>
       <div class="score" id="sc">${score}</div><div class="clock" id="clk">${clock}</div></div>
     ${sideCardHtml(f.away, look)}
+    ${lineupsHtml(f, look)}
     <div class="timebar"><i id="tb"></i></div>
     <div class="feed" id="feed"></div>
     <div class="mstats-wrap" id="mstats"></div></div>`;
+}
+
+/* Both elevens on one pitch, as a broadcast shows them before kick-off (C38): home in the
+   left half attacking right, away in the right half attacking left; on a phone the pitch
+   stands up, home at the bottom. Each man carries both sets of coordinates and the
+   stylesheet picks one. Positions come from the formation's slots (game.positions), the
+   same drawing as the draft's pitch, turned on its side. */
+function lineupsHtml(f, look) {
+  if (!f.lineups) return "";
+  const surname = (n) => n.split(" ").length > 1 && !/^(van|von|de|da|di|del|dos|der|den|le|la|ter)$/i.test(n.split(" ").slice(-2, -1)[0]) ? n.split(" ").slice(-1)[0] : n.split(" ").slice(-2).join(" ");
+  const side = (lu, s, i) => {
+    const spots = slotSpots(lu.slots), used = new Set();
+    const men = lu.slots.map((slot, j) => {
+      const k = lu.xi.findIndex((c, n) => c.slot === slot && !used.has(n));
+      used.add(k);
+      const c = lu.xi[k] || { name: "", slot }, { x, y } = spots[j];
+      const [hx, hy, vx, vy] = i === 0 ? [(100 - y) / 2, x, x, 50 + y / 2] : [50 + y / 2, 100 - x, 100 - x, (100 - y) / 2];
+      return `<div class="lu-p" data-side="${i}" data-name="${esc(c.name)}" title="${esc(c.name)} · ${slot}"
+        style="--hx:${hx}%;--hy:${hy}%;--vx:${vx}%;--vy:${vy}%"><i>${slot}</i><span>${esc(surname(c.name))}</span></div>`;
+    }).join("");
+    return `<div class="lu-side" style="${teamStyle(s)}">${men}</div>`;
+  };
+  const [h, a] = f.lineups;
+  return `<div class="lineups" aria-label="Both elevens">
+    <div class="lu-head"><span class="lu-h" style="${teamStyle(f.home)}"><b>${esc(look.name(f.home))}</b> · ${esc(h.formation)}</span>
+      <span class="lu-a" style="${teamStyle(f.away)}">${esc(a.formation)} · <b>${esc(look.name(f.away))}</b></span></div>
+    <div class="lu-pitch"><i class="lu-mark half"></i><i class="lu-mark circle"></i><i class="lu-mark box a"></i><i class="lu-mark box b"></i>
+      ${side(h, f.home, 0)}${side(a, f.away, 1)}</div></div>`;
+}
+
+/* A scorer's disc lights up, with a ball for each goal. */
+function markScorer(g) {
+  const p = [...document.querySelectorAll(`.lu-p[data-side="${g.side}"]`)].find((d) => d.dataset.name === g.scorer);
+  if (!p) return;
+  p.classList.remove("scored"); void p.offsetWidth; p.classList.add("scored");
+  p.dataset.goals = (+(p.dataset.goals || 0) + 1);
+  p.querySelector("i").dataset.goals = "⚽".repeat(+p.dataset.goals);
 }
 
 /* A broadcast-style stats panel: home on the left, away on the right, a split bar per
@@ -115,7 +153,7 @@ function playMatch(host, f, look, onDone) {
     done = true;
     clearInterval(timer);
     host.querySelector(".goal-burst")?.remove();
-    while (gi < f.goals.length) feed.insertAdjacentHTML("beforeend", goalLine(f.goals[gi++]));
+    while (gi < f.goals.length) { const g = f.goals[gi++]; feed.insertAdjacentHTML("beforeend", goalLine(g)); markScorer(g); }
     $("sc").textContent = `${f.hg}–${f.ag}`;
     $("clk").textContent = f.pens ? `${f.pens[0]}–${f.pens[1]} on penalties` : f.extra_time ? "After extra time" : "Full time";
     $("tb").style.width = "100%";
@@ -137,6 +175,7 @@ function playMatch(host, f, look, onDone) {
       sc.textContent = `${h}–${a}`;
       sc.classList.remove("flash"); void sc.offsetWidth; sc.classList.add("flash");
       feed.insertAdjacentHTML("beforeend", goalLine(g));
+      markScorer(g);
       goalBurst(f, g, look);
       pausedUntil = now + GOAL_PAUSE_MS;
     }

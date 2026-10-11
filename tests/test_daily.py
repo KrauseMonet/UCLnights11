@@ -126,6 +126,9 @@ def test_signed_out_play_is_practice_on_its_own_seed():
     assert anon.post("/api/daily/submit", json={"moves": moves}).status_code == 401
     practice = anon.post("/api/daily/practice", json={"moves": moves}).json()
     assert practice["ranked"] is False
+    # Both elevens are on the match screen (C38), but with no rating: practice stays blind.
+    assert [len(lu["xi"]) for lu in practice["fixture"]["lineups"]] == [11, 11]
+    assert "rating" not in str(practice["fixture"]["lineups"])
     ranked = c.post("/api/daily/submit", json={"moves": moves}).json()
     # Different seeds: the two matches are different games (shots and goals' minutes differ).
     assert practice["fixture"]["shots"] != ranked["fixture"]["shots"]

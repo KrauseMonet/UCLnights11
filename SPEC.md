@@ -219,6 +219,11 @@ validator prints what they produce with no "real" column.
   engine keeps their totals, not their moments; at full time every number is the real
   one. A goal stops the clock for 1.7 s while the card fills with the scorer's colours.
   Only your own matches carry the timeline.
+- **Both elevens** (C38): the match card draws both sides on one pitch, side on, home in
+  the left half attacking right and away in the right half attacking left (upright on a
+  phone, home at the bottom), each in its club's colours and its formation's slots. A
+  scorer's disc lights up with a ball per goal. A line-up carries each man's name and slot
+  only, never a rating, so a blind daily stays blind (C33).
 
 ## 7. The tournament
 

@@ -135,3 +135,21 @@ def test_the_setup_page_is_served_and_meta_describes_every_formation():
         assert len(f["slots"]) == 11 and f["slots"][0] == "GK" and f["about"]
         assert sum(f["lines"].values()) == 11
     assert len({tuple(sorted(f["slots"])) for f in forms}) == len(forms)
+
+
+def test_your_matches_carry_both_elevens_in_their_formations():
+    """The match screen draws both sides (C38): each line-up is its side's eleven in slot order,
+    every man in a slot of his side's formation, and nothing but his name and slot."""
+    s = client.post("/api/draft", json={"seed": 3, "formation": "532"}).json()
+    while not s["complete"]:
+        i = next(c["i"] for c in s["deal"]["cards"] if c["takeable"])
+        s = client.post(f"/api/draft/{s['state']}/pick", json={"index": i}).json()
+    t = client.get(f"/api/tournament/{s['state']}").json()
+    for f in t["your_matches"]:
+        for lu, side in zip(f["lineups"], (f["home"], f["away"])):
+            assert len(lu["xi"]) == 11 and sorted(c["slot"] for c in lu["xi"]) == sorted(lu["slots"])
+            assert all(set(c) == {"name", "slot"} for c in lu["xi"])
+        mine = f["lineups"][0 if f["home"]["you"] else 1]
+        assert mine["formation"] == "5-3-2"
+        assert {c["name"] for c in mine["xi"]} == {c["name"] for c in t["you"]["xi"]}
+    assert all("lineups" not in leg for r in t["knockout"] for tie in r["ties"] for leg in tie["legs"])

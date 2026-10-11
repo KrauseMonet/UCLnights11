@@ -355,9 +355,9 @@ function xiFoot(el, d) {
 
 /* Where each position stands on the pitch, attacking upwards: [top %, left %] for one man;
    a position held more than once spreads across the middle by GAP. */
-const SPOT = { GK: [90, 50], RB: [67, 86], CB: [70, 50], LB: [67, 14], DM: [55, 50], CM: [44, 50],
+const SPOT = { GK: [90, 50], RB: [69, 86], CB: [73, 50], LB: [69, 14], DM: [56, 50], CM: [42, 50],
   AM: [30, 50], RM: [41, 87], LM: [41, 13], RW: [20, 82], ST: [11, 50], LW: [20, 18] };
-const GAP = { CB: 25, CM: 32, DM: 24, ST: 24, AM: 30 };
+const GAP = { CB: 25, CM: 36, DM: 24, ST: 24, AM: 30 };
 
 function slotSpots(slots) {
   const count = {}, seen = {};

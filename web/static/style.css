@@ -334,7 +334,7 @@ button{font:inherit;cursor:pointer}
 .pitch::before{content:"";position:absolute;left:50%;top:50%;width:24%;aspect-ratio:1;border:2px solid rgba(255,255,255,.2);
   border-radius:50%;transform:translate(-50%,-50%)}
 .pitch::after{content:"";position:absolute;left:24%;right:24%;bottom:0;height:14%;border:2px solid rgba(255,255,255,.2);border-bottom:0}
-.slot{position:absolute;transform:translate(-50%,-50%);width:23%;text-align:center;z-index:1}
+.slot{position:absolute;transform:translate(-50%,-50%);width:21%;text-align:center;z-index:1}
 .slot .disc{position:relative;width:46px;height:46px;margin:0 auto 5px;border-radius:50%;display:grid;place-items:center;
   font:700 10px var(--display);letter-spacing:.02em;background:rgba(3,10,8,.35);border:1.5px dashed rgba(255,255,255,.4);color:rgba(255,255,255,.75)}
 .slot.filled .disc{border:0;background:none}
@@ -375,6 +375,54 @@ button{font:inherit;cursor:pointer}
 .clock{font:700 13px var(--display);letter-spacing:.04em;color:var(--ice);display:inline-flex;align-items:center;gap:8px}
 .clock::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor;box-shadow:0 0 10px currentColor}
 .stage-tag{font:650 11px/1.4 var(--sans);font-stretch:85%;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-2);text-align:center}
+/* --- both elevens on the match card (C38): one pitch, side on; standing up on a phone --- */
+.lineups{grid-column:1/-1;padding:16px 20px 20px;border-top:1px solid var(--line);
+  background:radial-gradient(100% 60% at 50% 0%,rgba(124,196,255,.06),transparent 70%)}
+.lu-head{display:flex;justify-content:space-between;gap:12px;margin-bottom:12px;font:650 11px/1.3 var(--sans);font-stretch:85%;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3)}
+.lu-head b{color:var(--team-ink);font-weight:700}
+.lu-pitch{position:relative;aspect-ratio:2/1;border-radius:16px;overflow:hidden;
+  background:radial-gradient(60% 90% at 50% 50%,rgba(220,240,255,.10),transparent 70%),
+    repeating-linear-gradient(90deg,#0d3426 0 10%,#103c2c 10% 20%);
+  box-shadow:inset 0 0 0 2px rgba(255,255,255,.18),inset 0 0 80px rgba(0,0,0,.45)}
+.lu-mark{position:absolute;border:2px solid rgba(255,255,255,.18);pointer-events:none}
+.lu-mark.half{left:50%;top:0;bottom:0;width:0;border-width:0 0 0 2px}
+.lu-mark.circle{left:50%;top:50%;width:16%;aspect-ratio:1;border-radius:50%;transform:translate(-50%,-50%)}
+.lu-mark.box{top:24%;height:52%;width:12%}
+.lu-mark.box.a{left:0;border-left:0}.lu-mark.box.b{right:0;border-right:0}
+.lu-p{position:absolute;left:var(--hx);top:var(--hy);transform:translate(-50%,-50%);display:grid;justify-items:center;gap:3px;
+  width:84px;z-index:1}
+.lu-p i{position:relative;display:grid;place-items:center;width:34px;height:34px;border-radius:50%;font:700 10px var(--display);
+  font-style:normal;background:var(--team-deep);color:var(--team-ink);border:2px solid var(--team);
+  box-shadow:0 4px 12px rgba(0,0,0,.45)}
+.lu-p span{max-width:100%;font-size:11.5px;font-weight:650;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.95);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lu-p i[data-goals]::after{content:attr(data-goals);position:absolute;top:-9px;right:-14px;font-size:11px;letter-spacing:-2px}
+.lu-p.scored i{animation:scored 1.4s ease-out;box-shadow:0 0 0 3px var(--team),0 0 22px var(--team)}
+@keyframes scored{0%{transform:scale(1)}20%{transform:scale(1.45)}100%{transform:scale(1)}}
+@media (max-width:640px){
+  .lu-pitch{aspect-ratio:3/5;background:radial-gradient(90% 60% at 50% 50%,rgba(220,240,255,.10),transparent 70%),
+    repeating-linear-gradient(180deg,#0d3426 0 10%,#103c2c 10% 20%)}
+  .lu-mark.half{left:0;right:0;top:50%;bottom:auto;width:auto;height:0;border-width:2px 0 0}
+  .lu-mark.circle{width:26%}
+  .lu-mark.box{left:24%;width:52%;height:12%;top:auto}
+  .lu-mark.box.a{bottom:0;top:auto;border:2px solid rgba(255,255,255,.18);border-bottom:0}
+  .lu-mark.box.b{top:0;right:auto;border:2px solid rgba(255,255,255,.18);border-top:0}
+  /* Standing up, each side's label sits at its own end: away above, home below. */
+  .lineups{display:grid;grid-template-areas:"a" "pitch" "h";gap:10px}
+  .lu-head{display:contents}
+  .lu-head .lu-a{grid-area:a;text-align:center}.lu-head .lu-h{grid-area:h;text-align:center}
+  .lu-pitch{grid-area:pitch}
+  .lu-p{left:var(--vx);top:var(--vy);width:62px}
+  .lu-p i{width:26px;height:26px;font-size:8.5px}
+  .lu-p span{font-size:10px}
+  .lineups{padding:14px 12px 16px}
+  /* The draft's pitch on a phone: smaller discs, so a holding midfielder's name clears the
+     centre-backs below him. */
+  .slot .disc,.slot.filled .disc .crest{width:38px;height:38px}
+  .slot .nm{font-size:11.5px}
+  .slot .cl{display:none}
+}
 .timebar{grid-column:1/-1;height:3px;background:rgba(255,255,255,.06)}
 .timebar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--ice-deep),var(--ice),var(--ice-2));box-shadow:0 0 10px var(--ice)}
 .feed{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:5px 26px;padding:16px 24px}

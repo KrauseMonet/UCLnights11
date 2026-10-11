@@ -346,6 +346,20 @@ button{font:inherit;cursor:pointer}
 .slot .nm{font-size:12.5px;font-weight:650;text-shadow:0 1px 4px rgba(0,0,0,.9);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .slot .cl{font:600 10px var(--sans);color:#cfeedd;text-shadow:0 1px 3px rgba(0,0,0,.9);letter-spacing:.04em}
 .slot.new .disc{animation:pop .6s cubic-bezier(.2,.8,.2,1.4)}
+/* The team sheet (C44): tap a man, then where he should go. */
+.pickable{cursor:pointer;border-radius:14px;outline:none;transition:background .15s,box-shadow .15s}
+.slot.pickable:hover .disc,.slot.pickable:focus-visible .disc{box-shadow:0 0 0 3px rgba(124,196,255,.45);border-radius:50%}
+.sub-card.pickable:hover,.sub-card.pickable:focus-visible{border-color:rgba(124,196,255,.55)}
+.slot.sel .disc{box-shadow:0 0 0 3px var(--ice),0 0 22px var(--ice);border-radius:50%}
+.sub-card.sel{border-color:var(--ice);box-shadow:0 0 0 2px var(--ice) inset}
+.slot.can .disc{box-shadow:0 0 0 3px var(--ice);border-radius:50%;animation:canPulse 1.2s ease-in-out infinite}
+.sub-card.can{border-color:var(--ice);border-style:dashed}
+@keyframes canPulse{0%,100%{box-shadow:0 0 0 3px var(--ice)}50%{box-shadow:0 0 0 7px rgba(124,196,255,.4)}}
+/* While a man is chosen, everyone he can't go to steps back. */
+.choosing .pickable:not(.can):not(.sel){opacity:.4}
+.sheet-hint{margin:0 20px 16px;color:var(--ink-2);font-size:13.5px;line-height:1.5}
+.sheet-hint b{color:var(--ink)}
+.linkish{background:none;border:0;padding:0;color:var(--ice);font:inherit;letter-spacing:normal;text-transform:none;cursor:pointer;text-decoration:underline}
 .slot.new .disc::after{content:"";position:absolute;inset:-6px;border-radius:50%;border:2px solid var(--ice);animation:ring .9s ease-out both}
 @keyframes pop{0%{transform:scale(.3)}100%{transform:scale(1)}}
 @keyframes ring{0%{transform:scale(.6);opacity:1}100%{transform:scale(1.7);opacity:0}}
@@ -381,7 +395,7 @@ button{font:inherit;cursor:pointer}
 .plan-foot{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:16px 20px 20px;border-top:1px solid var(--line)}
 .plan-foot .label{flex-basis:100%;margin:0}
 .plan-box{padding:0 0 12px}
-.plan-box .panel-h a{color:var(--ice)}
+.plan-box .panel-h a,.panel-h a.label{color:var(--ice)}
 .plan-list{list-style:none;margin:0;padding:0 20px;display:grid;gap:6px;font-size:13.5px}
 .plan-list .m{font:700 12px var(--display);color:var(--ice-2);margin-right:8px}
 .plan-list span:last-child{color:var(--ink-3)}
@@ -394,6 +408,8 @@ button{font:inherit;cursor:pointer}
 .cup-hero h1.champ{background:linear-gradient(180deg,var(--trophy-2),var(--trophy) 70%,#c8932a);-webkit-background-clip:text;background-clip:text;color:transparent;
   filter:drop-shadow(0 8px 30px rgba(242,194,90,.35))}
 .cup-hero p{color:var(--ink-2);margin:0}
+.cup-hero .cup-link{margin-top:10px;font-size:14px}
+.cup-hero .cup-link a{color:var(--ice);text-underline-offset:3px}
 .cup-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:22px 0 6px}
 .matchcard{position:relative;display:grid;grid-template-columns:1fr auto 1fr;border-radius:26px;overflow:hidden;border:1px solid var(--line-strong);
   margin:22px auto 0;max-width:880px;background:var(--bg-2);box-shadow:0 40px 80px -30px rgba(0,0,0,.9)}
@@ -433,6 +449,8 @@ button{font:inherit;cursor:pointer}
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .lu-p i[data-goals]::after{content:attr(data-goals);position:absolute;top:-9px;right:-14px;font-size:11px;letter-spacing:-2px}
 .lu-p.scored i{animation:scored 1.4s ease-out;box-shadow:0 0 0 3px var(--team),0 0 22px var(--team)}
+.lu-p i[data-assists]::before{content:attr(data-assists);position:absolute;top:-9px;left:-14px;font-size:11px;letter-spacing:-2px}
+.lu-p.assisted i{animation:scored 1.4s ease-out}
 /* A substitution (C41): everyone moved slides to his new place; the man coming on flashes ice. */
 .lu-p{transition:left .6s ease,top .6s ease}
 .lu-p.subbed i{animation:subbed 1.4s ease-out}
@@ -488,6 +506,7 @@ button{font:inherit;cursor:pointer}
 .res-d[open] > summary{background:rgba(124,196,255,.05)}
 .res-goals{display:grid;grid-template-columns:1fr 1fr;gap:2px 24px;padding:4px 18px 8px;font-size:12.5px;color:var(--ink-2)}
 .res-goals .h{grid-column:1;text-align:right}.res-goals .a{grid-column:2}
+.res-goals small{color:var(--ink-3)}
 .res-d .mstats{margin:0 18px 14px}
 
 /* --- match stats: home left, away right, a split bar in each side's colour --- */
@@ -1021,3 +1040,61 @@ button{font:inherit;cursor:pointer}
 }
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}
   .goal-burst{opacity:1}}
+
+/* ---- the completed draft (/squad): ratings by line, a room's sides side by side ---- */
+.sq-hero{padding:28px 0 0}
+.sq-acts{justify-content:flex-start;margin:0 0 26px}
+.sq-compare{margin-bottom:26px}
+.sq-scroll{overflow-x:auto}
+.sq-table{width:100%;border-collapse:collapse;font-size:14px}
+.sq-table th{font:650 10.5px var(--sans);font-stretch:85%;letter-spacing:.12em;color:var(--ink-3);text-align:center;padding:10px 8px;border-bottom:1px solid var(--line)}
+.sq-table th:first-child{text-align:left;padding-left:20px}
+.sq-table td{padding:8px;border-top:1px solid var(--line);text-align:center;font:700 15px var(--display);color:var(--ink-2)}
+.sq-table td:first-child{text-align:left;padding-left:12px}
+.sq-table td.best{color:var(--ice-2)}
+.sq-table tr.you td{background:rgba(242,194,90,.06)}
+.sq-table tr.on td{background:var(--ice-wash)}
+.sq-pick{display:flex;align-items:center;gap:10px;width:100%;min-width:150px;padding:6px 8px;border:0;border-radius:var(--r-sm);background:none;color:var(--ink);text-align:left;cursor:pointer;font:inherit}
+.sq-pick:hover,.sq-pick:focus-visible{background:var(--ice-wash)}
+.sq-pick b{display:block;font:650 14px var(--sans)}
+.sq-pick small{display:block;color:var(--ink-3);font:500 12px var(--sans)}
+.sq-side-h{display:flex;align-items:center;gap:14px;margin:0 0 16px}
+.sq-side-h b{display:block;font:700 22px/1.15 var(--display);letter-spacing:-.02em}
+.sq-side-h small{color:var(--ink-3);font-size:13px}
+.sq-tiles{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px}
+.sq-tile{border:1px solid var(--line);border-radius:var(--r-md);background:linear-gradient(180deg,var(--panel-2),var(--panel));padding:15px 16px;min-width:0}
+.sq-tile b{display:block;font:700 40px/1 var(--display);letter-spacing:-.03em;margin:10px 0 12px}
+.sq-tile b.gold{color:var(--trophy-2)}
+.sq-meter{height:5px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden}
+.sq-meter i{display:block;height:100%;border-radius:3px;background:var(--m)}
+.sq-tile small{display:block;margin-top:8px;color:var(--ink-3);font-size:12px}
+.sq-engine{color:var(--ink-2);font-size:14px;line-height:1.6;margin:16px 0 0;max-width:820px}
+.sq-engine b{color:var(--ink);font-weight:650}
+.sq-side .cup-grid{margin-top:22px}
+.sq-lines{display:grid;gap:4px;padding:6px 0 12px}
+.sq-line-h{display:flex;justify-content:space-between;padding:10px 20px 6px}
+.sq-line-h b{color:var(--ink);font-weight:700}
+.sq-man{display:flex;align-items:center;gap:10px;padding:7px 20px;min-width:0}
+.sq-man .pos{min-width:30px;text-align:center}
+.sq-man .who{min-width:0;flex:1}
+.sq-man .who b{display:block;font-weight:650;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sq-man .who small{display:block;color:var(--ink-3);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sq-flag{font:650 9.5px var(--sans);font-stretch:85%;letter-spacing:.12em;text-transform:uppercase;padding:3px 7px;border-radius:999px;flex:none}
+.sq-flag.top{color:var(--ice-2);background:var(--ice-wash)}
+.sq-flag.low{color:var(--ink-3);border:1px solid var(--line-strong)}
+@media (max-width:980px){.sq-tiles{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:640px){
+  .sq-tiles{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .sq-tile{padding:13px 14px}
+  .sq-tile b{font-size:32px}
+  .sq-man{padding:7px 14px}
+  .sq-man .crest{display:none}
+  .sq-line-h{padding:10px 14px 6px}
+  .sq-acts .btn{flex:1 1 auto}
+  .sq-table th,.sq-table td{padding:8px 3px;font-size:13px}
+  .sq-table th:first-child{padding-left:14px}
+  .sq-table td:first-child{padding-left:6px}
+  .sq-pick{min-width:0;padding:6px;gap:0}
+  .sq-pick .crest{display:none}
+  .sq-pick b{font-size:13px;max-width:96px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+}

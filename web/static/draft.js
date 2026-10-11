@@ -14,8 +14,9 @@ const Q = MEMORY ? "?memory=1" : "";
 function setSession(s, fresh = true) {
   S = s;
   history.replaceState(null, "", `/draft${Q}#${s.state}`);
-  // A finished bench draft stops to plan its changes (C41); an eleven-pick one kicks off.
-  if (s.complete && !s.bench_size) { location.href = `/cup#${s.state}`; return; }
+  // A finished bench draft stops to plan its changes (C41); an eleven-pick one goes
+  // straight to its completed squad, and kicks off from there.
+  if (s.complete && !s.bench_size) { location.href = `/squad#${s.state}`; return; }
   render(fresh);
 }
 
@@ -53,14 +54,27 @@ function renderPlan() {
   renderPitch($("pitch"), S.formation.slots, S.xi, null);
   renderBench($("bench"), S.bench, S.bench_size);
   $("xisub").textContent = `11 / 11 · bench ${S.bench.length} / ${S.bench_size}`;
-  xiFoot($("xifoot"), { ...S, picks: S.picks.slice(0, 11) });
+  xiFoot($("xifoot"), { ...S, picks: S.xi });
+  // The team sheet (C44): who starts where and who sits on the bench, swapped by tapping.
+  if (!$("sheethint")) $("bench").insertAdjacentHTML("afterend", `<p class="sheet-hint" id="sheethint"></p>`);
+  sheetEditor($("pitch"), $("bench"), S, {
+    hint: $("sheethint"), onMove: (man, to) => postSheet({ man, to }), reset: S.sheet_chosen ? () => postSheet({}) : null,
+  });
   planPanel($("deal"), S, S.plan, {
     tag: S.plan_chosen ? "your plan" : "automatic plan", onChange: postPlan,
-    foot: `<a class="btn primary" href="/cup#${S.state}">Kick off</a>
+    foot: `<a class="btn primary" href="/squad#${S.state}">Done: see your squad</a>
       <button class="btn ghost" id="autoplan" ${S.plan_chosen ? "" : "disabled"}>Use the automatic plan</button>
       <p class="label">${AUTO_NOTE}</p>`,
   });
   $("autoplan").onclick = () => postPlan(null);
+}
+
+async function postSheet(body) {
+  if (busy) return;
+  busy = true;
+  try {
+    setSession(await api(`/api/draft/${S.state}/sheet${Q}`, { method: "POST", body: JSON.stringify(body) }), false);
+  } catch (e) { toast(e.message); render(false); } finally { busy = false; }
 }
 
 async function postPlan(changes) {

@@ -23,10 +23,11 @@ from fastapi.responses import FileResponse, JSONResponse, Response as PlainRespo
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from game import analysis as analyses, daily as daily_rules, journey as journeys, match
+from game import analysis as analyses, daily as daily_rules, journey as journeys, match, squad_ratings
 from game.deck import Card, ClubSeason, load_deck
-from game.draft import (Change, IllegalMove, Pick, Reroll, Session, can_replace, decode, decode_state, encode,
-                        replay, why_not)
+from game.draft import (Change, IllegalMove, Pick, Reroll, Session, can_replace, carry_plan, check_sheet, decode,
+                        decode_solo, decode_state, default_sheet, encode, move as move_man, replay, targets,
+                        why_not)
 from game.formations import DEFAULT, FORMATIONS
 from game.positions import arrange
 from game.shared_draft import Stranded
@@ -132,14 +133,15 @@ def session_out(state: str, s: Session, memory: bool = False) -> dict:
             cards.sort(key=lambda c: (LINE_ORDER.index(c["pos"]), c["name"]))
         deal = club_season_out(s.deal, cards)
     picks = [card_out(c) for c in s.picks]
-    bench = picks[11:]
+    bench = [card_out(c) for c in s.bench]
+    xi = [card_out(c) for c in s.xi]
     if memory:
-        for c in [*picks, *(deal["cards"] if deal else [])]:
+        for c in [*picks, *bench, *xi, *(deal["cards"] if deal else [])]:
             c["rating"] = None
     out = {
         "state": state, "seed": s.seed, "memory": memory,
         "formation": formation_out(s.formation),
-        "picks": picks, "xi": eleven_out(s.formation, s.picks[:11], memory),
+        "picks": picks, "xi": xi,
         "bench": bench, "bench_size": s.bench_size, "total": s.total,
         "deal": deal, "rerolls_left": s.rerolls_left, "complete": s.complete,
     }
@@ -159,6 +161,13 @@ def plan_fields(s: Session, bench: list[dict], out: dict, memory: bool = False) 
     xi = s.xi
     for c, man in zip(bench, s.bench):
         c["can_replace"] = can_replace(s.formation, xi, man)
+    # The team sheet (C44): each man's pick index and every place he could be moved to.
+    where = {c.id: i for i, c in enumerate(s.picks)}
+    to = targets(s)
+    for c in [*out["xi"], *bench]:
+        c["p"] = where[c["id"]]
+        c["to"] = to[c["p"]]
+    out["sheet_chosen"] = s.sheet is not None
     if s.plan is None and memory:
         out["plan"] = None
     else:
@@ -379,17 +388,17 @@ def plan_out(side: Side) -> list[dict]:
 # -- routes -----------------------------------------------------------------
 
 def _decode(state: str):
-    """A solo draft's (seed, formation, moves, bench, plan): either kind of state."""
+    """A solo draft's (seed, formation, moves, bench, plan, sheet): either kind of state."""
     try:
-        return decode_state(state)
+        return decode_solo(state)
     except IllegalMove as e:
         raise HTTPException(400, str(e)) from None
 
 
 def _replay(state: str) -> Session:
-    seed, formation, moves, bench, plan = _decode(state)
+    seed, formation, moves, bench, plan, sheet = _decode(state)
     try:
-        return replay(load_deck(), seed, formation, moves, bench, plan)
+        return replay(load_deck(), seed, formation, moves, bench, plan, sheet)
     except IllegalMove as e:
         raise HTTPException(400, str(e)) from None
 
@@ -485,14 +494,14 @@ class PickIn(BaseModel):
 
 @app.post("/api/draft/{state}/pick")
 def pick(state: str, body: PickIn, memory: bool = False) -> dict:
-    seed, formation, moves, bench, _ = _decode(state)
+    seed, formation, moves, bench, *_ = _decode(state)
     new = encode(seed, formation, moves + [Pick(body.index)], bench)
     return session_out(new, _replay(new), memory)
 
 
 @app.post("/api/draft/{state}/reroll")
 def reroll(state: str, memory: bool = False) -> dict:
-    seed, formation, moves, bench, _ = _decode(state)
+    seed, formation, moves, bench, *_ = _decode(state)
     new = encode(seed, formation, moves + [Reroll()], bench)
     return session_out(new, _replay(new), memory)
 
@@ -512,25 +521,91 @@ class PlanIn(BaseModel):
 def set_plan(state: str, body: PlanIn, memory: bool = False) -> dict:
     """A finished bench draft's plan (C41). It is part of the state, so the tournament
     stays a pure function of the link; a new plan is a new link and a new tournament."""
-    seed, formation, moves, bench, _ = _decode(state)
+    seed, formation, moves, bench, _, sheet = _decode(state)
     plan = None if body.changes is None else tuple(Change(c.on, c.minute, c.when, c.off) for c in body.changes)
     try:
-        new = encode(seed, formation, moves, bench, plan)
+        new = encode(seed, formation, moves, bench, plan, sheet)
     except KeyError:
         raise HTTPException(400, "a change comes on a score the plan knows") from None
     return session_out(new, _replay(new), memory)
 
 
-def _solo_tournament(state: str) -> Tournament:
-    """A bench draft plays engine 2 with its bench on the automatic plan (C40); an
-    eleven-pick draft plays engine 1, as every link to one always has."""
+class SheetIn(BaseModel):
+    """One man moved (``man``, a pick index, ``to`` "s<slot>" or "b<bench place>"), or a
+    whole ``sheet`` (pick indices, the eleven in slot order then the bench); neither puts
+    back the draft's own order."""
+    man: int | None = None
+    to: str | None = None
+    sheet: list[int] | None = None
+
+
+def new_sheet(before: Session, body: SheetIn) -> tuple[int, ...] | None:
+    """The sheet asked for, checked against the finished draft (IllegalMove if it doesn't
+    fit) and None when it is just the draft's own order, so a link stays as short as it was."""
+    if body.man is not None:
+        out = move_man(before, body.man, body.to or "")
+    elif body.sheet is not None:
+        out = tuple(body.sheet)
+    else:
+        return None
+    check_sheet(before, out)
+    return None if out == default_sheet(before) else out
+
+
+@app.post("/api/draft/{state}/sheet")
+def set_sheet(state: str, body: SheetIn, memory: bool = False) -> dict:
+    """A finished bench draft's team sheet (C44): who starts where and who sits on the
+    bench. Part of the state like the plan, which follows its men across (carry_plan)."""
+    seed, formation, moves, bench, _, _ = _decode(state)
+    before = _replay(state)
+    try:
+        sheet = new_sheet(before, body)
+        after = replay(load_deck(), seed, formation, moves, bench, None, sheet)
+    except IllegalMove as e:
+        raise HTTPException(400, str(e)) from None
+    new = encode(seed, formation, moves, bench, carry_plan(before, after, before.plan), sheet)
+    return session_out(new, _replay(new), memory)
+
+
+def _solo_side(state: str) -> tuple[Session, Side]:
+    """A finished solo draft as the side it plays as: its eleven placed, its bench and
+    its plan (the automatic one unless another was chosen)."""
     s = _replay(state)
     if not s.complete:
         raise HTTPException(409, "the squad is not complete yet" if s.bench_size else "the eleven is not complete yet")
     subs = s.subs()
-    you = Side("YOU", "Your XI", "YOU", s.formation, s.picks[:11], you=True,
-               bench=s.bench, plan=auto_plan(s.bench) if subs is None else subs)
+    return s, Side("YOU", "Your XI", "YOU", s.formation, s.xi, you=True,
+                   bench=s.bench, plan=auto_plan(s.bench) if subs is None else subs)
+
+
+def _solo_tournament(state: str) -> Tournament:
+    """A bench draft plays engine 2 with its bench on the automatic plan (C40); an
+    eleven-pick draft plays engine 1, as every link to one always has."""
+    s, you = _solo_side(state)
     return play_tournament(load_deck(), league(), s.seed, you, engine=2 if s.bench_size else 1)
+
+
+def squad_out(side: Side) -> dict:
+    """A finished side for the completed-draft page: its eleven in their slots, its bench
+    and plan, and its ratings by line, each set against the deck's own club-seasons
+    (game.squad_ratings). Shown only once a draft is over, so Memory mode has nothing
+    left to hide."""
+    r = squad_ratings.squad_ratings(side.xi, side.bench)
+    xi = [card_out(c) for c in side.xi]
+    return {**side_out(side), "formation": side.formation.label, "code": side.formation.code,
+            "slots": list(side.formation.slots), "xi": xi,
+            "bench": [card_out(c) for c in side.bench], "plan": plan_out(side) if side.bench else None,
+            "clubs": len({c.key for c in [*side.xi, *side.bench]}),
+            "ratings": {k: None if v is None else round(v, 1) for k, v in r.as_dict().items()},
+            "better_than": squad_ratings.ranked(load_deck(), r)}
+
+
+@app.get("/api/draft/{state}/squad")
+def solo_squad(state: str) -> dict:
+    """The completed-draft page for a solo draft: 409 until the draft is finished."""
+    _, side = _solo_side(state)
+    return {"state": state, "sides": [squad_out(side)],
+            "field": len(load_deck().club_seasons)}
 
 
 @app.get("/api/tournament/{state}")
@@ -671,7 +746,13 @@ def room_out(room: rooms.Room, me: accounts.Account | None) -> dict:
                      "complete": len(d.picks[i]) == each, "memory": room.memory,
                      "state": room.moves_text}
             if room.bench and len(d.picks[i]) == each and room.status == "drafting":
-                plan_fields(rooms.seat_session(load_deck(), room, mine, d), draft["bench"], draft, room.memory)
+                # Planning: the eleven and bench as the seat's team sheet has them (C44).
+                s = rooms.seat_session(load_deck(), room, mine, d)
+                draft["xi"], draft["bench"] = [card_out(c) for c in s.xi], [card_out(c) for c in s.bench]
+                if room.memory:
+                    for c in [*draft["xi"], *draft["bench"]]:
+                        c["rating"] = None
+                plan_fields(s, draft["bench"], draft, room.memory)
     elif mine is not None and room.status == "drafting":
         try:
             draft = session_out(mine.state, rooms.seat_session(load_deck(), room, mine), room.memory)
@@ -856,6 +937,19 @@ def room_plan(code: str, body: PlanIn, request: Request) -> dict:
         return _room_reply(conn, request, code)
 
 
+@app.post("/api/rooms/{code}/sheet")
+def room_sheet(code: str, body: SheetIn, request: Request) -> dict:
+    """A seat's team sheet (C44): who starts where and who sits on the bench, once its
+    picks are made and until the room completes. An empty body is the draft's own order."""
+    with db.connection() as conn:
+        try:
+            rooms.set_sheet(conn, load_deck(), _signed_in(conn, request), code,
+                            lambda before: new_sheet(before, body))
+        except IllegalMove as e:
+            raise HTTPException(400, str(e)) from None
+        return _room_reply(conn, request, code)
+
+
 @app.post("/api/rooms/{code}/start")
 def start_room(code: str, request: Request) -> dict:
     with db.connection() as conn:
@@ -943,6 +1037,24 @@ def room_brief(room: rooms.Room) -> dict:
 def room_tournament(code: str, request: Request) -> dict:
     room, t = _room_tournament(code, request)
     return {**tournament_out(t), "room": room_brief(room), "players": players_out(t)}
+
+
+@app.get("/api/rooms/{code}/squads")
+def room_squads(code: str, request: Request) -> dict:
+    """Every seat's finished side, for the completed-draft page; once the room is
+    complete, like its tournament. Your own side first, then the rest by overall rating."""
+    with db.connection() as conn:
+        room = rooms.load_room(conn, code)
+        me = _account(conn, request)
+    if room.status != "complete":
+        raise HTTPException(409, "the room's drafts are not all finished yet")
+    if not _replays(room):
+        raise HTTPException(409, STALE_ROOM)
+    humans = rooms.sides(load_deck(), room)
+    for side in humans:
+        side.you = me is not None and side.owner == me.account_id
+    out = sorted((squad_out(s) for s in humans), key=lambda x: (not x["you"], -x["ratings"]["overall"]))
+    return {"room": room_brief(room), "sides": out, "field": len(load_deck().club_seasons)}
 
 
 @app.get("/api/rooms/{code}/analysis")
@@ -1215,7 +1327,7 @@ def _page(name: str):
 PAGES = (("/", "index"), ("/start", "start"), ("/draft", "draft"), ("/cup", "cup"), ("/archive", "archive"),
          ("/friends", "friends"), ("/room", "room"), ("/about", "about"), ("/faq", "faq"),
          ("/privacy", "privacy"), ("/terms", "terms"), ("/offline", "offline"), ("/admin", "admin"),
-         ("/analysis", "analysis"), ("/daily", "daily"), ("/profile", "profile"))
+         ("/analysis", "analysis"), ("/daily", "daily"), ("/profile", "profile"), ("/squad", "squad"))
 for _path, _name in PAGES:
     app.add_api_route(_path, _page(_name), methods=["GET"], include_in_schema=False)
 

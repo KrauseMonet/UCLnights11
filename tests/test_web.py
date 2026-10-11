@@ -309,3 +309,87 @@ def test_a_memory_plan_shows_no_ratings():
     assert m["plan"] is None and not m["plan_chosen"] and s["plan"]
     chosen = client.post(f"/api/draft/{s['state']}/plan?memory=1", json={"changes": s["plan"]}).json()
     assert chosen["plan"] == s["plan"], "a plan the drafter chose is theirs to see"
+
+
+# -- the completed draft ----------------------------------------------------
+
+def test_the_squad_page_waits_for_the_draft_then_rates_the_eleven_by_line():
+    assert client.get("/api/draft/b77-4231/squad").status_code == 409
+    s = _finish("b77-4231")
+    q = client.get(f"/api/draft/{s['state']}/squad").json()
+    side, = q["sides"]
+    assert side["you"] and side["formation"] == "4-2-3-1" and q["field"] > 200
+    assert [c["slot"] for c in side["xi"]] == side["slots"]
+    r = side["ratings"]
+    assert r["overall"] == round(sum(c["rating"] for c in side["xi"]) / 11, 1)
+    fw = [c["rating"] for c in side["xi"] if c["pos"] == "FW"]
+    assert r["attack"] == round(sum(fw) / len(fw), 1)
+    assert r["bench"] == round(sum(c["rating"] for c in side["bench"]) / 3, 1)
+    assert len(side["plan"]) == 3 and all(0 <= side["better_than"][k] <= 100 for k in r)
+
+
+def test_an_eleven_pick_squad_has_no_bench_to_rate():
+    s = _finish("31-433")
+    side = client.get(f"/api/draft/{s['state']}/squad").json()["sides"][0]
+    assert side["bench"] == [] and side["plan"] is None
+    assert side["ratings"]["bench"] is None and side["better_than"]["bench"] is None
+
+
+def test_a_memory_draft_s_squad_shows_the_ratings_once_it_is_finished():
+    s = _finish("b78-433")
+    m = client.get(f"/api/draft/{s['state']}?memory=1").json()
+    assert all(c["rating"] is None for c in m["xi"])
+    side = client.get(f"/api/draft/{s['state']}/squad").json()["sides"][0]
+    assert all(isinstance(c["rating"], int) for c in side["xi"])
+
+
+# -- the team sheet (C44) -----------------------------------------------------
+
+def _sub_in(s):
+    """A substitute and a starter's slot he can be moved to."""
+    return next((c["p"], t) for c in s["bench"] for t in c["to"] if t.startswith("s"))
+
+
+def test_a_substitute_moved_into_the_eleven_plays_the_tournament_there():
+    s = _finish("b81-433")
+    man, to = _sub_in(s)
+    name = s["picks"][man]["name"]
+    t = client.post(f"/api/draft/{s['state']}/sheet", json={"man": man, "to": to}).json()
+    assert "-s" in t["state"] and t["sheet_chosen"]
+    assert name in [c["name"] for c in t["xi"]] and name not in [c["name"] for c in t["bench"]]
+    cup = client.get(f"/api/tournament/{t['state']}").json()
+    assert name in [c["name"] for c in cup["you"]["xi"]]
+    side = 0 if cup["your_matches"][0]["home"]["you"] else 1
+    assert name in [c["name"] for c in cup["your_matches"][0]["lineups"][side]["xi"]]
+    sq = client.get(f"/api/draft/{t['state']}/squad").json()["sides"][0]
+    assert name in [c["name"] for c in sq["xi"]]
+    # Back to the drafted order: the same link as before any change.
+    back = client.post(f"/api/draft/{t['state']}/sheet", json={}).json()
+    assert back["state"] == s["state"] and not back["sheet_chosen"]
+
+
+def test_a_place_not_offered_is_a_400_and_a_move_before_the_end_too():
+    s = _finish("b82-433")
+    keeper = s["xi"][0]
+    assert keeper["slot"] == "GK" and keeper["to"] == []
+    assert client.post(f"/api/draft/{s['state']}/sheet", json={"man": keeper["p"], "to": "b0"}).status_code == 400
+    assert client.post(f"/api/draft/{s['state']}/sheet", json={"man": 0, "to": "x9"}).status_code == 400
+    half = _finish("b82-433", picks=5)
+    assert client.post(f"/api/draft/{half['state']}/sheet", json={"man": 0, "to": "s1"}).status_code == 400
+
+
+def test_the_plan_follows_its_substitutes_when_they_change_places():
+    s = _finish("b83-433")
+    planned = client.post(f"/api/draft/{s['state']}/plan",
+                          json={"changes": [{"on": 0, "minute": 55, "when": "behind"}]}).json()
+    first = planned["bench"][0]["name"]
+    moved = client.post(f"/api/draft/{planned['state']}/sheet", json={"man": planned["bench"][0]["p"], "to": "b2"}).json()
+    assert moved["bench"][2]["name"] == first
+    assert moved["plan"] == [{"on": 2, "minute": 55, "when": "behind", "off": None}]
+
+
+def test_a_memory_team_sheet_still_shows_no_ratings():
+    s = _finish("b84-433")
+    man, to = _sub_in(s)
+    m = client.post(f"/api/draft/{s['state']}/sheet?memory=1", json={"man": man, "to": to}).json()
+    assert {c["rating"] for c in [*m["xi"], *m["bench"], *m["picks"]]} == {None}

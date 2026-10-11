@@ -291,3 +291,199 @@ def test_can_replace_names_exactly_the_starters_a_man_could_come_on_for():
     keeper = next(c for cs in load_deck().club_seasons for c in cs.cards
                   if c.positions == ("GK",) and c.id not in {x.id for x in xi})
     assert fits(s.formation.slots, [*xi[1:], keeper]) and can_replace(s.formation, xi, keeper) == []
+
+
+# -- the team sheet (C44) -----------------------------------------------------
+
+from game.draft import carry_plan, check_sheet, decode_sheet, decode_solo, default_sheet, move, targets  # noqa: E402
+
+
+def best_bench_draft(seed, code="433"):
+    deck, moves = load_deck(), []
+    s = replay(deck, seed, code, moves, bench=True)
+    while not s.complete:
+        ok = [i for i, c in enumerate(s.deal.cards) if why_not(c, s.formation, s.picks) is None]
+        moves.append(Pick(max(ok, key=lambda i: s.deal.cards[i].rating)))
+        s = replay(deck, seed, code, moves, bench=True)
+    return s, moves
+
+
+def a_swap(s):
+    """A finished bench draft's first legal starter-for-substitute swap: (slot j, bench k)."""
+    return next((j, k) for k, man in enumerate(s.bench) for j, slot in enumerate(s.formation.slots)
+                if slot != "GK" and slot in man.positions)
+
+
+def swapped(s, j, k):
+    sheet = list(default_sheet(s))
+    sheet[j], sheet[11 + k] = sheet[11 + k], sheet[j]
+    return tuple(sheet)
+
+
+def test_the_default_sheet_is_the_draft_as_it_always_played():
+    s, moves = bench_draft(21)
+    t = replay(load_deck(), 21, "433", moves, bench=True, sheet=default_sheet(s))
+    assert [(c.id, c.slot) for c in t.xi] == [(c.id, c.slot) for c in s.xi]
+    assert [c.id for c in t.bench] == [c.id for c in s.bench] == [c.id for c in s.picks[11:]]
+
+
+def test_a_sheet_puts_a_substitute_in_the_eleven_and_the_starter_on_the_bench():
+    s, moves = bench_draft(22)
+    j, k = a_swap(s)
+    t = replay(load_deck(), 22, "433", moves, bench=True, sheet=swapped(s, j, k))
+    assert t.xi[j].id == s.bench[k].id and t.xi[j].slot == s.formation.slots[j]
+    assert t.bench[k].id == s.xi[j].id
+    assert [c.id for n, c in enumerate(t.xi) if n != j] == [c.id for n, c in enumerate(s.xi) if n != j]
+
+
+def test_a_starter_moved_to_another_position_stands_there_and_the_rest_make_room():
+    # Pirlo coming on for a central midfielder in seed 23's 4-3-3: he only plays DM, so
+    # Moutinho moves up from DM to make room, and nobody else moves.
+    s, moves = best_bench_draft(23)
+    pirlo = next(i for i, c in enumerate(s.picks) if c.name == "Andrea Pirlo")
+    cm = s.formation.slots.index("CM")
+    t = replay(load_deck(), 23, "433", moves, bench=True, sheet=move(s, pirlo, f"s{cm}"))
+    assert next(c for c in t.xi if c.name == "Andrea Pirlo").slot == "DM"
+    moved = {c.name for a, c in zip(s.xi, t.xi) if a.id != c.id}
+    assert moved == {"Andrea Pirlo", "João Moutinho"}        # two places change: Pirlo in, Moutinho across
+    assert s.xi[cm].id in {c.id for c in t.bench}
+    with pytest.raises(IllegalMove, match="doesn't play"):
+        move(s, default_sheet(s)[0], f"s{cm}")              # the keeper at CM
+
+
+@pytest.mark.parametrize("seed", [23, 31, 32])
+def test_every_place_offered_is_taken_and_every_other_refused(seed):
+    s, moves = best_bench_draft(seed)
+    offered = targets(s)
+    places = [f"s{j}" for j in range(11)] + [f"b{k}" for k in range(3)]
+    for man in range(14):
+        for to in places:
+            if to in offered[man]:
+                sheet = move(s, man, to)
+                t = replay(load_deck(), seed, "433", moves, bench=True, sheet=sheet)   # a legal sheet
+                if to.startswith("s") and man in default_sheet(s)[:11]:
+                    assert t.xi[int(to[1:])].id == s.picks[man].id
+            else:
+                with pytest.raises(IllegalMove):
+                    move(s, man, to)
+
+
+def test_a_sheet_refuses_a_keeper_on_the_bench_a_repeat_and_an_unfinished_draft():
+    s, moves = bench_draft(24)
+    keeper = s.formation.slots.index("GK")
+    k = next(k for k, man in enumerate(s.bench))
+    with pytest.raises(IllegalMove):
+        check_sheet(s, swapped(s, keeper, k))          # nobody on a bench keeps goal: the slot refuses him
+    from dataclasses import replace
+    gk_only = replace(s.picks[default_sheet(s)[keeper]], positions=("GK",))
+    s.picks[default_sheet(s)[keeper]] = gk_only
+    s.picks[default_sheet(s)[11]] = replace(s.picks[default_sheet(s)[11]], positions=("GK",))
+    sheet = list(default_sheet(s))
+    with pytest.raises(IllegalMove, match="keepers stay on"):
+        check_sheet(s, tuple(sheet))
+    s2, _ = bench_draft(24)
+    with pytest.raises(IllegalMove, match="every player once"):
+        check_sheet(s2, (0, 0, *default_sheet(s2)[2:]))
+    short = replay(load_deck(), 24, "433", moves[:5], bench=True)
+    with pytest.raises(IllegalMove, match="finished draft"):
+        check_sheet(short, tuple(range(14)))
+    eleven, _ = draft_to_the_end(24)
+    with pytest.raises(IllegalMove, match="finished draft with a bench"):
+        check_sheet(eleven, tuple(range(11)))
+
+
+def test_a_sheet_rides_in_a_solo_state_before_the_plan_and_nowhere_else():
+    s, moves = bench_draft(25)
+    sheet, plan = swapped(s, *a_swap(s)), (Change(0, 60, "any"),)
+    state = encode(25, "433", moves, bench=True, plan=plan, sheet=sheet)
+    assert "-s" in state and state.index("-s") < state.index("-p")
+    assert decode_solo(state) == (25, "433", moves, True, plan, sheet)
+    assert decode_solo(encode(25, "433", moves, bench=True, sheet=sheet))[5] == sheet
+    assert decode_sheet("s0123456789abcd") == tuple(range(14))
+    with pytest.raises(IllegalMove):
+        decode_state(state)                              # rooms and the daily never take one
+    for bad in ("s0123", "s0123456789abcD", "x0123456789abcd"):
+        with pytest.raises(IllegalMove):
+            decode_sheet(bad)
+
+
+def test_a_plan_follows_its_men_to_a_new_sheet():
+    s, moves = bench_draft(26)
+    deck = load_deck()
+    # Swap the first two substitutes: each line goes with its man.
+    sheet = list(default_sheet(s))
+    sheet[11], sheet[12] = sheet[12], sheet[11]
+    t = replay(deck, 26, "433", moves, bench=True, sheet=tuple(sheet))
+    plan = (Change(0, 60, "any"), Change(1, 70, "behind"))
+    assert carry_plan(s, t, plan) == (Change(1, 60, "any"), Change(0, 70, "behind"))
+    # A substitute brought into the eleven loses his line; a named starter sent to the
+    # bench leaves "best change" behind.
+    j, k = a_swap(s)
+    u = replay(deck, 26, "433", moves, bench=True, sheet=swapped(s, j, k))
+    others = [n for n in range(3) if n != k]
+    named = Change(others[0], 75, "any", j)
+    assert carry_plan(s, u, (Change(k, 60, "any"), named)) == (Change(others[0], 75, "any", None),)
+    assert carry_plan(s, u, None) is None
+
+
+# Rules the real deck rarely makes act on their own, asked directly of made-up squads.
+
+from dataclasses import replace as _replace  # noqa: E402
+
+from game.draft import Session  # noqa: E402
+
+
+def made_up(positions_by_pick):
+    """A finished 4-3-3 bench draft of made-up men, picks in the order given."""
+    base = load_deck().club_seasons[0].cards[0]
+    picks = [_replace(base, id=f"M{n}", name=f"Man {n}", positions=ps, rating=80)
+             for n, ps in enumerate(positions_by_pick)]
+    return Session(1, FORMATIONS["433"], picks=picks, bench_size=BENCH)
+
+
+XI_433 = [("GK",), ("RB",), ("CB",), ("CB",), ("LB",), ("DM",), ("CM",), ("CM",), ("RW",), ("ST",), ("LW",)]
+
+
+def test_a_sheet_refuses_a_man_in_a_slot_he_does_not_hold():
+    s = made_up([*XI_433, ("CM",), ("ST",), ("RW",)])
+    sheet = list(range(14))
+    sheet[1], sheet[8] = sheet[8], sheet[1]           # the right-winger at right-back, and back
+    with pytest.raises(IllegalMove, match="doesn't play"):
+        check_sheet(s, tuple(sheet))
+
+
+def test_a_move_leaves_everyone_it_does_not_need_where_they_stand():
+    # Two midfielders each standing at their second position: nothing about a winger's
+    # move needs them to change, so they don't, though each prefers the other's place.
+    s = made_up([("GK",), ("RB",), ("CB",), ("CB",), ("LB",), ("CM", "DM"), ("DM", "CM"), ("CM",),
+                 ("RW", "LW"), ("ST",), ("LW", "RW"), ("CM",), ("ST",), ("ST",)])
+    s.sheet = (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13)        # Man 5 at DM, Man 6 at CM
+    new = move(s, 8, "s10")                                         # the wingers change flanks
+    assert new[5] == 5 and new[6] == 6 and new[8] == 10 and new[10] == 8
+
+
+def test_a_keeper_is_never_offered_a_place_on_the_bench():
+    # A substitute who can also keep goal would fit the keeper's slot, but the keeper
+    # going off would sit on a bench where keepers don't.
+    s = made_up([*XI_433, ("GK", "CB"), ("ST",), ("RW",)])
+    assert "s0" not in targets(s)[11]
+    with pytest.raises(IllegalMove, match="keepers stay on"):
+        move(s, 11, "s0")
+
+
+def test_a_carried_plan_drops_a_named_starter_its_substitute_can_no_longer_replace():
+    # Man 6 (CM or RW) starts at CM; the plan brings sub 0 (a CM) on for him.
+    picks = [*XI_433[:6], ("CM", "RW"), *XI_433[7:], ("CM",), ("ST",), ("CM",)]
+    s = made_up(picks)
+    plan = (Change(0, 60, "any", 6),)
+    # Then Man 6 moves to the right wing, the winger goes to the bench and sub 2 takes
+    # the CM place. Man 6 still starts, but nobody left could cover the wing if a CM
+    # replaced him, so the line goes back to "best change".
+    t = made_up(picks)
+    t.sheet = (0, 1, 2, 3, 4, 5, 13, 7, 6, 9, 10, 11, 12, 8)
+    assert carry_plan(s, t, plan) == (Change(0, 60, "any", None),)
+    # Moved to the right wing with the winger to CM instead, he still can be replaced.
+    u = made_up([*picks[:8], ("RW", "CM"), *picks[9:]])
+    v = made_up([*picks[:8], ("RW", "CM"), *picks[9:]])
+    v.sheet = (0, 1, 2, 3, 4, 5, 8, 7, 6, 9, 10, 11, 12, 13)
+    assert carry_plan(u, v, plan) == (Change(0, 60, "any", 8),)

@@ -463,6 +463,74 @@ function renderPitch(el, slots, xi, newest) {
   }).join("");
 }
 
+/* The team sheet (C44): once a bench draft is finished, tap a man and then where he should
+   go: another slot (he stands there and the rest make room), a substitute (they change
+   places) or, for a substitute, a starter he replaces. The server says where each man can
+   go (`to` on every card: "s<slot>" or "b<bench place>") and does the moving, everyone else
+   shifting as little as possible. `d` is a finished draft ({xi in slot order, bench});
+   `opts.onMove(man, to)` sends one move, `opts.reset` (if the sheet was chosen) puts back
+   the drafted order, `opts.hint` is a line to talk in. */
+function sheetEditor(pitchEl, benchEl, d, opts) {
+  const men = [...d.xi.map((c, j) => ({ c, at: `s${j}`, where: c.slot })), ...d.bench.map((c, k) => ({ c, at: `b${k}`, where: `sub ${k + 1}` }))];
+  const els = [...pitchEl.querySelectorAll(".slot"), ...benchEl.querySelectorAll(".sub-card")];
+  if (els.length !== men.length) return;
+  const say = (t) => { if (opts.hint) opts.hint.innerHTML = t; };
+  const idle = () => {
+    say(`Tap a player, then where he should go: another position, or a substitute to change places with.
+      Everyone else moves as little as possible to make room.
+      ${opts.reset ? `<button class="linkish" id="sheetreset">Back to the drafted line-up</button>` : ""}`);
+    if ($("sheetreset")) $("sheetreset").onclick = opts.reset;
+  };
+  let sel = null;
+  const paint = () => {
+    [pitchEl, benchEl].forEach((e) => e.classList.toggle("choosing", sel !== null));
+    els.forEach((el, n) => {
+      el.classList.toggle("sel", sel === n);
+      el.classList.toggle("can", sel !== null && (men[sel].c.to || []).includes(men[n].at));
+    });
+  };
+  els.forEach((el, n) => {
+    const m = men[n];
+    el.classList.add("pickable");
+    el.tabIndex = 0;
+    el.setAttribute("role", "button");
+    el.setAttribute("aria-label", `${m.c.name}, ${m.where}`);
+    const go = () => {
+      if (sel === null) {
+        sel = n; paint();
+        const ps = (m.c.positions || [m.c.pos]).join(" · ");
+        say((m.c.to || []).length
+          ? `<b>${esc(m.c.name)}</b> plays ${esc(ps)}. Tap a highlighted place, or him again to cancel.`
+          : `<b>${esc(m.c.name)}</b> plays ${esc(ps)}, and nowhere else is free for him in this shape. Tap him again to cancel.`);
+        return;
+      }
+      if (sel === n) { sel = null; paint(); idle(); return; }
+      const from = men[sel];
+      if (!(from.c.to || []).includes(m.at)) { toast(`${from.c.name} can't go there`); return; }
+      sel = null; paint();
+      opts.onMove(from.c.p, m.at);
+    };
+    el.onclick = go;
+    el.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } };
+  });
+  idle();
+}
+
+/* A plan made for one sheet, for another, as the server's carry_plan does: each line follows
+   its substitute (dropped if he now starts) and its named starter (back to "best change"
+   if he no longer starts or that substitute can't replace him). For a plan not yet sent. */
+function carryPlan(plan, before, after) {
+  if (!plan) return plan;
+  const benchIds = after.bench.map((c) => c.id), xiIds = after.xi.map((c) => c.id);
+  return plan.flatMap((x) => {
+    const on = benchIds.indexOf(before.bench[x.on].id);
+    if (on < 0) return [];
+    let off = x.off == null ? null : xiIds.indexOf(before.xi[x.off].id);
+    if (off != null && (off < 0 || !after.bench[on].can_replace.includes(off))) off = null;
+    return [{ ...x, on, off }];
+  });
+}
+
 /* A formation drawn on a pitch (C37): eleven discs, created once and then moved, so a change
    of shape slides each into its new place. `el` is a .pitch; `f` a formation from /api/meta. */
 function shapePitch(el, f) {

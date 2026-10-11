@@ -47,7 +47,8 @@ function apply(room) {
   if (R && room.version < R.version) return;
   const same = R && room.version === R.version && room.seated === R.seated && room.is_host === R.is_host;
   R = room;
-  if (R.status === "complete") { location.replace(`/cup?room=${R.code}`); return; }
+  // A finished room shows everyone's squad first (the page marks it seen), then the cup.
+  if (R.status === "complete") { location.replace(store.get(`squad:${R.code}`) ? `/cup?room=${R.code}` : `/squad?room=${R.code}`); return; }
   if (!same) render();                               // nothing new: leave the screen alone
   maybeJoin();
 }
@@ -317,6 +318,16 @@ function renderPlanning() {
   });
   renderPitch($("pitch"), d.formation.slots, d.xi, null);
   renderBench($("bench"), d.bench, d.bench_size);
+  // The team sheet (C44) goes to the server at once; a plan not yet sent follows its men.
+  if (!$("sheethint")) $("bench").insertAdjacentHTML("afterend", `<p class="sheet-hint" id="sheethint"></p>`);
+  const sendSheet = async (body) => {
+    const before = R.draft;
+    await act("sheet", body);
+    if (localPlan && R.draft && R.draft !== before) { localPlan = carryPlan(localPlan, before, R.draft); renderPlanning(); }
+  };
+  sheetEditor($("pitch"), $("bench"), d, {
+    hint: $("sheethint"), onMove: (man, to) => sendSheet({ man, to }), reset: d.sheet_chosen ? () => sendSheet({}) : null,
+  });
   if ($("readyb")) $("readyb").onclick = () => act("plan", { changes: localPlan || (d.plan_chosen ? d.plan : null) });
   if ($("finishb")) $("finishb").onclick = () => {
     if (confirm(`Finish for ${waiting.join(", ")}? Unmade picks take the best player each squad offers, and anyone not ready gets the automatic plan.`)) act("finish");

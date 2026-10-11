@@ -38,6 +38,19 @@
         "8032"
       ],
       "port": 8032
+    },
+    {
+      "name": "campeones-db-3",
+      "runtimeExecutable": "uv",
+      "runtimeArgs": [
+        "run",
+        "python",
+        "-m",
+        "tools.devserver",
+        "--port",
+        "8033"
+      ],
+      "port": 8033
     }
   ]
 }

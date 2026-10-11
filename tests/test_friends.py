@@ -578,3 +578,71 @@ def test_set_plan_itself_refuses_a_plan_the_draft_cannot_play():
         account = accounts.get_account(conn, me)
         with pytest.raises(IllegalMove):
             rooms_mod.set_plan(conn, load_deck(), account, code, (Change(0, 60, "any", 0),))
+
+
+def test_a_finished_room_shows_every_squad_rated_yours_first():
+    host, guest, stranger = player("host_q"), player("guest_q"), player()
+    code = host.post("/api/rooms", json={"bench": True, "size": 4, "style": "own"}).json()["code"]
+    guest.post(f"/api/rooms/{code}/join")
+    host.post(f"/api/rooms/{code}/start")
+    draft_to_the_end(host, code)
+    assert guest.get(f"/api/rooms/{code}/squads").status_code == 409
+    host.post(f"/api/rooms/{code}/finish")
+    g = guest.get(f"/api/rooms/{code}/squads").json()
+    assert [s["name"] for s in g["sides"]][0] == "guest_q" and g["sides"][0]["you"]
+    assert {s["name"] for s in g["sides"]} == {"host_q", "guest_q"} and g["room"]["code"] == code
+    assert all(len(s["xi"]) == 11 and len(s["bench"]) == 3 and s["ratings"]["bench"] for s in g["sides"])
+    t = host.get(f"/api/rooms/{code}/tournament").json()
+    h = host.get(f"/api/rooms/{code}/squads").json()
+    assert h["sides"][0]["name"] == "host_q"
+    assert [c["id"] for c in h["sides"][0]["xi"]] == [c["id"] for c in t["you"]["xi"]]
+    watching = stranger.get(f"/api/rooms/{code}/squads").json()["sides"]
+    assert not any(s["you"] for s in watching)
+    assert [s["ratings"]["overall"] for s in watching] == sorted((s["ratings"]["overall"] for s in watching), reverse=True)
+
+
+def test_a_seat_changes_its_team_sheet_until_the_room_opens_and_the_tournament_plays_it():
+    host, guest = player("host_s"), player("guest_s")
+    code = host.post("/api/rooms", json={"bench": True, "size": 4, "style": "own"}).json()["code"]
+    guest.post(f"/api/rooms/{code}/join")
+    host.post(f"/api/rooms/{code}/start")
+    assert host.post(f"/api/rooms/{code}/sheet", json={"man": 0, "to": "s1"}).status_code == 409
+    d = draft_to_the_end(host, code)["draft"]
+    man, to = next((c["p"], t) for c in d["bench"] for t in c["to"] if t.startswith("s"))
+    name = d["picks"][man]["name"]
+    # Ready first, with a plan for the second substitute; the plan follows him to the front.
+    host.post(f"/api/rooms/{code}/plan", json={"changes": [{"on": 1, "minute": 65, "when": "any"}]})
+    room = host.post(f"/api/rooms/{code}/sheet", json={"man": d["bench"][1]["p"], "to": "b0"}).json()
+    assert room["draft"]["ready"] and room["draft"]["plan"] == [{"on": 0, "minute": 65, "when": "any", "off": None}]
+    # Moved back, the sheet is the drafted one again and nothing is stored for it.
+    room = host.post(f"/api/rooms/{code}/sheet", json={"man": d["bench"][1]["p"], "to": "b1"}).json()
+    assert not room["draft"]["sheet_chosen"]
+    room = host.post(f"/api/rooms/{code}/sheet", json={"man": man, "to": to}).json()
+    assert name in [c["name"] for c in room["draft"]["xi"]] and room["draft"]["sheet_chosen"]
+    assert guest.post(f"/api/rooms/{code}/sheet", json={"man": man, "to": to}).status_code == 409   # not finished
+    host.post(f"/api/rooms/{code}/finish")
+    t = host.get(f"/api/rooms/{code}/tournament").json()
+    assert name in [c["name"] for c in t["you"]["xi"]]
+    assert host.post(f"/api/rooms/{code}/sheet", json={}).status_code == 409                       # settled
+
+
+def test_a_turn_room_s_team_sheet_shows_on_its_planning_screen_and_in_its_tournament(clock):
+    host, guest = player(), player()
+    code = host.post("/api/rooms", json={"bench": True, "size": 4}).json()["code"]
+    guest.post(f"/api/rooms/{code}/join")
+    room = host.post(f"/api/rooms/{code}/start").json()
+    assert room["style"] == "turns"
+    while not (room["draft"] and room["draft"]["complete"] and guest.get(f"/api/rooms/{code}").json()["draft"]["complete"]):
+        on, _ = on_turn(host, guest, code)
+        r = take(on, code, on.get(f"/api/rooms/{code}").json())
+        assert r.status_code == 200, r.text
+        room = host.get(f"/api/rooms/{code}").json()
+    d = room["draft"]
+    man, to = next((c["p"], t) for c in d["bench"] for t in c["to"] if t.startswith("s"))
+    name = d["picks"][man]["name"]
+    room = host.post(f"/api/rooms/{code}/sheet", json={"man": man, "to": to}).json()
+    assert name in [c["name"] for c in room["draft"]["xi"]] and not room["draft"]["ready"]
+    host.post(f"/api/rooms/{code}/plan", json={"changes": None})
+    guest.post(f"/api/rooms/{code}/plan", json={"changes": None})
+    t = host.get(f"/api/rooms/{code}/tournament").json()
+    assert name in [c["name"] for c in t["you"]["xi"]]

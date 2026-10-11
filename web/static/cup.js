@@ -39,20 +39,26 @@ function renderHero() {
   const where = CUP.room ? `Room ${esc(CUP.room.code)} · ${esc(CUP.room.format)} · ` : "";
   if (!CUP.you) return renderSpectator(where);
   const avg = Math.round(CUP.you.xi.reduce((a, c) => a + c.rating, 0) / 11);
+  // Your eleven, its bench and plan live on the squad page now (C44), one tap away.
+  const squad = ROOM ? `/squad?room=${esc(ROOM)}` : `/squad#${esc(CUP.state)}`;
   const kicker = `<div class="kicker">${where}Your XI · ${esc(CUP.you.formation)} · average ${avg}</div>`;
+  const squadLink = `<p class="cup-link"><a href="${squad}">Your squad and ratings</a></p>`;
   if (!done) {
     const next = CUP.your_matches[CUP.revealed];
-    $("hero").innerHTML = `${kicker}<h1>Your campaign</h1><p>Next: ${esc(stageLabel(next))}</p>`;
-    $("actions").innerHTML = `<button class="btn primary" id="play">Play the match</button>
-      <button class="btn ghost" id="skip">Skip to the end</button>`;
+    $("hero").innerHTML = `${kicker}<h1>Your campaign</h1><p>Next: ${esc(stageLabel(next))}</p>${squadLink}`;
+    $("actions").innerHTML = `<button class="btn primary" id="play">Play the match</button>${skipButtons(next, "Skip this match")}`;
     $("play").onclick = playNext;
-    $("skip").onclick = () => { reveal(CUP.your_matches.length); };
+    wireSkips((n) => {
+      // Skipping one match unwatched still says how it went.
+      if (n === CUP.revealed + 1) toast(`${resultLine(next)}`);
+      reveal(n);
+    });
     showPreview(next);
     return;
   }
   const champ = CUP.reached === "Champions";
   $("hero").innerHTML = `${kicker}<h1 class="${champ ? "champ" : ""}">${champ ? "Champions" : esc(CUP.reached)}</h1>
-    <p>${champ ? "Your eleven won the whole thing." : `${esc(CUP.champion.name)} lifted the trophy.`}</p>`;
+    <p>${champ ? "Your eleven won the whole thing." : `${esc(CUP.champion.name)} lifted the trophy.`}</p>${squadLink}`;
   endActions();
   championBlock();
 }
@@ -62,6 +68,31 @@ function renderSpectator(where) {
     <p>${esc(CUP.champion.name)} lifted the trophy.</p>`;
   endActions();
   championBlock();
+}
+
+/* The ways past matches without watching them: this one, the rest of the group stage
+   (while there is any of it left) and everything. Each reveals the results, never more. */
+function skipButtons(f, oneLabel) {
+  const groups = f.stage === "Group stage" && groupsEnd() > CUP.revealed + 1;
+  return `<button class="btn ghost" id="skipone">${oneLabel}</button>
+    ${groups ? `<button class="btn ghost" id="skipgroups">Skip the group stage</button>` : ""}
+    <button class="btn ghost" id="skipall">Skip to the end</button>`;
+}
+
+// Where your knockout matches begin: after the last group match (all of them, if you went out there).
+function groupsEnd() {
+  const i = CUP.your_matches.findIndex((f) => f.stage !== "Group stage");
+  return i < 0 ? CUP.your_matches.length : i;
+}
+
+function wireSkips(go) {
+  $("skipone").onclick = () => go(CUP.revealed + 1);
+  if ($("skipgroups")) $("skipgroups").onclick = () => go(groupsEnd());
+  $("skipall").onclick = () => go(CUP.your_matches.length);
+}
+
+function resultLine(f) {
+  return `${sideName(f.home)} ${f.hg}–${f.ag} ${sideName(f.away)}${extraLine(f) ? ` (${extraLine(f)})` : ""}`;
 }
 
 function endActions() {
@@ -135,7 +166,7 @@ function showPreview(f) {
 
 function playNext() {
   const f = CUP.your_matches[CUP.revealed];
-  $("actions").innerHTML = `<button class="btn ghost" id="fast">Skip this match</button>`;
+  $("actions").innerHTML = skipButtons(f, "Skip to full time");
   const finish = playMatch($("match"), f, CUP_LOOK, () => {
     CUP.revealed += 1;
     store.set(`cup:${CUP.state}`, CUP.revealed);
@@ -146,7 +177,8 @@ function playNext() {
     renderBody();
   });
   $("match").scrollIntoView({ behavior: "smooth", block: "center" });
-  $("fast").onclick = finish;
+  // "Skip to full time" shows this match's result; the others finish it and move on.
+  wireSkips((n) => { finish(); if (n > CUP.revealed) reveal(n); });
 }
 
 // --------------------------------------------------------------- the body
@@ -155,7 +187,7 @@ function resRow(f) {
   const t = (s, side) => `<div class="t ${side}">${side === "h" ? `<span class="nm ${s.you ? "you-name" : ""}">${esc(sideName(s))}</span>${sideCrest(s, 22)}` : `${sideCrest(s, 22)}<span class="nm ${s.you ? "you-name" : ""}">${esc(sideName(s))}</span>`}</div>`;
   return `<details class="res-d"><summary class="res ${outcome(f)}"><div class="tag">${esc(f.stage === "Group stage" ? `Group ${f.group} · MD${f.label.slice(-1)}` : f.stage === "Final" ? "Final" : `${f.stage.replace("Quarter-finals", "QF").replace("Semi-finals", "SF")} · ${f.label.replace(" leg", "")}`)}</div>
     ${t(f.home, "h")}<div class="sc">${f.hg}–${f.ag}${extraLine(f) ? `<small>${extraLine(f)}</small>` : ""}</div>${t(f.away, "a")}</summary>
-    ${f.goals.length ? `<div class="res-goals">${f.goals.map((g) => `<span class="${g.side ? "a" : "h"}">${esc(g.scorer)} ${g.minute}'</span>`).join("")}</div>` : ""}
+    ${f.goals.length ? `<div class="res-goals">${f.goals.map((g) => `<span class="${g.side ? "a" : "h"}">${esc(g.scorer)} ${g.minute}'${g.assist ? ` <small>${ASSIST_MARK} ${esc(g.assist)}</small>` : ""}</span>`).join("")}</div>` : ""}
     ${statsHtml(f)}</details>`;
 }
 
@@ -195,8 +227,6 @@ function renderBody() {
     if (CUP.groups.length) left.push(`<section class="panel"><div class="panel-h"><span class="label">Group stage</span></div><div class="groups">${CUP.groups.map(groupHtml).join("")}</div></section>`);
   }
   const right = [];
-  if (CUP.you) right.push(`<section class="panel"><div class="panel-h"><span class="label">Your XI</span><span class="label">${esc(CUP.you.formation)}</span></div>
-    <div class="pitch" id="cuppitch"></div><div class="bench-row" id="cupbench" hidden></div></section>`);
   const others = (CUP.players || []).filter((p) => !p.you);
   if (done && others.length) right.push(`<section class="panel"><div class="panel-h"><span class="label">Their elevens</span>
     <select id="whose" aria-label="Whose eleven">${others.map((p, i) => `<option value="${i}">${esc(p.name)} · ${esc(p.formation)}</option>`).join("")}</select></div>
@@ -208,16 +238,6 @@ function renderBody() {
   }
   $("left").innerHTML = left.join("");
   $("right").innerHTML = right.join("");
-  if (CUP.you) {
-    renderPitch($("cuppitch"), CUP.you.slots, CUP.you.xi, null);
-    renderBench($("cupbench"), CUP.you.bench || [], (CUP.you.bench || []).length);
-    if ((CUP.you.bench || []).length) {
-      // The plan, and before the first match a way back to change it (C41): a new plan
-      // is a new link and a new tournament, so it is offered only before anything is seen.
-      const change = !ROOM && !CUP.revealed ? `<a class="label" href="/draft#${esc(CUP.state)}">Change</a>` : "";
-      $("cupbench").insertAdjacentHTML("afterend", `<div class="plan-box"><div class="panel-h"><span class="label">Your changes</span>${change}</div>${planHtml(CUP.you.plan)}</div>`);
-    }
-  }
   if ($("whose")) {
     const show = () => { const p = others[+$("whose").value]; renderPitch($("theirpitch"), p.slots, p.xi, null); };
     $("whose").onchange = show;

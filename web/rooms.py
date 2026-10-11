@@ -31,8 +31,9 @@ from dataclasses import dataclass
 from game.colours import palette
 from game.deck import Deck
 from game import shared_draft as shared
-from game.draft import (BENCH, Change, IllegalMove, Move, Pick, Session, check_plan, decode_plan, decode_state,
-                        encode, encode_plan, replay, why_not)
+from game.draft import (BENCH, Change, IllegalMove, Move, Pick, Session, carry_plan, check_plan, check_sheet,
+                        decode_plan, decode_sheet, decode_state, encode, encode_plan, encode_sheet, replay,
+                        why_not)
 from game.formations import DEFAULT, FORMATIONS
 from game.tournament import ROOM_SIZES, Side, auto_plan
 from web.accounts import Account
@@ -79,6 +80,7 @@ class Seat:
     formation: str
     state: str | None
     plan: str | None = None         # a bench room's: encode_plan once the seat is ready
+    sheet: str | None = None        # a bench room's team sheet (C44), encode_sheet; None: as drafted
 
     @property
     def bench(self) -> bool:
@@ -151,7 +153,7 @@ def human_side(seat: Seat, session: Session) -> Side:
     and in a bench room its bench and plan."""
     f = session.formation
     subs = session.subs()
-    return Side(f"P{seat.seat}", seat.username, seat.username[:3].upper(), f, session.picks[:11],
+    return Side(f"P{seat.seat}", seat.username, seat.username[:3].upper(), f, session.xi,
                 owner=seat.account_id, club_name=seat.username, label=f.label,
                 bench=session.bench, plan=auto_plan(session.bench) if subs is None else subs,
                 **seat_palette(seat.seat))
@@ -161,17 +163,21 @@ def seat_session(deck: Deck, room: Room, seat: Seat, d: shared.SharedDraft | Non
     """A seat's draft as a Session, with its plan: replayed from its state when it drafts
     at its own pace, or cut from the room's shared draft when the room takes turns."""
     plan = decode_plan(seat.plan) if seat.plan else None
+    sheet = decode_sheet(seat.sheet) if seat.sheet else None
     if room.turns:
         d = d if d is not None else shared_of(deck, room)
         i = next(k for k, x in enumerate(room.seats) if x.account_id == seat.account_id)
         s = Session(room.seed, d.formations[i], picks=list(d.picks[i]),
                     bench_size=BENCH if room.bench else 0)
+        if sheet is not None:
+            check_sheet(s, sheet)
+            s.sheet = sheet
         if plan is not None:
             check_plan(s, plan)
             s.plan = plan
         return s
     seed, formation, moves, bench, _ = decode_state(seat.state)
-    return replay(deck, seed, formation, moves, bench, plan)
+    return replay(deck, seed, formation, moves, bench, plan, sheet)
 
 
 # -- reading ----------------------------------------------------------------
@@ -192,7 +198,7 @@ def load_room(conn, code: str, lock: bool = False) -> Room:
     if row is None:
         raise NotFound("no room with that code")
     seats = [Seat(*r) for r in conn.execute(
-        "select s.account_id, a.username, s.seat, s.formation, s.state, s.plan"
+        "select s.account_id, a.username, s.seat, s.formation, s.state, s.plan, s.sheet"
         "  from room_seats s join accounts a using (account_id)"
         " where s.room_code = %s order by s.seat", (code,))]
     return Room(*row, seats=seats)
@@ -442,7 +448,34 @@ def set_plan(conn, deck: Deck, account: Account, code: str, plan: tuple[Change, 
 
 
 def replace_plan(seat: Seat, plan: str | None) -> Seat:
-    return Seat(seat.account_id, seat.username, seat.seat, seat.formation, seat.state, plan)
+    return Seat(seat.account_id, seat.username, seat.seat, seat.formation, seat.state, plan, seat.sheet)
+
+
+def set_sheet(conn, deck: Deck, account: Account, code: str, choose) -> None:
+    """A seat's team sheet (C44): ``choose(session)`` gives the new one from the seat's
+    finished draft (web.app.new_sheet), None for the draft's own order. Like the plan, it
+    can change once the seat's picks are all made and until the room completes; unlike the
+    plan it doesn't say the seat is ready. A plan already sent follows its men across."""
+    room = load_room(conn, code, lock=True)
+    seat = room.seat_of(account.account_id)
+    if seat is None:
+        raise Forbidden("you are not in this room")
+    if not room.bench:
+        raise RoomError("this room drafts no bench")
+    if room.status != "drafting":
+        raise Conflict("team sheets are settled once the tournament opens")
+    before = seat_session(deck, room, seat)
+    if len(before.picks) < before.total:
+        raise Conflict("finish your picks first")
+    sheet = choose(before)                            # raises IllegalMove
+    text = None if sheet is None else encode_sheet(sheet)
+    after = seat_session(deck, room, Seat(seat.account_id, seat.username, seat.seat, seat.formation,
+                                          seat.state, None, text))
+    plan = carry_plan(before, after, before.plan)
+    seat.sheet, seat.plan = text, None if plan is None else encode_plan(plan)
+    conn.execute("update room_seats set sheet = %s, plan = %s where room_code = %s and account_id = %s",
+                 (seat.sheet, seat.plan, room.code, seat.account_id))
+    _touch(conn, room)
 
 
 def _all_in(deck: Deck, room: Room, d: shared.SharedDraft | None = None) -> bool:

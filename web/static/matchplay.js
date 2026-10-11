@@ -59,13 +59,20 @@ function lineupsHtml(f, look) {
       ${side(h, f.home, 0)}${side(a, f.away, 1)}</div></div>`;
 }
 
-/* A scorer's disc lights up, with a ball for each goal. */
-function markScorer(g) {
-  const p = [...document.querySelectorAll(`.lu-p[data-side="${g.side}"]`)].find((d) => d.dataset.name === g.scorer);
+/* A scorer's disc lights up, with a ball for each goal; the man who set it up gets a boot
+   for each assist, on the other shoulder. */
+const ASSIST_MARK = "👟";
+function markDisc(side, name, kind, sign, flash) {
+  const p = [...document.querySelectorAll(`.lu-p[data-side="${side}"]`)].find((d) => d.dataset.name === name);
   if (!p) return;
-  p.classList.remove("scored"); void p.offsetWidth; p.classList.add("scored");
-  p.dataset.goals = (+(p.dataset.goals || 0) + 1);
-  p.querySelector("i").dataset.goals = "⚽".repeat(+p.dataset.goals);
+  p.classList.remove(flash); void p.offsetWidth; p.classList.add(flash);
+  p.dataset[kind] = (+(p.dataset[kind] || 0) + 1);
+  p.querySelector("i").dataset[kind] = sign.repeat(+p.dataset[kind]);
+}
+
+function markScorer(g) {
+  markDisc(g.side, g.scorer, "goals", "⚽", "scored");
+  if (g.assist) markDisc(g.side, g.assist, "assists", ASSIST_MARK, "assisted");
 }
 
 /* A substitution (C41): the man coming on takes the disc of the man going off, and anyone
@@ -78,7 +85,9 @@ function applySub(f, x) {
   if (off) {
     off.dataset.name = x.on;
     off.dataset.goals = 0;
+    off.dataset.assists = 0;
     delete off.querySelector("i").dataset.goals;
+    delete off.querySelector("i").dataset.assists;
     off.querySelector("span").textContent = surname(x.on);
     off.classList.remove("subbed"); void off.offsetWidth; off.classList.add("subbed");
   }
@@ -167,12 +176,12 @@ function goalBurst(f, g, look) {
   card.insertAdjacentHTML("beforeend", `<div class="goal-burst" style="${teamStyle(side)}" role="status" aria-live="assertive">
     <div class="gb-ball" aria-hidden="true">⚽</div><div class="gb-word">Goal</div>
     <div class="gb-who">${esc(g.scorer)} <span>${g.minute}'</span></div>
-    ${g.assist ? `<div class="gb-assist">assisted by ${esc(g.assist)}</div>` : ""}
+    ${g.assist ? `<div class="gb-assist"><span aria-hidden="true">${ASSIST_MARK}</span> assisted by ${esc(g.assist)}</div>` : ""}
     <div class="gb-side">${esc(look.name(side))}</div></div>`);
 }
 
 function goalLine(g) {
-  const assist = g.assist ? ` <small>(${esc(g.assist)})</small>` : "";
+  const assist = g.assist ? ` <small title="Assist"><span aria-label="assist by">${ASSIST_MARK}</span> ${esc(g.assist)}</small>` : "";
   return g.side === 0
     ? `<div class="h">${esc(g.scorer)}${assist}<span class="m">${g.minute}'</span>⚽</div>`
     : `<div class="a">⚽<span class="m">${g.minute}'</span>${esc(g.scorer)}${assist}</div>`;

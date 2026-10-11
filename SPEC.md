@@ -13,11 +13,10 @@ the decisions log.
   League era) to 2025–26, the last completed season: **32 seasons**.
 - **Club-seasons:** the eight quarter-finalists of each season, **256** in all,
   read from Wikipedia (`etl.quarterfinalists`; exactly eight per season is asserted).
-- **In the deck: 242.** Thirteen have no squad that can be read (eleven have no
-  club-season article at all; Hajduk Split 1994–95's article lists no squad; AC Milan
-  2011–12's tables yield nobody once cells are split correctly, C36). One more cannot
-  field an eleven in any formation once positions count (§3a): Ajax 1995–96, whose
-  declared positions are too thin to complete a shape. The thirteen:
+- **In the deck: 243**, every squad that can be read. Thirteen have no squad that can be
+  read (eleven have no club-season article at all; Hajduk Split 1994–95's article lists no
+  squad; AC Milan 2011–12's tables yield nobody once cells are split correctly, C36). The
+  thirteen:
   Göteborg 1994–95, Hajduk Split 1994–95, Nantes, Spartak Moscow and Legia Warsaw
   1995–96, Auxerre, Porto, Ajax and Rosenborg 1996–97, Dynamo Kyiv and Monaco
   1997–98, CSKA Moscow 2009–10, AC Milan 2011–12.
@@ -117,8 +116,10 @@ generated (`etl.deck`) and committed; `etl.deck --check` fails if it is stale.
 
 ## 5. The draft
 
-- Formations, chosen before the first deal, are eleven slots each, Transfermarkt's
-  commonest line-up for the shape (measured over 2013–14 to 2025–26):
+- Formations are chosen before the first deal, on their own page (`/start`, C37) with
+  whether ratings show; a bare `/draft` goes there. Each is eleven slots, Transfermarkt's
+  commonest line-up for the shape (measured over 2013–14 to 2025–26); a shape whose
+  commonest slots repeat another's is left out, and the code refuses two with one slot set:
 
   | | slots |
   |---|---|
@@ -129,9 +130,17 @@ generated (`etl.deck`) and committed; `etl.deck --check` fails if it is stale.
   | 3-5-2 | GK CB CB CB RM DM CM CM LM ST ST |
   | 3-4-3 | GK CB CB CB RM CM CM LM RW ST LW |
   | 3-4-1-2 | GK CB CB CB RM DM CM LM AM ST ST |
+  | 4-4-2 wingers | GK RB CB CB LB DM CM RW LW ST ST |
+  | 4-4-2 diamond | GK RB CB CB LB DM RM LM AM ST ST |
+  | 4-5-1 | GK RB CB CB LB RM DM DM AM LM ST |
+  | 3-4-2-1 | GK CB CB CB RM DM DM LM AM AM ST |
+  | 3-1-4-2 | GK CB CB CB RM DM AM AM LM ST ST |
+  | 5-3-2 | GK RB CB CB CB LB DM DM AM ST ST |
+  | 5-4-1 | GK RB CB CB CB LB CM CM RW LW ST |
 
   The diamond and the 3-4-1-2 came with positions: Ancelotti's Milan, the Porto and PSV
-  diamonds and Dortmund 1997–98 field none of the first five.
+  diamonds and Dortmund 1997–98 field none of the first five. The last seven came with the
+  setup page, at the user's request for more formations (C37).
 - Each turn deals **one club-season, uniformly at random over the deck** — Bayern,
   in 24 quarter-finals, comes round 24 times as often as APOEL with one. Rarity is
   meant to feel like an event.

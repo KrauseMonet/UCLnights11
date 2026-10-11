@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>New draft · UCLnights11</title>
+<meta name="description" content="Set up a draft: choose a formation and whether to see the ratings while you pick.">
+<link rel="icon" type="image/png" sizes="32x32" href="/static/brand/favicon-32.png">
+<link rel="apple-touch-icon" href="/static/brand/apple-touch-icon.png">
+<link rel="manifest" href="/static/manifest.webmanifest">
+<meta name="theme-color" content="#07080f">
+<meta property="og:site_name" content="UCLnights11">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://uclnights11.vercel.app/static/brand/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preload" href="/static/fonts/Unbounded.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/static/style.css?v=673735c7b1">
+</head>
+<body>
+<main class="sheet">
+  <header class="setup-head">
+    <div class="kicker">New draft</div>
+    <h1 class="arch-h">Set up your <em>eleven</em></h1>
+    <p class="sub">Pick a shape, then how you want to see the squads. Every player can only stand in a place he played that season.</p>
+  </header>
+  <div class="setup-grid">
+    <section class="setup-step setup-form" aria-labelledby="h-form">
+      <div class="step-h"><span class="n">01</span><h2 id="h-form">Formation</h2></div>
+      <div id="formgroups"></div>
+    </section>
+    <aside class="panel setup-preview" aria-live="polite">
+      <div class="panel-h"><span class="label">Your shape</span><span class="label" id="pv-label"></span></div>
+      <div class="pitch" id="pitch" role="img" aria-label="The formation on a pitch"></div>
+      <div class="pv-text">
+        <h3 id="pv-name"></h3>
+        <p id="pv-about"></p>
+        <div class="pv-lines" id="pv-lines"></div>
+      </div>
+    </aside>
+    <section class="setup-step setup-ratings" aria-labelledby="h-rate">
+      <div class="step-h"><span class="n">02</span><h2 id="h-rate">Ratings</h2></div>
+      <div class="opt-cards" id="memory" role="radiogroup" aria-labelledby="h-rate"></div>
+    </section>
+    <div class="setup-cta">
+      <button class="btn primary" id="start" disabled>Start the draft</button>
+      <span class="hint" id="summary"></span>
+    </div>
+  </div>
+</main>
+<script src="/static/common.js?v=0317ddeeeb"></script>
+<script src="/static/start.js?v=e36cf7e9e7"></script>
+</body>
+</html>

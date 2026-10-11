@@ -358,7 +358,7 @@ def meta() -> dict:
         "clubs": len({cs.club for cs in deck.club_seasons}),
         "first_season": deck.club_seasons[0].label, "last_season": deck.club_seasons[-1].label,
         "seasons": len(seasons),
-        "formations": [{"code": f.code, "label": f.label} for f in FORMATIONS.values()],
+        "formations": [{**formation_out(f), "about": f.about} for f in FORMATIONS.values()],
         "default_formation": DEFAULT,
         "crests": sorted({crest_url(cs.short) for cs in deck.club_seasons}),
     }
@@ -1079,7 +1079,7 @@ def _page(name: str):
     return serve
 
 
-PAGES = (("/", "index"), ("/draft", "draft"), ("/cup", "cup"), ("/archive", "archive"),
+PAGES = (("/", "index"), ("/start", "start"), ("/draft", "draft"), ("/cup", "cup"), ("/archive", "archive"),
          ("/friends", "friends"), ("/room", "room"), ("/about", "about"), ("/faq", "faq"),
          ("/privacy", "privacy"), ("/terms", "terms"), ("/offline", "offline"), ("/admin", "admin"),
          ("/analysis", "analysis"), ("/daily", "daily"), ("/profile", "profile"))

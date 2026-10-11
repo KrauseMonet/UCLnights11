@@ -123,3 +123,15 @@ def test_only_your_matches_carry_the_shot_timeline():
         assert len(f["shots"]) == sum(f["stats"]["shots"])
         assert [x[0] for x in f["shots"] if x[3]] == sorted(g["minute"] for g in f["goals"])
     assert all("shots" not in leg for r in t["knockout"] for tie in r["ties"] for leg in tie["legs"])
+
+
+def test_the_setup_page_is_served_and_meta_describes_every_formation():
+    """The setup page (C37) draws each formation from /api/meta: its slots, lines and a line
+    about it. No two formations may share a slot set, or one adds a name and nothing to play."""
+    assert client.get("/start").status_code == 200
+    forms = client.get("/api/meta").json()["formations"]
+    assert len(forms) == 14
+    for f in forms:
+        assert len(f["slots"]) == 11 and f["slots"][0] == "GK" and f["about"]
+        assert sum(f["lines"].values()) == 11
+    assert len({tuple(sorted(f["slots"])) for f in forms}) == len(forms)

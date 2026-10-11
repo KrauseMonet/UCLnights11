@@ -1,35 +1,6 @@
 "use strict";
 
 shell("home");
-let FORMATION = store.get("formation") || "433";
-let MEMORY = store.get("memory") === "1";
-
-function renderFormations() {
-  const box = $("formations");
-  box.innerHTML = META.formations.map((f) =>
-    `<button class="chip" role="radio" aria-checked="${f.code === FORMATION}" data-f="${f.code}">${esc(f.label)}</button>`).join("");
-  box.onclick = (e) => {
-    const b = e.target.closest("button");
-    if (!b) return;
-    FORMATION = b.dataset.f;
-    store.set("formation", FORMATION);
-    renderFormations();
-  };
-}
-
-function renderMemory() {
-  const box = $("memory");
-  box.innerHTML = [[false, "Shown"], [true, "Hidden · Memory"]].map(([m, label]) =>
-    `<button class="chip" role="radio" aria-checked="${m === MEMORY}" data-m="${m ? 1 : 0}">${label}</button>`).join("");
-  box.onclick = (e) => {
-    const b = e.target.closest("button");
-    if (!b) return;
-    MEMORY = b.dataset.m === "1";
-    store.set("memory", MEMORY ? "1" : "0");
-    renderMemory();
-  };
-}
-
 function deckCard(cs) {
   const rows = cs.cards.map((c) => `<div class="deck-row">${positionsHtml(c)}
     <span>${esc(c.name)}</span>${rate(c.rating)}</div>`).join("");
@@ -78,20 +49,8 @@ function dealDeck(show) {
   run();
 }
 
-$("start").onclick = async (e) => {
-  e.target.disabled = true;
-  try {
-    const q = MEMORY ? "?memory=1" : "";
-    const s = await api(`/api/draft${q}`, { method: "POST", body: JSON.stringify({ formation: FORMATION }) });
-    location.href = `/draft${q}#${s.state}`;
-  } catch (err) { toast(err.message); e.target.disabled = false; }
-};
-
 (async function boot() {
-  renderMemory();
   try { await loadMeta(); } catch { toast("Could not reach the server"); return; }
-  if (!META.formations.some((f) => f.code === FORMATION)) FORMATION = META.default_formation;
-  renderFormations();
   $("stats").innerHTML = [
     [META.seasons, "Seasons"], [META.club_seasons, "Squads"], [META.clubs, "Clubs"],
     [META.cards.toLocaleString(), "Players"],

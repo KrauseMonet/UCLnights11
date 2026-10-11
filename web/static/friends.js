@@ -83,7 +83,15 @@ $("code").oninput = () => { $("code").value = $("code").value.toUpperCase(); };
 (async function boot() {
   renderFormats();
   const meta = await loadMeta().catch(() => null);
-  if (meta) chips($("formations"), meta.formations, formation, (c) => { formation = c; store.set("formation", c); });
+  if (meta) {
+    const by = Object.fromEntries(meta.formations.map((f) => [f.code, f]));
+    if (!by[formation]) formation = meta.default_formation;
+    $("shapebox").innerHTML = shapeBox("newshape");
+    const show = (f) => showShape("newshape", f);
+    chips($("formations"), meta.formations, formation, (c) => { formation = c; store.set("formation", c); show(by[c]); });
+    previewOnHover($("formations"), by, "data-c", show, () => formation);
+    show(by[formation]);
+  }
   chips($("ratings"), RATINGS, memory ? "1" : "0", (c) => { memory = c === "1"; store.set("memory", c); });
   const showTimers = () => { $("timerrow").hidden = style !== "turns"; };
   chips($("styles"), STYLES, style, (c) => { style = c; store.set("room-style", c); showTimers(); });

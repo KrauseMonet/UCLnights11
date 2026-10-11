@@ -20,7 +20,7 @@ function shell(active) {
       <source media="(max-width: 480px)" srcset="${SITE_EMBLEM}">
       <img src="${SITE_LOGO}" alt="${esc(SITE_NAME)}" width="129" height="32"></picture></a>
     <nav class="navlinks">
-      <a href="/draft" ${active === "draft" ? 'class="on"' : ""}>Draft</a>
+      <a href="/start" ${active === "draft" ? 'class="on"' : ""}>Draft</a>
       <a href="/daily" ${active === "daily" ? 'class="on"' : ""}>Daily</a>
       <a href="/friends" ${active === "friends" ? 'class="on"' : ""}>Friends</a>
       <a href="/archive" ${active === "archive" ? 'class="on"' : ""}>Archive</a>
@@ -363,10 +363,13 @@ function slotSpots(slots) {
   const count = {}, seen = {};
   slots.forEach((s) => { count[s] = (count[s] || 0) + 1; });
   const pivot = count.DM === 1 && count.CM === 1;   // a double pivot sits side by side
+  const five = count.CB === 3 && count.RB;           // a back five: full-backs push up and out
   return slots.map((s) => {
     const k = (seen[s] = (seen[s] || 0) + 1), n = count[s];
     let [y, x] = SPOT[s];
     if (n > 1) x = 50 + (k - (n + 1) / 2) * (GAP[s] || 24);
+    if (five && (s === "RB" || s === "LB")) { y = 58; x = s === "RB" ? 89 : 11; }
+    if (five && s === "CB") x = 50 + (k - 2) * 22;
     if (pivot && s === "DM") { x = 38; y = 53; }
     if (pivot && s === "CM") { x = 62; y = 49; }
     return { x, y };
@@ -385,6 +388,38 @@ function renderPitch(el, slots, xi, newest) {
       ${c ? `<div class="nm">${esc(c.name)}</div><div class="cl">${esc(c.short)} ${esc(c.season.slice(2))}</div>` : ""}
     </div>`;
   }).join("");
+}
+
+/* A formation drawn on a pitch (C37): eleven discs, created once and then moved, so a change
+   of shape slides each into its new place. `el` is a .pitch; `f` a formation from /api/meta. */
+function shapePitch(el, f) {
+  if (el.children.length !== 11) el.innerHTML = Array.from({ length: 11 }, () => `<div class="slot pv-slot"><div class="disc"></div></div>`).join("");
+  const spots = slotSpots(f.slots);
+  [...el.children].forEach((d, j) => {
+    d.style.left = `${spots[j].x}%`;
+    d.style.top = `${spots[j].y}%`;
+    d.dataset.line = LINE_OF[f.slots[j]];
+    d.firstElementChild.textContent = f.slots[j];
+  });
+  el.setAttribute("aria-label", `${f.label}: ${f.slots.join(", ")}`);
+}
+
+/* The compact version for a lobby: a small pitch with the shape's name and line beside it. */
+function shapeBox(id) {
+  return `<div class="shape-pv"><div class="pitch" id="${id}-pitch" role="img"></div>
+    <div class="shape-txt"><b id="${id}-name"></b><p id="${id}-about"></p></div></div>`;
+}
+function showShape(id, f) {
+  if (!$(`${id}-pitch`) || !f) return;
+  shapePitch($(`${id}-pitch`), f);
+  $(`${id}-name`).textContent = f.label;
+  $(`${id}-about`).textContent = f.about;
+}
+
+/* Hovering a formation chip previews it; leaving the chips shows the chosen one again. */
+function previewOnHover(chipsEl, byCode, attr, show, current) {
+  chipsEl.onmouseover = (e) => { const b = e.target.closest(`[${attr}]`); if (b) show(byCode[b.getAttribute(attr)]); };
+  chipsEl.onmouseleave = () => show(byCode[current()]);
 }
 
 const store = {

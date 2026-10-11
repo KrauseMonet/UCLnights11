@@ -23,6 +23,7 @@
     { "src": "/api/(.*)", "dest": "api/index.py" },
 
     { "src": "/", "dest": "/web/static/index.html", "headers": { "cache-control": "public, max-age=0, must-revalidate" } },
+    { "src": "/start", "dest": "/web/static/start.html", "headers": { "cache-control": "public, max-age=0, must-revalidate" } },
     { "src": "/draft", "dest": "/web/static/draft.html", "headers": { "cache-control": "public, max-age=0, must-revalidate" } },
     { "src": "/cup", "dest": "/web/static/cup.html", "headers": { "cache-control": "public, max-age=0, must-revalidate" } },
     { "src": "/archive", "dest": "/web/static/archive.html", "headers": { "cache-control": "public, max-age=0, must-revalidate" } },

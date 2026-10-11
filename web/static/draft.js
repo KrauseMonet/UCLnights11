@@ -48,7 +48,7 @@ async function move(kind, body) {
   loadMeta().catch(() => {});
   try {
     if (/^[\w.-]+$/.test(STATE_IN)) return setSession(await api(`/api/draft/${STATE_IN}${Q}`));
-    const fresh = await api(`/api/draft${Q}`, { method: "POST", body: JSON.stringify({ formation: store.get("formation") || "433" }) });
-    setSession(fresh);
+    // A new draft is set up on its own page first (formation and ratings, C37).
+    location.replace("/start");
   } catch (e) { toast(e.message); }
 })();

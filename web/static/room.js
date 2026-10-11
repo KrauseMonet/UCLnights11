@@ -168,7 +168,7 @@ function renderLobby() {
   $("view").innerHTML = `<div class="friends-grid">
     <section class="panel">
       <div class="panel-h"><span class="label">Your formation</span><span class="label">fixed when the draft starts</span></div>
-      <div class="room-form"><div class="chips" id="forms" role="radiogroup" aria-label="Formation"></div></div>
+      <div class="room-form"><div class="chips" id="forms" role="radiogroup" aria-label="Formation"></div>${shapeBox("lobbyshape")}</div>
       <div class="panel-h"><span class="label">The draft</span><span class="label">${R.is_host ? "your call as host" : "the host's call"}</span></div>
       <div class="room-form">${R.is_host
         ? `<div class="chips" role="radiogroup" aria-label="Draft style">
@@ -208,6 +208,10 @@ function renderLobby() {
     if (!el) return;
     el.innerHTML = m.formations.map((f) => `<button class="chip" role="radio" aria-checked="${f.code === you.code}" data-c="${f.code}">${esc(f.label)}</button>`).join("");
     el.querySelectorAll(".chip").forEach((b) => b.onclick = () => { store.set("formation", b.dataset.c); act("formation", { formation: b.dataset.c }); });
+    const by = Object.fromEntries(m.formations.map((f) => [f.code, f]));
+    const show = (f) => showShape("lobbyshape", f);
+    previewOnHover(el, by, "data-c", show, () => you.code);
+    show(by[you.code]);
   }).catch(() => {});
   $("view").querySelectorAll("[data-m]").forEach((b) => b.onclick = () => act("memory", { memory: b.dataset.m === "1" }));
   $("view").querySelectorAll("[data-style]").forEach((b) => b.onclick = () => act("style", { style: b.dataset.style, timer: R.timer }));

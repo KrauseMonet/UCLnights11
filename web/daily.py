@@ -20,7 +20,7 @@ from datetime import date, datetime, timezone
 from game import daily as rules
 from game import match
 from game.deck import Deck
-from game.draft import IllegalMove, Pick, decode, encode
+from game.draft import Change, IllegalMove, Pick, decode_plan, decode_state, encode, encode_plan
 from game.formations import FORMATIONS
 from game.journey import Journey, journey
 from game.tournament import Fixture, Side, Tournament, club_side
@@ -29,6 +29,9 @@ from web.accounts import Account
 
 BOARD_SIZE = 50
 STAGE = "Daily challenge"
+# Every day made from now on has a bench and plays engine 2 (C42). A day already stored
+# keeps what it was made with, so a played day never changes.
+NEW_DAYS_BENCH = True
 
 
 class DailyError(ValueError):
@@ -63,34 +66,44 @@ def seed_for(day: date, purpose: str) -> int:
 
 def get_challenge(conn, deck: Deck, league: match.League, day: date) -> rules.Challenge:
     """The day's challenge, made and stored the first time anyone asks."""
-    row = conn.execute("select day, seed, formation, opponent, kind, target, success_rate"
-                       " from daily_challenges where day = %s", (day,)).fetchone()
+    columns = "day, seed, formation, opponent, kind, target, success_rate, bench"
+    row = conn.execute(f"select {columns} from daily_challenges where day = %s", (day,)).fetchone()
     if row is None:
-        ch = rules.make_challenge(deck, league, day.isoformat(), seed_for(day, "deal"))
-        conn.execute("insert into daily_challenges (day, seed, formation, opponent, kind, target, success_rate)"
-                     " values (%s, %s, %s, %s, %s, %s, %s) on conflict (day) do nothing",
-                     (day, ch.seed, ch.formation, ch.opponent, ch.kind, ch.target, ch.success_rate))
-        row = conn.execute("select day, seed, formation, opponent, kind, target, success_rate"
-                           " from daily_challenges where day = %s", (day,)).fetchone()
-    d, seed, formation, opponent, kind, target, rate = row
-    return rules.Challenge(d.isoformat(), seed, formation, opponent, kind, target, rate)
+        ch = rules.make_challenge(deck, league, day.isoformat(), seed_for(day, "deal"), NEW_DAYS_BENCH)
+        conn.execute(f"insert into daily_challenges ({columns}) values (%s, %s, %s, %s, %s, %s, %s, %s)"
+                     " on conflict (day) do nothing",
+                     (day, ch.seed, ch.formation, ch.opponent, ch.kind, ch.target, ch.success_rate, ch.bench))
+        row = conn.execute(f"select {columns} from daily_challenges where day = %s", (day,)).fetchone()
+    d, seed, formation, opponent, kind, target, rate, bench = row
+    return rules.Challenge(d.isoformat(), seed, formation, opponent, kind, target, rate, bench)
 
 
 def moves_of(ch: rules.Challenge, text: str) -> list[Pick]:
-    """A day's moves from "3.0.12": picks only, eleven at most."""
-    _, _, moves = decode(encode(ch.seed, ch.formation, []) + (f"-{text}" if text else ""))
+    """A day's moves from "3.0.12": picks only, eleven at most (fourteen with a bench)."""
+    _, _, moves, _, _ = decode_state(encode(ch.seed, ch.formation, [], ch.bench) + (f"-{text}" if text else ""))
     return moves
 
 
-def play(deck: Deck, league: match.League, ch: rules.Challenge, moves: list, purpose: str):
+def plan_of(ch: rules.Challenge, plan: tuple[Change, ...] | str | None) -> tuple[Change, ...] | None:
+    """A day's plan, as sent (changes) or stored ("p..."); None is the automatic plan, and
+    a day without a bench takes none."""
+    if plan is None:
+        return None
+    if not ch.bench:
+        raise IllegalMove("this day has no bench")
+    return decode_plan(plan) if isinstance(plan, str) else plan
+
+
+def play(deck: Deck, league: match.League, ch: rules.Challenge, moves: list, purpose: str,
+         plan: tuple[Change, ...] | None = None):
     """The finished eleven's match: (fixture, journey). Refuses an unfinished draft."""
-    s = rules.draft(deck, ch, moves)
+    s = rules.draft(deck, ch, moves, plan)
     if not s.complete:
-        raise IllegalMove("the eleven isn't complete yet")
-    you = Side("YOU", "Your XI", "YOU", s.formation, s.picks, you=True)
+        raise IllegalMove("the squad isn't complete yet" if ch.bench else "the eleven isn't complete yet")
+    you = rules.side_of(s)
     opp = club_side(deck.by_key[ch.opponent])
     day = date.fromisoformat(ch.day)
-    r = rules.play(league, seed_for(day, purpose), you.xi, deck.by_key[ch.opponent])
+    r = rules.play(league, seed_for(day, purpose), you, deck.by_key[ch.opponent], ch.engine)
     fx = Fixture(STAGE, you, opp, r, ch.day)
     t = Tournament([you, opp], {}, {})
     t.fixtures = [fx]
@@ -103,11 +116,12 @@ def mark_of(j: Journey) -> float | None:
 
 
 def result_of(conn, day: date, account_id: int):
-    return conn.execute("select moves, met, gf, ga, mark, submitted_at from daily_results"
+    return conn.execute("select moves, met, gf, ga, mark, submitted_at, plan from daily_results"
                         " where day = %s and account_id = %s", (day, account_id)).fetchone()
 
 
-def submit(conn, deck: Deck, league: match.League, account: Account, day: date, text: str):
+def submit(conn, deck: Deck, league: match.League, account: Account, day: date, text: str,
+           plan: tuple[Change, ...] | None = None):
     """The ranked attempt. Only today's, only once."""
     if day != today():
         raise DailyError("only today's challenge can be played")
@@ -115,13 +129,16 @@ def submit(conn, deck: Deck, league: match.League, account: Account, day: date, 
         raise AlreadyPlayed("you've played today's challenge")
     ch = get_challenge(conn, deck, league, day)
     moves = moves_of(ch, text)
-    fx, j = play(deck, league, ch, moves, "ranked")
+    plan = plan_of(ch, plan)
+    fx, j = play(deck, league, ch, moves, "ranked", plan)
     r = fx.result
     ok = rules.met(ch.kind, ch.target, r.home_goals, r.away_goals)
+    # The plan is stored as played, the automatic one written out, so the match replays.
+    stored = None if not ch.bench else encode_plan(plan if plan is not None else rules.auto_changes(fx.home.bench))
     inserted = conn.execute(
-        "insert into daily_results (day, account_id, moves, met, gf, ga, mark) values (%s,%s,%s,%s,%s,%s,%s)"
+        "insert into daily_results (day, account_id, moves, met, gf, ga, mark, plan) values (%s,%s,%s,%s,%s,%s,%s,%s)"
         " on conflict do nothing returning 1",
-        (day, account.account_id, text, ok, r.home_goals, r.away_goals, mark_of(j))).fetchone()
+        (day, account.account_id, text, ok, r.home_goals, r.away_goals, mark_of(j), stored)).fetchone()
     if inserted is None:                      # a second tab beat this one to it
         raise AlreadyPlayed("you've played today's challenge")
     results.save(conn, account, "daily", ch.day, j, FORMATIONS[ch.formation].label,

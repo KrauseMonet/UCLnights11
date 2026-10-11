@@ -144,14 +144,26 @@ def session_out(state: str, s: Session, memory: bool = False) -> dict:
         "deal": deal, "rerolls_left": s.rerolls_left, "complete": s.complete,
     }
     if s.complete and s.bench_size:
-        # The plan (C41): the one chosen, or the automatic one written out, and for each
-        # substitute the slots whose starter he could come on for.
-        xi = s.xi
-        for c, man in zip(bench, s.bench):
-            c["can_replace"] = can_replace(s.formation, xi, man)
-        out["plan"] = [plan_line_out(c) for c in (s.plan if s.plan is not None else auto_changes(s.bench))]
-        out["plan_chosen"] = s.plan is not None
+        plan_fields(s, bench, out, memory)
     return out
+
+
+def plan_fields(s: Session, bench: list[dict], out: dict, memory: bool = False) -> None:
+    """The plan (C41) for a finished bench draft, added to ``out``: the one chosen, or the
+    automatic one written out, and on each substitute's card (``bench``, the drafter's own
+    view of them) the slots whose starter he could come on for.
+
+    Drafting blind, the automatic plan is NOT written out (``plan`` is None): it brings
+    the best-rated man on first, so its order would rank the substitutes for someone
+    who can't see their ratings (C42, the C33 rule)."""
+    xi = s.xi
+    for c, man in zip(bench, s.bench):
+        c["can_replace"] = can_replace(s.formation, xi, man)
+    if s.plan is None and memory:
+        out["plan"] = None
+    else:
+        out["plan"] = [plan_line_out(c) for c in (s.plan if s.plan is not None else auto_changes(s.bench))]
+    out["plan_chosen"] = s.plan is not None
 
 
 def auto_changes(bench: list[Card]) -> tuple[Change, ...]:
@@ -628,7 +640,7 @@ def _replays(room: rooms.Room) -> bool:
         else:
             for seat in room.seats:
                 if seat.state:
-                    replay(load_deck(), *decode(seat.state))
+                    replay(load_deck(), *decode_state(seat.state)[:4])
     except (IllegalMove, Stranded):
         return False
     return True
@@ -640,10 +652,11 @@ def room_out(room: rooms.Room, me: accounts.Account | None) -> dict:
     turns = None
     if not _replays(room):
         room.status, room.failure_reason = "failed", STALE_ROOM
-    picks = {s.account_id: (s.picks, s.complete) for s in room.seats}
+    each = room.picks_each
+    picks = {s.account_id: (s.picks, s.picks == s.total) for s in room.seats}
     if room.turns and room.status in ("drafting", "complete"):
         d = rooms.shared_of(load_deck(), room)
-        picks = {s.account_id: (len(p), len(p) == 11) for s, p in zip(room.seats, d.picks)}
+        picks = {s.account_id: (len(p), len(p) == each) for s, p in zip(room.seats, d.picks)}
         turns = turns_out(room, d, mine)
         if mine is not None:
             i = room.seats.index(mine)
@@ -653,13 +666,23 @@ def room_out(room: rooms.Room, me: accounts.Account | None) -> dict:
                     c["rating"] = None
             f = d.formations[i]
             draft = {"formation": formation_out(f),
-                     "picks": mine_picks, "xi": eleven_out(f, d.picks[i], room.memory), "complete": len(d.picks[i]) == 11, "memory": room.memory,
+                     "picks": mine_picks, "xi": eleven_out(f, d.picks[i][:11], room.memory),
+                     "bench": mine_picks[11:], "bench_size": each - 11, "total": each,
+                     "complete": len(d.picks[i]) == each, "memory": room.memory,
                      "state": room.moves_text}
+            if room.bench and len(d.picks[i]) == each and room.status == "drafting":
+                plan_fields(rooms.seat_session(load_deck(), room, mine, d), draft["bench"], draft, room.memory)
     elif mine is not None and room.status == "drafting":
-        draft = session_out(mine.state, _replay(mine.state), room.memory)
+        try:
+            draft = session_out(mine.state, rooms.seat_session(load_deck(), room, mine), room.memory)
+        except IllegalMove as e:
+            raise HTTPException(400, str(e)) from None
+    if draft is not None:
+        draft["ready"] = mine.plan is not None
     return {
         "code": room.code, "size": room.size, "format": ROOM_FORMATS[room.size],
-        "memory": room.memory, "style": room.style, "timer": room.timer_seconds,
+        "memory": room.memory, "style": room.style, "timer": room.timer_seconds, "bench": room.bench,
+        "picks_each": each,
         "stages": CUP_STAGES.get(room.size, ["Group stage", *CUP_STAGES[16]]),
         "status": room.status, "version": room.version, "failure_reason": room.failure_reason,
         "is_host": me is not None and room.host_id == me.account_id,
@@ -668,6 +691,7 @@ def room_out(room: rooms.Room, me: accounts.Account | None) -> dict:
             "id": s.account_id, "username": s.username, "seat": s.seat,
             "formation": FORMATIONS[s.formation].label, "code": s.formation,
             "picks": picks[s.account_id][0], "complete": picks[s.account_id][1],
+            "ready": not room.bench or s.plan is not None,
             "host": s.account_id == room.host_id,
             "you": mine is s, **rooms.seat_palette(s.seat),
         } for s in room.seats],
@@ -698,7 +722,7 @@ def turns_out(room: rooms.Room, d, mine) -> dict:
             c["rating"] = None
         recent.append({"username": room.seats[i].username, "seat": room.seats[i].seat, **rooms.seat_palette(room.seats[i].seat), "card": c})
     return {
-        "expect": len(d.moves), "total": d.total, "round": d.round, "rounds": 11,
+        "expect": len(d.moves), "total": d.total, "round": d.round, "rounds": d.picks_each,
         "turn": None if seat is None else {"id": seat.account_id, "username": seat.username,
                                            "you": seat is mine, "seat": seat.seat, **rooms.seat_palette(seat.seat)},
         "deal": deal, "recent": recent,
@@ -712,6 +736,11 @@ class RoomIn(BaseModel):
     memory: bool = False
     style: str = "turns"
     timer: int = 30
+    bench: bool = True
+
+
+class BenchIn(BaseModel):
+    bench: bool
 
 
 class StyleIn(BaseModel):
@@ -748,7 +777,7 @@ def _room_reply(conn, request: Request, code: str) -> dict:
 def create_room(body: RoomIn, request: Request) -> dict:
     with db.connection() as conn:
         code = rooms.create_room(conn, _signed_in(conn, request), body.size, body.formation, body.memory,
-                                 body.style, body.timer)
+                                 body.style, body.timer, body.bench)
         return _room_reply(conn, request, code)
 
 
@@ -804,6 +833,26 @@ def room_style(code: str, body: StyleIn, request: Request) -> dict:
 def room_memory(code: str, body: MemoryIn, request: Request) -> dict:
     with db.connection() as conn:
         rooms.set_memory(conn, _signed_in(conn, request), code, body.memory)
+        return _room_reply(conn, request, code)
+
+
+@app.post("/api/rooms/{code}/bench")
+def room_bench(code: str, body: BenchIn, request: Request) -> dict:
+    with db.connection() as conn:
+        rooms.set_bench(conn, _signed_in(conn, request), code, body.bench)
+        return _room_reply(conn, request, code)
+
+
+@app.post("/api/rooms/{code}/plan")
+def room_plan(code: str, body: PlanIn, request: Request) -> dict:
+    """A seat's plan, which also says it is ready (C42); `changes: null` is the automatic
+    plan. The room completes when every seat is ready."""
+    plan = None if body.changes is None else tuple(Change(c.on, c.minute, c.when, c.off) for c in body.changes)
+    with db.connection() as conn:
+        try:
+            rooms.set_plan(conn, load_deck(), _signed_in(conn, request), code, plan)
+        except (IllegalMove, KeyError) as e:
+            raise _plan_refused(e) from None
         return _room_reply(conn, request, code)
 
 
@@ -883,7 +932,7 @@ def _room_tournament(code: str, request: Request) -> tuple[rooms.Room, Tournamen
     humans = rooms.sides(deck, room)
     for side in humans:
         side.you = me is not None and side.owner == me.account_id
-    return room, play_room(deck, league(), room.seed, humans, room.size)
+    return room, play_room(deck, league(), room.seed, humans, room.size, engine=rooms.engine(room))
 
 
 def room_brief(room: rooms.Room) -> dict:
@@ -953,8 +1002,18 @@ def profile(request: Request) -> dict:
 
 # -- the daily challenge (C32) -----------------------------------------------------
 
+def _plan_refused(e: Exception) -> HTTPException:
+    """A move or plan refused: IllegalMove says why; a KeyError is a condition no plan knows."""
+    return HTTPException(400, str(e) if isinstance(e, IllegalMove) else "a change comes on a score the plan knows")
+
+
 class DailyIn(BaseModel):
     moves: str = ""
+    changes: list[ChangeIn] | None = None     # a bench day's plan (C42); None: automatic
+
+
+def _daily_plan(body: DailyIn):
+    return None if body.changes is None else tuple(Change(c.on, c.minute, c.when, c.off) for c in body.changes)
 
 
 def hide_ratings(cards: list[dict]) -> list[dict]:
@@ -975,7 +1034,7 @@ def challenge_out(ch: daily_rules.Challenge, reveal: bool) -> dict:
             "opponent": {**side_out(opp), "xi": xi if reveal else hide_ratings(xi), "shape": opp.formation.label},
             "ratings_hidden": not reveal,
             "goal": daily_rules.describe(ch.kind, ch.target), "kind": ch.kind, "target": ch.target,
-            "success_rate": pct(ch.success_rate)}
+            "success_rate": pct(ch.success_rate), "bench": ch.bench, "squads": 14 if ch.bench else 11}
 
 
 def daily_result_out(ch, fx, j, met: bool, ranked: bool) -> dict:
@@ -1000,7 +1059,8 @@ def daily_today(request: Request, day: str | None = None) -> dict:
             row = daily.result_of(conn, d, me.account_id)
             if row is not None:
                 try:
-                    fx, j = daily.play(load_deck(), league(), ch, daily.moves_of(ch, row[0]), "ranked")
+                    fx, j = daily.play(load_deck(), league(), ch, daily.moves_of(ch, row[0]), "ranked",
+                                       daily.plan_of(ch, row[6]))
                     mine = daily_result_out(ch, fx, j, row[1], True)
                 except (IllegalMove, ValueError):
                     # The picks no longer replay (the deck changed since that day): the
@@ -1032,9 +1092,10 @@ def daily_submit(body: DailyIn, request: Request) -> dict:
     with db.connection() as conn:
         me = _signed_in(conn, request)
         try:
-            ch, fx, j, ok = daily.submit(conn, load_deck(), league(), me, daily.today(), body.moves)
-        except IllegalMove as e:
-            raise HTTPException(400, str(e)) from None
+            ch, fx, j, ok = daily.submit(conn, load_deck(), league(), me, daily.today(), body.moves,
+                                         _daily_plan(body))
+        except (IllegalMove, KeyError) as e:
+            raise _plan_refused(e) from None
         out = daily_result_out(ch, fx, j, ok, True)
         board = daily.board(conn, daily.today(), me)
         streak = results.streaks(daily.days_played(conn, me.account_id), daily.today())
@@ -1049,9 +1110,10 @@ def daily_practice(body: DailyIn) -> dict:
     with db.connection() as conn:
         ch = daily.get_challenge(conn, load_deck(), league(), d)
     try:
-        fx, j = daily.play(load_deck(), league(), ch, daily.moves_of(ch, body.moves), "practice")
-    except IllegalMove as e:
-        raise HTTPException(400, str(e)) from None
+        fx, j = daily.play(load_deck(), league(), ch, daily.moves_of(ch, body.moves), "practice",
+                           daily.plan_of(ch, _daily_plan(body)))
+    except (IllegalMove, KeyError) as e:
+        raise _plan_refused(e) from None
     r = fx.result
     return daily_result_out(ch, fx, j, daily_rules.met(ch.kind, ch.target, r.home_goals, r.away_goals), False)
 

@@ -257,8 +257,8 @@ Every tournament is played by one engine, chosen when it is played. **Engine 1 i
 everything above and does not change**: every shared link, saved result and room
 replays its tournament from scratch, so a new rule there would rewrite results people
 have already watched; a pinned hash of six tournaments guards it. Engine 2 is opt-in
-(`play_tournament(..., engine=2)`, `game --validate --engine 2`); a solo draft with a
-bench plays it (§5, C40), rooms and the daily do not yet.
+(`play_tournament(..., engine=2)`, `game --validate --engine 2`); solo drafts, rooms
+and days with a bench play it (§5, §7b, §8; C40, C42).
 
 - **A match is played in five-minute blocks.** In each, a side's expected goals are
   engine 1's formula over the eleven ON THE PITCH, with each outfield man's rating moved by
@@ -362,6 +362,16 @@ home goals 1.767 (real 1.719), away 1.360 (1.327), total SD 1.801 (1.783), home 
   engine. One ranked attempt per account per day. Signed out, a practice match uses a
   third seed and is kept nowhere. Ranked by goal met, goal difference, goals scored,
   the eleven's average mark, then who played first. A streak lasts until a day is missed.
+- **A day with a bench** (C42): every day made from then on is fourteen squads, the last
+  three for the bench, with a plan (§5), and its match is played by engine 2 (§6), the
+  opponent bringing on its own bench by the automatic plan. Its goal is measured the same
+  way, the calibration drafter also taking the best player for its bench and using the
+  automatic plan: over 60 days, all in the band, mean 39.5%. A day stored before keeps
+  eleven picks and engine 1. The ranked plan is stored with the attempt (the automatic one
+  written out), so a played day replays. Drafting blind, the automatic plan's lines are
+  not shown, since bringing the best-rated man on first would rank the substitutes; each
+  shows "Automatic" until the drafter chooses, and the untouched ones then come on at
+  60', 70', 80' in bench order.
 
 ## 8. Accounts and rooms (playing with friends)
 
@@ -393,6 +403,14 @@ home goals 1.767 (real 1.719), away 1.360 (1.327), total SD 1.801 (1.783), home 
   people can both take Messi 2011–12.
 - **Memory mode** (§5) is the host's choice, made in the lobby and fixed once the draft
   starts; in a memory room the API leaves the ratings out of every seat's draft.
+- **The bench** (C42) is the host's choice too, on by default for a new room: fourteen
+  picks each (fourteen rounds when taking turns, exclusive across the room like the rest),
+  then each seat plans its changes (§5) and says it is **ready**; the room completes only
+  when every seat is, since the tournament is recomputed on every read and a plan changed
+  after it opened would change what everyone had seen. A plan can be changed until then.
+  No pick clock runs while plans are made; the host's finish makes any picks left and
+  gives anyone not ready the automatic plan. A bench room plays engine 2; a room without
+  one, and every room made before benches, plays engine 1.
 - **The host can finish the drafts** of anyone who has wandered off: each unfinished
   eleven takes the highest-rated takeable player of each remaining deal.
 - **The tournament** starts when the last eleven is full. Places no person took go to
@@ -402,7 +420,9 @@ home goals 1.767 (real 1.719), away 1.360 (1.327), total SD 1.801 (1.783), home 
   (seed, size, the seats' draft states) and is recomputed on every request, never
   stored; a room of one in 32 plays exactly the solo tournament of the same seed.
 - **Stored:** `accounts`, `rooms` (code, size, seed, host, status, memory, style, pick
-  clock, the room's moves and when the current turn began, a version that rises on every write) and `room_seats` (who, seat, formation, draft state string).
+  clock, whether it drafts a bench, the room's moves and when the current turn began, a
+  version that rises on every write) and `room_seats` (who, seat, formation, draft state
+  string, and in a bench room its plan once ready).
   Lobbies nobody started are swept after three days.
 - **A dropped connection is not the end of a room.** The page polls; only a 404 means
   the room is gone. Any other failure keeps the screen, says it is reconnecting and tries

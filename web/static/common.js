@@ -371,12 +371,59 @@ function renderBench(el, bench, size) {
 const WHEN_LABEL = { any: "whatever the score", behind: "if behind", level: "if level", ahead: "if ahead",
   not_ahead: "unless ahead", not_behind: "unless behind" };
 const WHEN_SHORT = { ...WHEN_LABEL, any: "any score" };
+const AUTO_NOTE = `Automatic: the best-rated on first, at 60', 70' and 80'. "Best change" replaces whoever it helps most to replace, and only if it helps.`;
 
 /* A plan as the tournament page lists it: [{on, minute, when, off}] with names. */
 function planHtml(plan) {
   if (!plan || !plan.length) return `<p class="plan-none">No changes planned: the eleven play every minute.</p>`;
   return `<ol class="plan-list">${[...plan].sort((a, b) => a.minute - b.minute).map((x) =>
     `<li><span class="m">${x.minute}'</span><b>${esc(x.on)}</b> <span>${esc(WHEN_LABEL[x.when])}, for ${x.off ? esc(x.off) : "whoever it helps most"}</span></li>`).join("")}</ol>`;
+}
+
+/* The plan panel (C41): for each substitute, from when, on what score and for whom. `d` is
+   a finished bench draft ({bench, xi} with each bench card's `can_replace`), `plan` the
+   lines to show ([{on, minute, when, off}]); `opts.tag` heads it, `opts.foot` is the
+   page's own buttons, and `opts.onChange(plan)` gets the whole plan after any change. */
+function planPanel(el, d, plan, opts) {
+  // A null plan is the automatic one, not shown: drafting blind, its order would rank the
+  // substitutes (C42). Each row says "Automatic" until the drafter chooses.
+  const hidden = plan == null;
+  const line = (i) => hidden ? null : plan.find((x) => x.on === i);
+  const opt = (v, label, on) => `<option value="${v}" ${on ? "selected" : ""}>${esc(label)}</option>`;
+  el.style.cssText = "";
+  el.classList.remove("flip");
+  el.innerHTML = `
+    <div class="panel-h"><span class="label">Your changes</span><span class="label">${esc(opts.tag || "")}</span></div>
+    <div class="plan-intro"><p>Players tire as a match goes on, and a tired man defends worst. A substitute comes on fresh.
+      Up to three changes, the same plan for every match. The score is the tie's: in a second leg, the aggregate.</p></div>
+    ${d.bench.map((c, i) => {
+      const x = line(i);
+      return `<div class="plan-row" data-i="${i}">
+        <div class="t">${crest(c.crest, 36, c.club)}<div class="who"><b>${esc(c.name)}</b><small>${(c.positions || [c.pos]).map(posChip).join("")}${c.rating == null ? "" : ` ${c.rating}`}</small></div></div>
+        <label>On<select data-k="minute" aria-label="When ${esc(c.name)} comes on">${hidden ? opt("auto", "Automatic", true) : ""}${opt("", "Not used", !hidden && !x)}${[45, 50, 55, 60, 65, 70, 75, 80, 85].map((m) => opt(m, `from ${m}'`, x && x.minute === m)).join("")}</select></label>
+        <label>When<select data-k="when" ${x ? "" : "disabled"}>${Object.entries(WHEN_SHORT).map(([k, l]) => opt(k, l, x ? x.when === k : k === "any")).join("")}</select></label>
+        <label>For<select data-k="off" ${x ? "" : "disabled"}>${opt("", "best change", !x || x.off == null)}${c.can_replace.map((j) =>
+          opt(j, `${d.xi[j].slot} · ${d.xi[j].name}`, x && x.off === j)).join("")}</select></label>
+      </div>`;
+    }).join("")}
+    <div class="plan-foot">${opts.foot || ""}</div>`;
+  el.querySelectorAll(".plan-row select").forEach((sel) => sel.onchange = () => opts.onChange(readPlan(el)));
+}
+
+/* The plan as the panel shows it. Two changes for one man can't both happen; the later
+   goes back to "best change". */
+function readPlan(el) {
+  const seen = new Set();
+  return [...el.querySelectorAll(".plan-row")].map((row) => {
+    const v = (k) => row.querySelector(`[data-k="${k}"]`).value;
+    if (!v("minute")) return null;
+    // A row still "Automatic" once another is chosen: on at 60', 70', 80' in bench order,
+    // which says nothing about ratings.
+    if (v("minute") === "auto") return { on: +row.dataset.i, minute: 60 + 10 * +row.dataset.i, when: "any", off: null };
+    const x = { on: +row.dataset.i, minute: +v("minute"), when: v("when"), off: v("off") === "" ? null : +v("off") };
+    if (x.off != null) { if (seen.has(x.off)) x.off = null; else seen.add(x.off); }
+    return x;
+  }).filter(Boolean);
 }
 
 /* Where each position stands on the pitch, attacking upwards: [top %, left %] for one man;

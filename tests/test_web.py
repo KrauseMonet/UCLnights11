@@ -303,4 +303,9 @@ def test_a_plan_the_draft_cannot_play_is_a_400():
 def test_a_memory_plan_shows_no_ratings():
     s = _finish("b31-433")
     m = client.get(f"/api/draft/{s['state']}?memory=1").json()
-    assert m["plan"] and all(c["rating"] is None and c["can_replace"] for c in m["bench"])
+    assert all(c["rating"] is None and c["can_replace"] for c in m["bench"])
+    # The automatic plan brings the best-rated man on first, so drafting blind its order
+    # would rank the substitutes: it isn't sent (C42). Seen, it is.
+    assert m["plan"] is None and not m["plan_chosen"] and s["plan"]
+    chosen = client.post(f"/api/draft/{s['state']}/plan?memory=1", json={"changes": s["plan"]}).json()
+    assert chosen["plan"] == s["plan"], "a plan the drafter chose is theirs to see"

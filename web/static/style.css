@@ -599,6 +599,46 @@ button{font:inherit;cursor:pointer}
   border:1px solid rgba(242,194,90,.4);box-shadow:0 0 0 6px rgba(242,194,90,.06),0 40px 80px -30px rgba(0,0,0,.9);--rx:50%;--ry:126px;--rr:70px}
 .champ-name{font:800 clamp(26px,4vw,38px)/1.15 var(--display);letter-spacing:-.03em;color:#fff;text-align:center;text-wrap:balance}
 .champ-block .trophy{font-size:44px;line-height:1;filter:drop-shadow(0 6px 20px rgba(242,194,90,.5))}
+/* Your run, once it is over: the hero is your side, in your colours, with its figures and
+   the tie that ended it; the champion is a chip underneath. */
+.run-card{max-width:720px;margin:8px auto 0;padding:24px 26px 22px;border-radius:26px;
+  border:1px solid color-mix(in srgb,var(--team) 45%,transparent);box-shadow:0 40px 80px -30px rgba(0,0,0,.9);
+  --rx:calc(100% - 58px);--ry:56px;--rr:50px}
+.run-card.champ{border-color:rgba(242,194,90,.55);box-shadow:0 0 0 6px rgba(242,194,90,.07),0 40px 80px -30px rgba(0,0,0,.9)}
+.run-top{display:flex;align-items:center;gap:14px}
+.run-top > div{flex:1;min-width:0}
+.run-top .label{display:block;color:var(--team-ink);margin-bottom:6px}
+.run-top b{font:700 clamp(17px,2.4vw,22px)/1.2 var(--display);letter-spacing:-.02em;color:#fff}
+.run-top .trophy{font-size:38px;line-height:1;filter:drop-shadow(0 6px 20px rgba(242,194,90,.5))}
+.run-figs{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:10px;margin-top:20px}
+.run-figs > div{padding:12px 14px;border-radius:14px;background:rgba(3,4,10,.32);box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
+.run-figs .label{display:block;color:rgba(255,255,255,.62)}
+.run-figs b{display:block;margin:8px 0 2px;font:800 26px/1 var(--display);letter-spacing:-.03em;color:#fff}
+.run-figs small{color:var(--team-ink);font-size:12px}
+.run-end{display:grid;justify-items:center;gap:10px;margin-top:18px;padding-top:16px;border-top:1px solid rgba(255,255,255,.12);text-align:center}
+.run-end .label{color:rgba(255,255,255,.62)}
+.run-end p{margin:0;color:#fff;font-size:15px;text-wrap:balance}
+.run-end small{color:rgba(255,255,255,.72);font-size:12.5px}
+.run-tie{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:12px;width:100%}
+.run-tie > span{display:flex;align-items:center;gap:9px;min-width:0}
+.run-tie .h{justify-content:flex-end}
+.run-tie .nm{font:700 15px/1.2 var(--display);letter-spacing:-.01em;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.run-tie .nm.you-name{color:var(--trophy-2)}
+.run-tie .sc{font:800 24px/1 var(--display);letter-spacing:-.03em;color:#fff;padding:8px 14px;border-radius:12px;background:rgba(3,4,10,.4)}
+.champ-chip{display:flex;align-items:center;gap:10px;width:max-content;max-width:100%;margin:14px auto 0;padding:6px 18px 6px 6px;border-radius:999px;
+  background:color-mix(in srgb,var(--team-deep) 65%,var(--bg));border:1px solid color-mix(in srgb,var(--team) 40%,transparent)}
+.champ-chip .label{color:var(--team-ink)}
+.champ-chip b{font:700 14px/1.2 var(--display);color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+
+/* After your run, the rest of the tournament in playing order (cup.js moreHtml). */
+.cup-more{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:22px;margin-top:22px;align-items:start}
+.m-groups,.m-bracket,.m-side.pair{grid-column:1/-1}
+.m-side{display:grid;gap:22px}
+.m-side.pair{grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}
+.m-side .rounds.playoffs{grid-template-columns:repeat(2,minmax(0,1fr))}
+/* A bracket, not four lists: each later round's ties sit level with the pair they came from. */
+.rounds.bracket > div{display:flex;flex-direction:column}
+.rounds.bracket .ties{flex:1;display:flex;flex-direction:column;justify-content:space-around}
 
 /* --- archive --- */
 .season{margin-top:44px}
@@ -978,6 +1018,10 @@ button{font:inherit;cursor:pointer}
   .home-hero{grid-template-columns:1fr;padding-top:40px;gap:20px}
   .deck-stage{height:440px;max-width:560px;width:100%;margin:0 auto}
   .draft-grid,.cup-grid{grid-template-columns:1fr}
+  /* One column in playing order: the side column comes apart around the bracket. */
+  .cup-more,.m-side.pair{grid-template-columns:minmax(0,1fr)}
+  .cup-more.league .m-side{display:contents}
+  .cup-more.league .m-boot,.cup-more.league .m-assists{order:2}
   .pitch{max-width:440px;margin:18px auto}
   .latest{grid-template-columns:repeat(2,minmax(0,1fr))}
   .tiles{grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -1059,6 +1103,19 @@ button{font:inherit;cursor:pointer}
   .feed .h,.feed .a{grid-column:1;text-align:left}
   .res{grid-template-columns:1fr auto 1fr;padding:10px 12px}
   .res .tag{grid-column:1/-1}
+  /* The actions in a tidy grid: the first across the top, the rest in pairs. */
+  .cup-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .cup-actions > :first-child,.cup-actions > :last-child:nth-child(even){grid-column:1/-1}
+  .cup-actions .btn{padding:12px 10px;text-align:center;line-height:1.2}
+  .run-card{padding:18px 16px 16px;border-radius:20px;--rx:calc(100% - 44px);--ry:44px;--rr:38px}
+  .run-top .crest{width:52px;height:52px}
+  .run-figs{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .run-figs b{font-size:22px}
+  .run-tie{gap:8px}
+  .run-tie > span{gap:6px}
+  .run-tie .crest{width:22px;height:22px}
+  .run-tie .nm{font-size:12.5px}
+  .run-tie .sc{font-size:19px;padding:7px 10px}
   .deal .crest{width:64px;height:64px}
   .deal .band{--rx:calc(100% - 54px);--ry:54px;--rr:44px}
   .foot{padding:32px 16px 40px}

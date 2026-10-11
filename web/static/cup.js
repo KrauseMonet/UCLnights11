@@ -69,18 +69,73 @@ function renderHero() {
     return;
   }
   const champ = CUP.reached === "Champions";
-  $("hero").innerHTML = `${kicker}<h1 class="${champ ? "champ" : ""}">${champ ? "Champions" : esc(CUP.reached)}</h1>
-    <p>${placed ? `${placed}. ` : ""}${champ ? "Your eleven won the whole thing." : `${esc(CUP.champion.name)} lifted the trophy.`}</p>${squadLink}`;
+  $("hero").innerHTML = `${kicker}<h1 class="${champ ? "champ" : ""}">${champ ? "Champions" : esc(CUP.reached)}</h1>${squadLink}`;
   endActions();
-  championBlock();
+  runBlock(champ);
+}
+
+function ordinal(n) {
+  return `${n}${n % 10 === 1 && n % 100 !== 11 ? "st" : n % 10 === 2 && n % 100 !== 12 ? "nd" : n % 10 === 3 && n % 100 !== 13 ? "rd" : "th"}`;
 }
 
 // Where your side finished in the league phase (C50), once its eight matches are seen.
 function leaguePlace() {
   const i = CUP.table.findIndex((r) => r.you);
   if (i < 0 || CUP.revealed < firstRoundEnd()) return "";
-  const n = i + 1, th = n % 10 === 1 && n !== 11 ? "st" : n % 10 === 2 && n !== 12 ? "nd" : n % 10 === 3 && n !== 13 ? "rd" : "th";
-  return `${n}${th} of ${CUP.table.length} in the league phase`;
+  return `${ordinal(i + 1)} of ${CUP.table.length} in the league phase`;
+}
+
+/* Your run, once it is over, is the hero: its figures and the tie (or table) that ended
+   it, in your colours. The champion sits under it as a chip rather than in its place, so
+   a run that ended in the final isn't headlined by the side that beat it. */
+function runBlock(champ) {
+  const y = CUP.you, ms = CUP.your_matches;
+  const count = (o) => ms.filter((f) => outcome(f) === o).length;
+  const gf = ms.reduce((a, f) => a + (f.home.you ? f.hg : f.ag), 0);
+  const ga = ms.reduce((a, f) => a + (f.home.you ? f.ag : f.hg), 0);
+  const i = CUP.table.findIndex((r) => r.you);
+  const figs = [
+    i >= 0 ? ["League phase", ordinal(i + 1), `of ${CUP.table.length}`] : null,
+    ["Record", `${count("w")}–${count("d")}–${count("l")}`, "won, drawn, lost"],
+    ["Goals", `${gf}–${ga}`, "for, against"],
+    ["Matches", ms.length, champ ? "all the way" : "played"],
+  ].filter(Boolean);
+  const c = CUP.champion;
+  $("match").innerHTML = `<div class="run-card band ${champ ? "champ" : ""}" style="${teamStyle(y)}">
+      <div class="run-top">${champ ? `<span class="trophy" aria-hidden="true">🏆</span>` : ""}
+        <div><span class="label">${champ ? "Champions" : "Your run"}</span><b>${esc(sideName(y))} · ${esc(y.formation)}</b></div>
+        ${sideCrest(y, 64)}</div>
+      <div class="run-figs">${figs.map(([k, v, note]) => `<div><span class="label">${k}</span><b>${v}</b><small>${note}</small></div>`).join("")}</div>
+      ${endingHtml(champ, i)}</div>
+    ${champ ? "" : `<div class="champ-chip" style="${teamStyle(c)}">${sideCrest(c, 28)}<span class="label">Champions</span><b>${esc(c.name)}</b></div>`}`;
+}
+
+// The tie that ended your run (or won it), or where you finished if it ended in a table.
+function endingHtml(champ, i) {
+  const stage = champ || CUP.reached === "Runners-up" ? "Final" : CUP.reached;
+  const round = CUP.knockout.find((r) => r.stage === stage);
+  const t = round && round.ties.find((x) => x.a.you || x.b.you);
+  if (t) {
+    const single = t.legs.length === 1, pens = t.legs[t.legs.length - 1].pens;
+    const sa = single ? t.legs[0].hg : t.agg[0], sb = single ? t.legs[0].ag : t.agg[1];
+    const winner = t.winner === t.a.key ? t.a : t.b;
+    const side = (s, cls) => `<span class="${cls}">${cls === "a" ? sideCrest(s, 28) : ""}<span class="nm ${s.you ? "you-name" : ""}">${esc(sideName(s))}</span>${cls === "h" ? sideCrest(s, 28) : ""}</span>`;
+    const notes = [single ? "" : "On aggregate", pens ? `${sideName(winner)} won ${Math.max(...pens)}–${Math.min(...pens)} on penalties` : ""].filter(Boolean);
+    const head = champ ? "Won the final" : stage === "Final" ? "Lost the final" : `Out in the ${stage.toLowerCase()}`;
+    return `<div class="run-end"><span class="label">${head}</span>
+      <div class="run-tie">${side(t.a, "h")}<b class="sc">${sa}–${sb}</b>${side(t.b, "a")}</div>
+      ${notes.length ? `<small>${esc(notes.join(" · "))}</small>` : ""}</div>`;
+  }
+  if (i >= 0) {
+    // Out in the league phase: 25th and below go home.
+    const cut = CUP.table[23], short = cut.pts - CUP.table[i].pts;
+    return `<div class="run-end"><span class="label">Out in the league phase</span>
+      <p>${ordinal(i + 1)} of ${CUP.table.length}, ${short > 0 ? `${short} point${short === 1 ? "" : "s"} short of` : "level on points with"} 24th, the last place in the play-offs</p></div>`;
+  }
+  const g = CUP.groups.find((x) => x.table.some((r) => r.you));
+  if (!g) return "";
+  return `<div class="run-end"><span class="label">Out in the group stage</span>
+    <p>${ordinal(g.table.findIndex((r) => r.you) + 1)} in Group ${esc(g.name)}; the top two went through</p></div>`;
 }
 
 function renderSpectator(where) {
@@ -241,13 +296,13 @@ function leagueHtml() {
 }
 
 function roundHtml(r) {
-  return `<div><span class="label">${esc(r.stage)}</span>${r.ties.map((t) => {
+  return `<div><span class="label">${esc(r.stage)}</span><div class="ties">${r.ties.map((t) => {
     const single = t.legs.length === 1, aw = t.winner === t.a.key;
     const sa = single ? t.legs[0].hg : t.agg[0], sb = single ? t.legs[0].ag : t.agg[1];
     const pens = t.legs[t.legs.length - 1].pens;
     const line = (s, n, win) => `<div class="${win ? "" : "lose"}">${sideCrest(s, 18)}<span class="nm ${s.you ? "you-name" : ""}">${esc(tag(s))}</span><b>${n}</b></div>`;
     return `<div class="tie">${line(t.a, sa, aw)}${line(t.b, sb, !aw)}${pens ? `<small>pens ${pens[0]}–${pens[1]}</small>` : ""}</div>`;
-  }).join("")}</div>`;
+  }).join("")}</div></div>`;
 }
 
 function leaderList(rows) {
@@ -264,33 +319,40 @@ function renderBody() {
     <span class="label">${played.filter((f) => outcome(f) === "w").length}W ${played.filter((f) => outcome(f) === "d").length}D ${played.filter((f) => outcome(f) === "l").length}L</span></div>
     ${played.map(resRow).join("")}</section>`);
   if (done && CUP.players) left.push(friendsHtml());
-  if (done) {
-    // The play-offs get their own panel, so the bracket is the four rounds from the last 16.
-    const playoffs = CUP.knockout.filter((r) => r.stage === "Knockout play-offs");
-    const bracket = CUP.knockout.filter((r) => r.stage !== "Knockout play-offs");
-    left.push(`<section class="panel"><div class="panel-h"><span class="label">Knockouts</span></div><div class="rounds r${bracket.length}">${bracket.map(roundHtml).join("")}</div></section>`);
-    if (playoffs.length) left.push(`<section class="panel"><div class="panel-h"><span class="label">Knockout play-offs</span><span class="label">9th–16th v 17th–24th</span></div>
-      <div class="rounds playoffs">${playoffs[0].ties.map((t) => roundHtml({ stage: "", ties: [t] })).join("")}</div></section>`);
-    if (CUP.table.length) left.push(leagueHtml());
-    if (CUP.groups.length) left.push(`<section class="panel"><div class="panel-h"><span class="label">Group stage</span></div><div class="groups">${CUP.groups.map(groupHtml).join("")}</div></section>`);
-  }
   const right = [];
   const others = (CUP.players || []).filter((p) => !p.you);
   if (done && others.length) right.push(`<section class="panel"><div class="panel-h"><span class="label">Their elevens</span>
     <select id="whose" aria-label="Whose eleven">${others.map((p, i) => `<option value="${i}">${esc(p.name)} · ${esc(p.formation)}</option>`).join("")}</select></div>
     <div class="pitch" id="theirpitch"></div></section>`);
   if (done && CUP.journey) right.push(playersPanel(CUP.journey));
-  if (done) {
-    right.push(`<section class="panel"><div class="panel-h"><span class="label">Top scorers</span></div>${leaderList(CUP.golden_boot)}</section>`);
-    right.push(`<section class="panel"><div class="panel-h"><span class="label">Most assists</span></div>${leaderList(CUP.assists)}</section>`);
-  }
   $("left").innerHTML = left.join("");
   $("right").innerHTML = right.join("");
+  $("more").innerHTML = done ? moreHtml() : "";
   if ($("whose")) {
     const show = () => { const p = others[+$("whose").value]; renderPitch($("theirpitch"), p.slots, p.xi, null); };
     $("whose").onchange = show;
     show();
   }
+}
+
+/* The whole tournament, in the order it was played: the league phase (or the groups) and
+   its play-offs, then the bracket from the last 16, then the leaders. The bracket takes
+   the full width so its names fit; the play-offs and leaders sit beside the long table. */
+function moreHtml() {
+  const playoffs = CUP.knockout.filter((r) => r.stage === "Knockout play-offs");
+  const bracket = CUP.knockout.filter((r) => r.stage !== "Knockout play-offs");
+  const first = CUP.table.length ? `<div class="m-table">${leagueHtml()}</div>`
+    : CUP.groups.length ? `<div class="m-groups"><section class="panel"><div class="panel-h"><span class="label">Group stage</span></div><div class="groups">${CUP.groups.map(groupHtml).join("")}</div></section></div>` : "";
+  const po = playoffs.length ? `<div class="m-po"><section class="panel"><div class="panel-h"><span class="label">Knockout play-offs</span><span class="label">9th–16th v 17th–24th</span></div>
+    <div class="rounds playoffs">${playoffs[0].ties.map((t) => roundHtml({ stage: "", ties: [t] })).join("")}</div></section></div>` : "";
+  const leaders = `<div class="m-boot"><section class="panel"><div class="panel-h"><span class="label">Top scorers</span></div>${leaderList(CUP.golden_boot)}</section></div>
+    <div class="m-assists"><section class="panel"><div class="panel-h"><span class="label">Most assists</span></div>${leaderList(CUP.assists)}</section></div>`;
+  const knockouts = `<div class="m-bracket"><section class="panel"><div class="panel-h"><span class="label">Knockouts</span></div><div class="rounds bracket r${bracket.length}">${bracket.map(roundHtml).join("")}</div></section></div>`;
+  // A league table is long, so the play-offs and leaders fill the column beside it; on a
+  // narrow screen that column comes apart and everything falls back into playing order.
+  return CUP.table.length
+    ? `<div class="cup-more league">${first}<div class="m-side">${po}${leaders}</div>${knockouts}</div>`
+    : `<div class="cup-more">${first}${knockouts}<div class="m-side pair">${leaders}</div></div>`;
 }
 
 function friendsHtml() {

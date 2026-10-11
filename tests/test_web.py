@@ -214,8 +214,8 @@ def test_your_best_rated_substitute_comes_on_first():
     t = client.get(f"/api/tournament/{s['state']}").json()
     came_on = 0
     for m in t["your_matches"]:
-        mine = [x for x in m["subs"] if x[1] == (0 if m["home"]["you"] else 1)]
-        ratings = [rating[x[3]] for x in sorted(mine)]
+        mine = [x for x in m["subs"] if x["side"] == (0 if m["home"]["you"] else 1)]
+        ratings = [rating[x["on"]] for x in sorted(mine, key=lambda x: x["minute"])]
         assert ratings == sorted(ratings, reverse=True)
         came_on += len(mine)
     assert came_on >= 6
@@ -232,7 +232,75 @@ def test_memory_hides_the_bench_s_ratings_too():
 def test_a_bench_state_is_not_an_eleven_for_rooms_or_the_daily():
     import pytest
     from game.draft import IllegalMove, decode, decode_state, encode
-    assert decode_state("b5-433-1.2") == (5, "433", decode("5-433-1.2")[2], True)
+    assert decode_state("b5-433-1.2") == (5, "433", decode("5-433-1.2")[2], True, None)
     assert encode(5, "433", decode("5-433-1.2")[2], bench=True) == "b5-433-1.2"
     with pytest.raises(IllegalMove):
         decode("b5-433-1.2")
+
+
+
+# -- the plan (C41) ---------------------------------------------------------
+
+def _yours(t):
+    return [(m, 0 if m["home"]["you"] else 1) for m in t["your_matches"]]
+
+
+def test_a_finished_bench_draft_offers_its_automatic_plan_and_what_each_man_can_replace():
+    s = _finish("b31-433")
+    assert not s["plan_chosen"] and [x["minute"] for x in s["plan"]] == [60, 70, 80]
+    assert all(x["off"] is None and x["when"] == "any" for x in s["plan"])
+    for c in s["bench"]:
+        assert c["can_replace"] and 0 not in c["can_replace"]
+
+
+def test_the_automatic_plan_written_out_plays_the_same_tournament():
+    s = _finish("b31-433")
+    chosen = client.post(f"/api/draft/{s['state']}/plan", json={"changes": s["plan"]}).json()
+    assert chosen["plan_chosen"] and chosen["state"] == s["state"] + "-p" + ".".join(
+        f"{x['on']}a{x['minute']}" for x in s["plan"])
+    a = client.get(f"/api/tournament/{s['state']}").json()["your_matches"]
+    b = client.get(f"/api/tournament/{chosen['state']}").json()["your_matches"]
+    assert [(m["hg"], m["ag"], m["subs"]) for m in a] == [(m["hg"], m["ag"], m["subs"]) for m in b]
+
+
+def test_a_plan_of_no_changes_brings_nobody_on():
+    s = _finish("b31-433")
+    none = client.post(f"/api/draft/{s['state']}/plan", json={"changes": []}).json()
+    assert none["state"].endswith("-p") and none["plan"] == []
+    t = client.get(f"/api/tournament/{none['state']}").json()
+    assert not any(x["side"] == side for m, side in _yours(t) for x in m["subs"])
+    assert any(m["subs"] for m, _ in _yours(t)), "the clubs still make theirs"
+
+
+def test_a_named_change_takes_off_that_man_and_the_card_shows_the_eleven_after_it():
+    s = _finish("b31-433")
+    slot = s["bench"][2]["can_replace"][-1]
+    starter = s["xi"][slot]["name"]
+    plan = [{"on": 2, "minute": 45, "when": "any", "off": slot}]
+    new = client.post(f"/api/draft/{s['state']}/plan", json={"changes": plan}).json()
+    t = client.get(f"/api/tournament/{new['state']}").json()
+    assert t["you"]["plan"] == [{"on": s["bench"][2]["name"], "minute": 45, "when": "any", "off": starter}]
+    for m, side in _yours(t):
+        mine = [x for x in m["subs"] if x["side"] == side]
+        assert [(x["minute"], x["off"], x["on"]) for x in mine] == [(45, starter, s["bench"][2]["name"])]
+        names = [c["name"] for c in mine[0]["xi"]]
+        assert len(names) == 11 and s["bench"][2]["name"] in names and starter not in names
+
+
+def test_a_plan_the_draft_cannot_play_is_a_400():
+    s = _finish("b31-433")
+    for plan in ([{"on": 0, "minute": 60, "when": "any", "off": 0}],
+                 [{"on": 0, "minute": 61, "when": "any"}],
+                 [{"on": 0, "minute": 60, "when": "sometimes"}],
+                 [{"on": 0, "minute": 60, "when": "any"}, {"on": 0, "minute": 70, "when": "any"}]):
+        assert client.post(f"/api/draft/{s['state']}/plan", json={"changes": plan}).status_code == 400
+    unfinished = _finish("b31-433", picks=12)
+    assert client.post(f"/api/draft/{unfinished['state']}/plan", json={"changes": []}).status_code == 400
+    back = client.post(f"/api/draft/{s['state']}-p/plan", json={"changes": None}).json()
+    assert back["state"] == s["state"] and not back["plan_chosen"]
+
+
+def test_a_memory_plan_shows_no_ratings():
+    s = _finish("b31-433")
+    m = client.get(f"/api/draft/{s['state']}?memory=1").json()
+    assert m["plan"] and all(c["rating"] is None and c["can_replace"] for c in m["bench"])

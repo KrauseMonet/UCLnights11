@@ -25,7 +25,8 @@ from pydantic import BaseModel
 
 from game import analysis as analyses, daily as daily_rules, journey as journeys, match
 from game.deck import Card, ClubSeason, load_deck
-from game.draft import IllegalMove, Pick, Reroll, Session, decode, decode_state, encode, replay, why_not
+from game.draft import (Change, IllegalMove, Pick, Reroll, Session, can_replace, decode, decode_state, encode,
+                        replay, why_not)
 from game.formations import DEFAULT, FORMATIONS
 from game.positions import arrange
 from game.shared_draft import Stranded
@@ -135,13 +136,30 @@ def session_out(state: str, s: Session, memory: bool = False) -> dict:
     if memory:
         for c in [*picks, *(deal["cards"] if deal else [])]:
             c["rating"] = None
-    return {
+    out = {
         "state": state, "seed": s.seed, "memory": memory,
         "formation": formation_out(s.formation),
         "picks": picks, "xi": eleven_out(s.formation, s.picks[:11], memory),
         "bench": bench, "bench_size": s.bench_size, "total": s.total,
         "deal": deal, "rerolls_left": s.rerolls_left, "complete": s.complete,
     }
+    if s.complete and s.bench_size:
+        # The plan (C41): the one chosen, or the automatic one written out, and for each
+        # substitute the slots whose starter he could come on for.
+        xi = s.xi
+        for c, man in zip(bench, s.bench):
+            c["can_replace"] = can_replace(s.formation, xi, man)
+        out["plan"] = [plan_line_out(c) for c in (s.plan if s.plan is not None else auto_changes(s.bench))]
+        out["plan_chosen"] = s.plan is not None
+    return out
+
+
+def auto_changes(bench: list[Card]) -> tuple[Change, ...]:
+    return tuple(Change(x.on, x.minute, x.when, None) for x in auto_plan(bench))
+
+
+def plan_line_out(c: Change) -> dict:
+    return {"on": c.on, "minute": c.minute, "when": c.when, "off": c.off}
 
 
 def side_out(side: Side) -> dict:
@@ -169,8 +187,9 @@ def fixture_out(f: Fixture, timeline: bool = False) -> dict:
     if timeline:
         out["shots"] = [[x.minute, x.side, int(x.on_target), int(x.goal)] for x in r.shots]
         out["lineups"] = [lineup_out(f.home), lineup_out(f.away)]
-        # Engine 2's changes (C39), [minute, side, off, on]; none in engine 1.
-        out["subs"] = [[x.minute, x.side, x.off.name, x.on.name] for x in r.subs]
+        # Engine 2's changes (C39), each with the eleven after it; none in engine 1.
+        out["subs"] = [{"minute": x.minute, "side": x.side, "off": x.off.name, "on": x.on.name,
+                        "xi": [{"name": c.name, "slot": c.slot} for c in x.xi]} for x in r.subs]
     return out
 
 
@@ -327,7 +346,7 @@ def tournament_out(t: Tournament) -> dict:
         "you": None if you is None else {
             **side_out(you), "formation": you.formation.label, "code": you.formation.code,
             "slots": list(you.formation.slots), "xi": [card_out(c) for c in you.xi],
-            "bench": [card_out(c) for c in you.bench]},
+            "bench": [card_out(c) for c in you.bench], "plan": plan_out(you)},
         "your_matches": [fixture_out(f, timeline=True) for f in t.fixtures if you in (f.home, f.away)],
         "groups": groups, "knockout": knockout,
         "champion": side_out(t.champion), "reached": t.reached(you) if you else None,
@@ -337,10 +356,18 @@ def tournament_out(t: Tournament) -> dict:
     }
 
 
+def plan_out(side: Side) -> list[dict]:
+    """A side's plan in words' parts, for the tournament page: who, from when, on what
+    score, for whom (None: whoever it helps most)."""
+    name = {c.id: c.name for c in side.xi}
+    return [{"on": side.bench[x.on].name, "minute": x.minute, "when": x.when,
+             "off": None if x.off is None else name.get(x.off)} for x in side.plan]
+
+
 # -- routes -----------------------------------------------------------------
 
 def _decode(state: str):
-    """A solo draft's (seed, formation, moves, bench): either kind of state."""
+    """A solo draft's (seed, formation, moves, bench, plan): either kind of state."""
     try:
         return decode_state(state)
     except IllegalMove as e:
@@ -348,9 +375,9 @@ def _decode(state: str):
 
 
 def _replay(state: str) -> Session:
-    seed, formation, moves, bench = _decode(state)
+    seed, formation, moves, bench, plan = _decode(state)
     try:
-        return replay(load_deck(), seed, formation, moves, bench)
+        return replay(load_deck(), seed, formation, moves, bench, plan)
     except IllegalMove as e:
         raise HTTPException(400, str(e)) from None
 
@@ -446,15 +473,39 @@ class PickIn(BaseModel):
 
 @app.post("/api/draft/{state}/pick")
 def pick(state: str, body: PickIn, memory: bool = False) -> dict:
-    seed, formation, moves, bench = _decode(state)
+    seed, formation, moves, bench, _ = _decode(state)
     new = encode(seed, formation, moves + [Pick(body.index)], bench)
     return session_out(new, _replay(new), memory)
 
 
 @app.post("/api/draft/{state}/reroll")
 def reroll(state: str, memory: bool = False) -> dict:
-    seed, formation, moves, bench = _decode(state)
+    seed, formation, moves, bench, _ = _decode(state)
     new = encode(seed, formation, moves + [Reroll()], bench)
+    return session_out(new, _replay(new), memory)
+
+
+class ChangeIn(BaseModel):
+    on: int
+    minute: int
+    when: str
+    off: int | None = None
+
+
+class PlanIn(BaseModel):
+    changes: list[ChangeIn] | None     # None: back to the automatic plan
+
+
+@app.post("/api/draft/{state}/plan")
+def set_plan(state: str, body: PlanIn, memory: bool = False) -> dict:
+    """A finished bench draft's plan (C41). It is part of the state, so the tournament
+    stays a pure function of the link; a new plan is a new link and a new tournament."""
+    seed, formation, moves, bench, _ = _decode(state)
+    plan = None if body.changes is None else tuple(Change(c.on, c.minute, c.when, c.off) for c in body.changes)
+    try:
+        new = encode(seed, formation, moves, bench, plan)
+    except KeyError:
+        raise HTTPException(400, "a change comes on a score the plan knows") from None
     return session_out(new, _replay(new), memory)
 
 
@@ -464,8 +515,9 @@ def _solo_tournament(state: str) -> Tournament:
     s = _replay(state)
     if not s.complete:
         raise HTTPException(409, "the squad is not complete yet" if s.bench_size else "the eleven is not complete yet")
+    subs = s.subs()
     you = Side("YOU", "Your XI", "YOU", s.formation, s.picks[:11], you=True,
-               bench=s.bench, plan=auto_plan(s.bench))
+               bench=s.bench, plan=auto_plan(s.bench) if subs is None else subs)
     return play_tournament(load_deck(), league(), s.seed, you, engine=2 if s.bench_size else 1)
 
 

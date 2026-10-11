@@ -29,18 +29,25 @@ function matchCardHtml(f, score, clock, look) {
    stands up, home at the bottom. Each man carries both sets of coordinates and the
    stylesheet picks one. Positions come from the formation's slots (game.positions), the
    same drawing as the draft's pitch, turned on its side. */
+const surname = (n) => n.split(" ").length > 1 && !/^(van|von|de|da|di|del|dos|der|den|le|la|ter)$/i.test(n.split(" ").slice(-2, -1)[0]) ? n.split(" ").slice(-1)[0] : n.split(" ").slice(-2).join(" ");
+
+/* Where slot j of side i stands: side on (--hx/--hy) and, on a phone, upright (--vx/--vy). */
+function luSpot(spots, j, i) {
+  const { x, y } = spots[j];
+  const [hx, hy, vx, vy] = i === 0 ? [(100 - y) / 2, x, x, 50 + y / 2] : [50 + y / 2, 100 - x, 100 - x, (100 - y) / 2];
+  return `--hx:${hx}%;--hy:${hy}%;--vx:${vx}%;--vy:${vy}%`;
+}
+
 function lineupsHtml(f, look) {
   if (!f.lineups) return "";
-  const surname = (n) => n.split(" ").length > 1 && !/^(van|von|de|da|di|del|dos|der|den|le|la|ter)$/i.test(n.split(" ").slice(-2, -1)[0]) ? n.split(" ").slice(-1)[0] : n.split(" ").slice(-2).join(" ");
   const side = (lu, s, i) => {
     const spots = slotSpots(lu.slots), used = new Set();
     const men = lu.slots.map((slot, j) => {
       const k = lu.xi.findIndex((c, n) => c.slot === slot && !used.has(n));
       used.add(k);
-      const c = lu.xi[k] || { name: "", slot }, { x, y } = spots[j];
-      const [hx, hy, vx, vy] = i === 0 ? [(100 - y) / 2, x, x, 50 + y / 2] : [50 + y / 2, 100 - x, 100 - x, (100 - y) / 2];
+      const c = lu.xi[k] || { name: "", slot };
       return `<div class="lu-p" data-side="${i}" data-name="${esc(c.name)}" title="${esc(c.name)} · ${slot}"
-        style="--hx:${hx}%;--hy:${hy}%;--vx:${vx}%;--vy:${vy}%"><i>${slot}</i><span>${esc(surname(c.name))}</span></div>`;
+        style="${luSpot(spots, j, i)}"><i>${slot}</i><span>${esc(surname(c.name))}</span></div>`;
     }).join("");
     return `<div class="lu-side" style="${teamStyle(s)}">${men}</div>`;
   };
@@ -59,6 +66,37 @@ function markScorer(g) {
   p.classList.remove("scored"); void p.offsetWidth; p.classList.add("scored");
   p.dataset.goals = (+(p.dataset.goals || 0) + 1);
   p.querySelector("i").dataset.goals = "⚽".repeat(+p.dataset.goals);
+}
+
+/* A substitution (C41): the man coming on takes the disc of the man going off, and anyone
+   moved to make room slides to his new place. `x.xi` is the eleven after the change, in
+   the formation's slot order. */
+function applySub(f, x) {
+  if (!f.lineups) return;
+  const discs = [...document.querySelectorAll(`.lu-p[data-side="${x.side}"]`)];
+  const off = discs.find((d) => d.dataset.name === x.off);
+  if (off) {
+    off.dataset.name = x.on;
+    off.dataset.goals = 0;
+    delete off.querySelector("i").dataset.goals;
+    off.querySelector("span").textContent = surname(x.on);
+    off.classList.remove("subbed"); void off.offsetWidth; off.classList.add("subbed");
+  }
+  const lu = f.lineups[x.side], spots = slotSpots(lu.slots);
+  x.xi.forEach((c, j) => {
+    const d = discs.find((e) => e.dataset.name === c.name);
+    if (!d) return;
+    d.style.cssText = luSpot(spots, j, x.side);
+    d.querySelector("i").textContent = c.slot;
+    d.title = `${c.name} · ${c.slot}`;
+  });
+}
+
+function subLine(x) {
+  const who = `${esc(x.on)} <small>for ${esc(x.off)}</small>`;
+  return x.side === 0
+    ? `<div class="h sub">${who}<span class="m">${x.minute}'</span>⇄</div>`
+    : `<div class="a sub">⇄<span class="m">${x.minute}'</span>${who}</div>`;
 }
 
 /* A broadcast-style stats panel: home on the left, away on the right, a split bar per
@@ -144,8 +182,16 @@ function goalLine(g) {
    `onDone` runs once, at the whistle either way. */
 function playMatch(host, f, look, onDone) {
   host.innerHTML = matchCardHtml(f, "0–0", "0'", look);
-  const end = f.extra_time ? 120 : 90;
-  let minute = 0, h = 0, a = 0, gi = 0, pausedUntil = 0, done = false;
+  const end = f.extra_time ? 120 : 90, subs = f.subs || [];
+  let minute = 0, h = 0, a = 0, gi = 0, si = 0, pausedUntil = 0, done = false;
+  // A change after minute m comes before any goal after it, and after a goal in it.
+  const nextSub = (upTo) => {
+    while (si < subs.length && subs[si].minute <= upTo && !(gi < f.goals.length && f.goals[gi].minute <= subs[si].minute)) {
+      const x = subs[si++];
+      feed.insertAdjacentHTML("beforeend", subLine(x));
+      applySub(f, x);
+    }
+  };
   const feed = $("feed"), live = f.stats && f.shots;
   if (live) { $("mstats").innerHTML = statsHtml(f, liveStats(f, 0, end)); $("mstats").classList.add("live"); }
   const finish = () => {
@@ -153,7 +199,13 @@ function playMatch(host, f, look, onDone) {
     done = true;
     clearInterval(timer);
     host.querySelector(".goal-burst")?.remove();
-    while (gi < f.goals.length) { const g = f.goals[gi++]; feed.insertAdjacentHTML("beforeend", goalLine(g)); markScorer(g); }
+    nextSub(end);
+    while (gi < f.goals.length) {
+      const g = f.goals[gi++];
+      feed.insertAdjacentHTML("beforeend", goalLine(g));
+      markScorer(g);
+      nextSub(end);
+    }
     $("sc").textContent = `${f.hg}–${f.ag}`;
     $("clk").textContent = f.pens ? `${f.pens[0]}–${f.pens[1]} on penalties` : f.extra_time ? "After extra time" : "Full time";
     $("tb").style.width = "100%";
@@ -168,6 +220,7 @@ function playMatch(host, f, look, onDone) {
     minute += 1;
     $("clk").textContent = `${minute}'`;
     $("tb").style.width = `${(minute / end) * 100}%`;
+    nextSub(minute);
     while (gi < f.goals.length && f.goals[gi].minute <= minute) {
       const g = f.goals[gi++];
       g.side === 0 ? h++ : a++;
@@ -178,6 +231,7 @@ function playMatch(host, f, look, onDone) {
       markScorer(g);
       goalBurst(f, g, look);
       pausedUntil = now + GOAL_PAUSE_MS;
+      nextSub(minute);
     }
     if (live) updateStats($("mstats"), f, liveStats(f, minute, end));
     if (minute >= end) finish();

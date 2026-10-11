@@ -103,7 +103,7 @@ function showJourney() {
   const y = CUP.you;
   const side = { name: y.you ? "Your XI" : y.name, formation: y.formation, crest: y.crest, human: !!y.human,
     avg: Math.round(y.xi.reduce((a, c) => a + c.rating, 0) / y.xi.length), team: y.team, deep: y.deep, ink: y.ink };
-  openJourney(CUP.journey, side, CUP.room ? `ROOM ${CUP.room.code}` : `SEED ${CUP.state.split("-")[0]}`);
+  openJourney(CUP.journey, side, CUP.room ? `ROOM ${CUP.room.code}` : `SEED ${CUP.state.split("-")[0].replace(/^b/, "")}`);
 }
 
 function championBlock() {
@@ -211,6 +211,12 @@ function renderBody() {
   if (CUP.you) {
     renderPitch($("cuppitch"), CUP.you.slots, CUP.you.xi, null);
     renderBench($("cupbench"), CUP.you.bench || [], (CUP.you.bench || []).length);
+    if ((CUP.you.bench || []).length) {
+      // The plan, and before the first match a way back to change it (C41): a new plan
+      // is a new link and a new tournament, so it is offered only before anything is seen.
+      const change = !ROOM && !CUP.revealed ? `<a class="label" href="/draft#${esc(CUP.state)}">Change</a>` : "";
+      $("cupbench").insertAdjacentHTML("afterend", `<div class="plan-box"><div class="panel-h"><span class="label">Your changes</span>${change}</div>${planHtml(CUP.you.plan)}</div>`);
+    }
   }
   if ($("whose")) {
     const show = () => { const p = others[+$("whose").value]; renderPitch($("theirpitch"), p.slots, p.xi, null); };

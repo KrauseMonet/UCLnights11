@@ -366,6 +366,19 @@ function renderBench(el, bench, size) {
   }).join("");
 }
 
+/* A plan's conditions in words (C41), from your side's point of view; in a second leg the
+   score is the aggregate. */
+const WHEN_LABEL = { any: "whatever the score", behind: "if behind", level: "if level", ahead: "if ahead",
+  not_ahead: "unless ahead", not_behind: "unless behind" };
+const WHEN_SHORT = { ...WHEN_LABEL, any: "any score" };
+
+/* A plan as the tournament page lists it: [{on, minute, when, off}] with names. */
+function planHtml(plan) {
+  if (!plan || !plan.length) return `<p class="plan-none">No changes planned: the eleven play every minute.</p>`;
+  return `<ol class="plan-list">${[...plan].sort((a, b) => a.minute - b.minute).map((x) =>
+    `<li><span class="m">${x.minute}'</span><b>${esc(x.on)}</b> <span>${esc(WHEN_LABEL[x.when])}, for ${x.off ? esc(x.off) : "whoever it helps most"}</span></li>`).join("")}</ol>`;
+}
+
 /* Where each position stands on the pitch, attacking upwards: [top %, left %] for one man;
    a position held more than once spreads across the middle by GAP. */
 const SPOT = { GK: [90, 50], RB: [69, 86], CB: [73, 50], LB: [69, 14], DM: [56, 50], CM: [42, 50],

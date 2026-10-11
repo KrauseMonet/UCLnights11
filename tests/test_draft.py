@@ -3,8 +3,8 @@
 import pytest
 
 from game.deck import build_deck, load_deck
-from game.draft import (BENCH, IllegalMove, Pick, Reroll, REROLLS_ALLOWED, decode, decode_state, encode,
-                        replay, why_not)
+from game.draft import (BENCH, Change, IllegalMove, Pick, Reroll, REROLLS_ALLOWED, can_replace, decode,
+                        decode_plan, decode_state, encode, encode_plan, replay, why_not)
 from game.formations import FORMATIONS
 
 
@@ -224,8 +224,8 @@ def test_a_bench_deal_with_nothing_takeable_is_redrawn():
 
 def test_a_bench_state_round_trips_and_its_cap_counts_the_bench():
     moves = [Pick(3), Reroll(), Pick(0)]
-    assert decode_state(encode(123, "4231", moves, bench=True)) == (123, "4231", moves, True)
-    assert decode_state(encode(123, "4231", moves)) == (123, "4231", moves, False)
+    assert decode_state(encode(123, "4231", moves, bench=True)) == (123, "4231", moves, True, None)
+    assert decode_state(encode(123, "4231", moves)) == (123, "4231", moves, False, None)
     long = ".".join(["1"] * (11 + BENCH + REROLLS_ALLOWED))
     assert decode_state(f"b1-433-{long}")[3]
     with pytest.raises(IllegalMove):
@@ -234,3 +234,60 @@ def test_a_bench_state_round_trips_and_its_cap_counts_the_bench():
         decode(f"1-433-{long}")
     with pytest.raises(IllegalMove, match="bench"):
         decode("b1-433")
+
+
+# -- the plan (C41) -----------------------------------------------------------------
+
+def test_a_plan_round_trips_and_rides_at_the_end_of_a_bench_state():
+    plan = (Change(0, 60, "behind", 9), Change(1, 70, "any"), Change(2, 85, "not_behind"))
+    assert encode_plan(plan) == "p0b60o9.1a70.2w85"
+    assert decode_plan(encode_plan(plan)) == plan and decode_plan("p") == ()
+    moves = [Pick(1), Pick(2)]
+    assert encode(5, "433", moves, bench=True, plan=plan) == "b5-433-1.2-p0b60o9.1a70.2w85"
+    assert decode_state("b5-433-1.2-p0b60o9.1a70.2w85")[4] == plan
+    assert decode_state("b5-433-1.2")[4] is None
+
+
+@pytest.mark.parametrize("bad", ["5-433-1.2-p0a60", "b5-433-p0a60", "b5-433-1.2-p0z60", "b5-433-1.2-p0a6",
+                                 "b5-433-1.2-p0a60o123", "b5-433-1.2-q", "b5-433-1.2-p0a60.1a60.2a60.0a70"])
+def test_a_malformed_plan_is_refused(bad):
+    with pytest.raises(IllegalMove):
+        decode_state(bad)
+
+
+def test_a_plan_must_fit_the_finished_draft():
+    s, moves = bench_draft(42)
+    deck = load_deck()
+    ok = lambda plan: replay(deck, 42, "433", moves, bench=True, plan=plan)   # noqa: E731
+    xi = s.xi
+    slot = can_replace(s.formation, xi, s.bench[0])[0]
+    # A starter both of the first two could come on for, so only the one-change rule refuses.
+    both = next(j for j in can_replace(s.formation, xi, s.bench[0]) if j in can_replace(s.formation, xi, s.bench[1]))
+    assert ok((Change(0, 60, "behind", slot),)).subs()[0].off == s.xi[slot].id
+    assert ok(()).subs() == ()
+    for bad in [(Change(0, 60, "any"), Change(0, 70, "any")),             # one substitute twice
+                (Change(0, 60, "any", both), Change(1, 70, "any", both)),  # one starter twice
+                (Change(0, 60, "any", 0),),                               # the keeper
+                (Change(3, 60, "any"),),                                  # no fourth substitute
+                (Change(0, 40, "any"),), (Change(0, 90, "any"),), (Change(0, 62, "any"),)]:
+        with pytest.raises(IllegalMove):
+            ok(bad)
+    with pytest.raises(IllegalMove, match="finished"):
+        replay(deck, 42, "433", moves[:-1], bench=True, plan=())
+
+
+def test_can_replace_names_exactly_the_starters_a_man_could_come_on_for():
+    from game.positions import fits
+    s, _ = bench_draft(42, "352")
+    xi = s.xi                     # a property: each read places fresh copies
+    for man in s.bench:
+        allowed = can_replace(s.formation, xi, man)
+        for j, c in enumerate(xi):
+            legal = s.formation.slots[j] != "GK" and fits(s.formation.slots, [*(x for x in xi if x is not c), man])
+            assert (j in allowed) == legal
+        assert allowed
+    # Never the keeper, even for a man who could stand there. No keeper reaches a bench
+    # (why_not_bench), so this guard is a second one, and only a keeper can show it acting.
+    keeper = next(c for cs in load_deck().club_seasons for c in cs.cards
+                  if c.positions == ("GK",) and c.id not in {x.id for x in xi})
+    assert fits(s.formation.slots, [*xi[1:], keeper]) and can_replace(s.formation, xi, keeper) == []

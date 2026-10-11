@@ -15,6 +15,7 @@ const CODE = location.hash.slice(1).toUpperCase();
 const POLL_MS = 2500;
 const TURN_POLL_MS = 1000;            // while a pick clock runs, so a turn passes within a second
 const MAX_BACKOFF_MS = 20000;
+const POLL_TIMEOUT_MS = 8000;         // a poll is asked again soon anyway; don't hang on one for 15 s
 const STATUS = { lobby: "Lobby", drafting: "Drafting", complete: "Finished" };
 let R = null;              // the room as last applied
 let shown = null;          // the draft state the deal on screen belongs to
@@ -67,7 +68,12 @@ async function pollOnce() {
   clearTimeout(timer);
   let room;
   const t0 = Date.now();
-  try { room = await api(`/api/rooms/${CODE}`); sampleClock(t0, Date.now(), room.turns && room.turns.server_now); }
+  // Naming the version on screen lets the server answer "unchanged" in a few bytes.
+  const path = R ? `/api/rooms/${CODE}?v=${R.version}` : `/api/rooms/${CODE}`;
+  try {
+    room = await api(path, { timeout: POLL_TIMEOUT_MS });
+    sampleClock(t0, Date.now(), room.unchanged ? room.server_now : room.turns && room.turns.server_now);
+  }
   catch (e) {
     if (e.status === 404) return gone(e.message);
     failures += 1;
@@ -75,7 +81,7 @@ async function pollOnce() {
     return schedule(Math.min(POLL_MS * 2 ** failures, MAX_BACKOFF_MS));
   }
   if (failures) { failures = 0; connection(null); }
-  apply(room);
+  if (!room.unchanged) apply(room);
   schedule();
 }
 

@@ -25,7 +25,9 @@ from __future__ import annotations
 
 import random
 import secrets
+import threading
 import time
+from collections import OrderedDict
 from dataclasses import dataclass
 
 from game.colours import palette
@@ -182,26 +184,30 @@ def seat_session(deck: Deck, room: Room, seat: Seat, d: shared.SharedDraft | Non
 
 # -- reading ----------------------------------------------------------------
 
-ROOM_COLUMNS = ("code, size, seed, host_id, status, version, memory, style, timer_seconds,"
-                " moves, turn_started_at, failure_reason, bench")
+ROOM_COLUMNS = ("r.code, r.size, r.seed, r.host_id, r.status, r.version, r.memory, r.style, r.timer_seconds,"
+                " r.moves, r.turn_started_at, r.failure_reason, r.bench")
+SEAT_COLUMNS = "s.account_id, a.username, s.seat, s.formation, s.state, s.plan, s.sheet"
 
 
 def load_room(conn, code: str, lock: bool = False) -> Room:
+    """The room and its seats in ONE query: the room is read on every poll, and every
+    query is a round trip to the database, so the seats ride along as joined rows."""
     code = code.strip().upper()
     if lock:
         # Wait at most 5 s for the row, then fail as a 503 the page retries, rather than
         # freezing every request behind one slow one (the cricket site's A92, A180).
         conn.execute("select set_config('lock_timeout', '5s', true)")
-    row = conn.execute(
-        f"select {ROOM_COLUMNS} from rooms where code = %s"
-        + (" for update" if lock else ""), (code,)).fetchone()
-    if row is None:
+    rows = conn.execute(
+        f"select {ROOM_COLUMNS}, {SEAT_COLUMNS}"
+        "  from rooms r left join room_seats s on s.room_code = r.code"
+        "  left join accounts a on a.account_id = s.account_id"
+        " where r.code = %s order by s.seat"
+        + (" for update of r" if lock else ""), (code,)).fetchall()
+    if not rows:
         raise NotFound("no room with that code")
-    seats = [Seat(*r) for r in conn.execute(
-        "select s.account_id, a.username, s.seat, s.formation, s.state, s.plan, s.sheet"
-        "  from room_seats s join accounts a using (account_id)"
-        " where s.room_code = %s order by s.seat", (code,))]
-    return Room(*row, seats=seats)
+    n = len(ROOM_COLUMNS.split(","))
+    seats = [Seat(*r[n:]) for r in rows if r[n] is not None]
+    return Room(*rows[0][:n], seats=seats)
 
 
 def my_rooms(conn, account: Account) -> list[dict]:
@@ -562,10 +568,32 @@ def engine(room: Room) -> int:
 
 # -- taking turns (C29) --------------------------------------------------------
 
+SHARED_CACHE_SIZE = 64
+_shared_cache: OrderedDict = OrderedDict()
+_shared_lock = threading.Lock()   # requests run on a thread pool
+
+
 def shared_of(deck: Deck, room: Room, moves: list[int] | None = None) -> shared.SharedDraft:
-    """The room's draft, replayed: seats in the order they sat down, host first."""
-    return shared.replay_shared(deck, room.seed, [s.formation for s in room.seats],
-                                room.moves if moves is None else moves, room.bench)
+    """The room's draft, replayed: seats in the order they sat down, host first.
+
+    Kept for the next request, because every seat polls the same room every second
+    while a clock runs and each poll used to replay the whole draft two or three times.
+    It is a pure function of the key, so a hit is the same answer; callers only read
+    the draft (a move makes a new list of moves, hence a new key). The deck itself is
+    held in the entry so a different deck (the tests') can never share one."""
+    moves = room.moves if moves is None else moves
+    key = (id(deck), room.seed, tuple(s.formation for s in room.seats), tuple(moves), room.bench)
+    with _shared_lock:
+        hit = _shared_cache.get(key)
+        if hit is not None and hit[0] is deck:
+            _shared_cache.move_to_end(key)
+            return hit[1]
+    d = shared.replay_shared(deck, room.seed, [s.formation for s in room.seats], moves, room.bench)
+    with _shared_lock:
+        _shared_cache[key] = (deck, d)
+        while len(_shared_cache) > SHARED_CACHE_SIZE:
+            _shared_cache.popitem(last=False)
+    return d
 
 
 def _save_moves(conn, room: Room, moves: list[int], status: str | None = None) -> None:
@@ -599,11 +627,14 @@ def resolve(conn, deck: Deck, room: Room) -> bool:
     return True
 
 
-def resolve_if_due(conn, deck: Deck, code: str) -> None:
+def resolve_if_due(conn, deck: Deck, code: str) -> Room:
     """For a poll: a lock-free look first, and the locked resolve only when a clock has
-    actually run out (the cricket site's A92: polls taking the pick lock froze drafts)."""
-    if load_room(conn, code).clock_expired(clock()):
-        resolve(conn, deck, load_room(conn, code, lock=True))
+    actually run out (the cricket site's A92: polls taking the pick lock froze drafts).
+    Returns the room as it now stands, so the poll needn't read it again."""
+    room = load_room(conn, code)
+    if room.clock_expired(clock()) and resolve(conn, deck, load_room(conn, code, lock=True)):
+        room = load_room(conn, code)
+    return room
 
 
 def make_turn_pick(conn, deck: Deck, account: Account, code: str, index: int, expect: int) -> None:

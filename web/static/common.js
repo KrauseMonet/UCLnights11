@@ -72,7 +72,8 @@ window.addEventListener("appinstalled", () => { INSTALL = null; const l = $("ins
 /* Every call to the API. A thrown error carries `status`: the HTTP status, or 0 when no
    reply came at all (offline, a phone that froze the tab, a timeout). A read is retried
    once on 0 or a gateway error, as the cricket site does (its A169); a write never is,
-   because it may have landed even though the reply was lost. */
+   because it may have landed even though the reply was lost. `opts.timeout` shortens the
+   wait for a call that is asked again soon anyway (a room poll). */
 const API_TIMEOUT_MS = 15000;
 const RETRY_STATUS = new Set([0, 502, 503, 504]);
 
@@ -92,21 +93,40 @@ async function api(path, opts = {}) {
 }
 
 async function apiOnce(path, opts) {
+  const { timeout = API_TIMEOUT_MS, ...init } = opts;
   const ctl = new AbortController();
-  const timer = setTimeout(() => ctl.abort(), API_TIMEOUT_MS);
+  const timer = setTimeout(() => ctl.abort(), timeout);
+  const call = `${init.method || "GET"} ${routeOf(path)}`;
   let res;
   try {
-    res = await fetch(path, { headers: { "Content-Type": "application/json" }, signal: ctl.signal, ...opts });
+    res = await fetch(path, { headers: { "Content-Type": "application/json" }, signal: ctl.signal, ...init });
   } catch (e) {
-    throw new ApiError(navigator.onLine === false ? "You're offline" : "Couldn't reach the server", 0);
+    const offline = navigator.onLine === false;
+    // No reply at all is reported too, or a timeout leaves no trace anywhere. Not when
+    // the browser knows it is offline, the tab is hidden (a phone freezing it) or the
+    // page is being left (which cancels whatever is in flight).
+    if (!offline && !LEAVING && document.visibilityState === "visible") {
+      reportFailure("api", `${call} ${ctl.signal.aborted ? `timeout ${timeout / 1000}s` : "no reply"}`);
+    }
+    throw new ApiError(offline ? "You're offline" : "Couldn't reach the server", 0);
   } finally { clearTimeout(timer); }
   const body = await res.json().catch(() => ({}));
   if (!res.ok) {
     const err = new ApiError(body.detail || `Request failed (${res.status})`, res.status, body);
-    if (res.status >= 500) reportFailure("api", `${opts.method || "GET"} ${path.split("?")[0]} ${res.status}`);
+    if (res.status >= 500) reportFailure("api", `${call} ${res.status}`);
     throw err;
   }
   return body;
+}
+
+let LEAVING = false;
+window.addEventListener("pagehide", () => { LEAVING = true; });
+window.addEventListener("pageshow", () => { LEAVING = false; });   // back from the cache
+
+/* A path as one row in the failure reports however many drafts or rooms hit it: the
+   draft state or room code is replaced, /api/rooms/AB12CD -> /api/rooms/:id. */
+function routeOf(path) {
+  return path.split("?")[0].replace(/^\/api\/(draft|tournament|rooms|squad)\/[^/]+/, "/api/$1/:id");
 }
 
 /* Failures this browser saw, sent to /api/client-failures so a broken page is noticed

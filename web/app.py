@@ -77,6 +77,18 @@ def league() -> match.League:
     return league_of(load_deck())
 
 
+# A reply that is a pure function of its URL and the deck: no cookie, clock or database
+# goes into it. Vercel's CDN keeps it (s-maxage) and empties itself on every deploy, the
+# only way the deck or the engine can change, so a cached reply is never a stale one; the
+# browser still asks each time (max-age=0), so a deploy shows at once. Set on the
+# Response parameter, so an error raised instead carries no such header.
+PURE = "public, max-age=0, s-maxage=31536000"
+
+
+def pure(response: Response) -> None:
+    response.headers["cache-control"] = PURE
+
+
 # -- serialisation ----------------------------------------------------------
 
 def crest_url(key: str | None) -> str | None:
@@ -412,7 +424,8 @@ def health() -> dict:
 
 
 @app.get("/api/meta")
-def meta() -> dict:
+def meta(response: Response) -> dict:
+    pure(response)
     deck = load_deck()
     seasons = sorted({cs.season for cs in deck.club_seasons})
     return {
@@ -428,7 +441,8 @@ def meta() -> dict:
 
 
 @app.get("/api/showcase")
-def showcase() -> list[dict]:
+def showcase(response: Response) -> list[dict]:
+    pure(response)
     deck = load_deck()
     out = []
     for key in SHOWCASE:
@@ -444,7 +458,8 @@ def _gaps() -> list[str]:
 
 
 @app.get("/api/archive")
-def archive() -> dict:
+def archive(response: Response) -> dict:
+    pure(response)
     deck = load_deck()
     by_season: dict[int, list[ClubSeason]] = {}
     for cs in deck.club_seasons:
@@ -461,10 +476,11 @@ def archive() -> dict:
 
 
 @app.get("/api/squad/{key}")
-def squad(key: str) -> dict:
+def squad(key: str, response: Response) -> dict:
     cs = load_deck().by_key.get(key)
     if cs is None:
         raise HTTPException(404, "no such squad")
+    pure(response)
     return club_season_out(cs, [card_out(c) for c in cs.cards])
 
 
@@ -484,8 +500,10 @@ def start(body: StartIn, memory: bool = False) -> dict:
 
 
 @app.get("/api/draft/{state}")
-def get_draft(state: str, memory: bool = False) -> dict:
-    return session_out(state, _replay(state), memory)
+def get_draft(state: str, response: Response, memory: bool = False) -> dict:
+    out = session_out(state, _replay(state), memory)
+    pure(response)
+    return out
 
 
 class PickIn(BaseModel):
@@ -578,9 +596,14 @@ def _solo_side(state: str) -> tuple[Session, Side]:
                    bench=s.bench, plan=auto_plan(s.bench) if subs is None else subs)
 
 
+@lru_cache(maxsize=16)
 def _solo_tournament(state: str) -> Tournament:
     """A bench draft plays engine 2 with its bench on the automatic plan (C40); an
-    eleven-pick draft plays engine 1, as every link to one always has."""
+    eleven-pick draft plays engine 1, as every link to one always has.
+
+    Kept for the next request: the cup page, its analysis and saving it each ask for the
+    same tournament, and playing one costs ~100 ms. Callers only read it. A refusal
+    (an unfinished draft) raises, and lru_cache keeps no exception."""
     s, you = _solo_side(state)
     return play_tournament(load_deck(), league(), s.seed, you, engine=2 if s.bench_size else 1)
 
@@ -601,26 +624,37 @@ def squad_out(side: Side) -> dict:
 
 
 @app.get("/api/draft/{state}/squad")
-def solo_squad(state: str) -> dict:
+def solo_squad(state: str, response: Response) -> dict:
     """The completed-draft page for a solo draft: 409 until the draft is finished."""
     _, side = _solo_side(state)
+    pure(response)
     return {"state": state, "sides": [squad_out(side)],
             "field": len(load_deck().club_seasons)}
 
 
 @app.get("/api/tournament/{state}")
-def tournament(state: str) -> dict:
-    return tournament_out(_solo_tournament(state))
+def tournament(state: str, response: Response) -> dict:
+    out = tournament_out(_solo_tournament(state))
+    pure(response)
+    return out
 
 
 @app.get("/api/tournament/{state}/analysis")
-def tournament_analysis(state: str) -> dict:
+def tournament_analysis(state: str, response: Response) -> dict:
     t = _solo_tournament(state)
     you = next((s for s in t.sides if s.you), None)
+    pure(response)
     return {"analysis": analysis_out(analyses.tournament_analysis(t, you)), "you": side_out(you)}
 
 
 # -- accounts ---------------------------------------------------------------
+
+def _viewer_id(request: Request) -> int | None:
+    """Who is asking, from the signed cookie alone, for a reply that needs only the id
+    (whose seat is whose): no query, so a room poll costs one round trip, not two."""
+    token = request.cookies.get(auth.COOKIE_NAME)
+    return auth.verify_session_cookie(token) if token else None
+
 
 def _account(conn, request: Request) -> accounts.Account | None:
     token = request.cookies.get(auth.COOKIE_NAME)
@@ -721,8 +755,8 @@ def _replays(room: rooms.Room) -> bool:
     return True
 
 
-def room_out(room: rooms.Room, me: accounts.Account | None) -> dict:
-    mine = room.seat_of(me.account_id) if me else None
+def room_out(room: rooms.Room, me_id: int | None) -> dict:
+    mine = room.seat_of(me_id) if me_id is not None else None
     draft = None
     turns = None
     if not _replays(room):
@@ -766,7 +800,7 @@ def room_out(room: rooms.Room, me: accounts.Account | None) -> dict:
         "picks_each": each,
         "stages": CUP_STAGES.get(room.size, ["Group stage", *CUP_STAGES[16]]),
         "status": room.status, "version": room.version, "failure_reason": room.failure_reason,
-        "is_host": me is not None and room.host_id == me.account_id,
+        "is_host": me_id is not None and room.host_id == me_id,
         "seated": mine is not None,
         "seats": [{
             "id": s.account_id, "username": s.username, "seat": s.seat,
@@ -851,7 +885,7 @@ class KickIn(BaseModel):
 
 
 def _room_reply(conn, request: Request, code: str) -> dict:
-    return room_out(rooms.load_room(conn, code), _account(conn, request))
+    return room_out(rooms.load_room(conn, code), _viewer_id(request))
 
 
 @app.post("/api/rooms")
@@ -869,10 +903,15 @@ def list_my_rooms(request: Request) -> dict:
 
 
 @app.get("/api/rooms/{code}")
-def get_room(code: str, request: Request) -> dict:
+def get_room(code: str, request: Request, v: int | None = None) -> dict:
+    """The poll. ``v`` is the version the page already shows: when the room hasn't moved
+    past it the reply is a few bytes, with no replay. A run-out clock is still resolved
+    first, so a quiet room can't sit on an expired turn. One query when nothing is due."""
     with db.connection() as conn:
-        rooms.resolve_if_due(conn, load_deck(), code)      # a run-out clock picks here
-        return _room_reply(conn, request, code)
+        room = rooms.resolve_if_due(conn, load_deck(), code)      # a run-out clock picks here
+    if v is not None and room.version == v:
+        return {"code": room.code, "version": room.version, "unchanged": True, "server_now": time.time()}
+    return room_out(room, _viewer_id(request))
 
 
 @app.post("/api/rooms/{code}/join")
@@ -1017,7 +1056,7 @@ def players_out(t: Tournament) -> list[dict]:
 def _room_tournament(code: str, request: Request) -> tuple[rooms.Room, Tournament]:
     with db.connection() as conn:
         room = rooms.load_room(conn, code)
-        me = _account(conn, request)
+    me = _viewer_id(request)
     if room.status != "complete":
         raise HTTPException(409, "the room's elevens are not all complete yet")
     if not _replays(room):
@@ -1025,7 +1064,7 @@ def _room_tournament(code: str, request: Request) -> tuple[rooms.Room, Tournamen
     deck = load_deck()
     humans = rooms.sides(deck, room)
     for side in humans:
-        side.you = me is not None and side.owner == me.account_id
+        side.you = me is not None and side.owner == me
     return room, play_room(deck, league(), room.seed, humans, room.size, engine=rooms.engine(room))
 
 
@@ -1045,14 +1084,14 @@ def room_squads(code: str, request: Request) -> dict:
     complete, like its tournament. Your own side first, then the rest by overall rating."""
     with db.connection() as conn:
         room = rooms.load_room(conn, code)
-        me = _account(conn, request)
+    me = _viewer_id(request)
     if room.status != "complete":
         raise HTTPException(409, "the room's drafts are not all finished yet")
     if not _replays(room):
         raise HTTPException(409, STALE_ROOM)
     humans = rooms.sides(load_deck(), room)
     for side in humans:
-        side.you = me is not None and side.owner == me.account_id
+        side.you = me is not None and side.owner == me
     out = sorted((squad_out(s) for s in humans), key=lambda x: (not x["you"], -x["ratings"]["overall"]))
     return {"room": room_brief(room), "sides": out, "field": len(load_deck().club_seasons)}
 

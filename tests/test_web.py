@@ -393,3 +393,21 @@ def test_a_memory_team_sheet_still_shows_no_ratings():
     man, to = _sub_in(s)
     m = client.post(f"/api/draft/{s['state']}/sheet?memory=1", json={"man": man, "to": to}).json()
     assert {c["rating"] for c in [*m["xi"], *m["bench"], *m["picks"]]} == {None}
+
+
+# -- what the CDN may keep (speed sweep) ------------------------------------------
+
+def test_replies_that_depend_only_on_their_url_may_be_kept_by_the_cdn():
+    """A pure reply carries s-maxage, which Vercel's CDN keeps until the next deploy; an
+    error never does, nor anything that reads a cookie, the clock or the database."""
+    state = _finish("b5-433")["state"]
+    pure = ["/api/meta", "/api/showcase", "/api/archive", "/api/squad/2010-BAR", "/api/draft/b5-433",
+            f"/api/draft/{state}", f"/api/draft/{state}?memory=1", f"/api/draft/{state}/squad",
+            f"/api/tournament/{state}", f"/api/tournament/{state}/analysis"]
+    for path in pure:
+        r = client.get(path)
+        assert r.status_code == 200 and "s-maxage" in r.headers.get("cache-control", ""), path
+    not_pure = ["/api/health", "/api/auth/me", "/api/squad/1900-XXX", "/api/draft/garbage",
+                "/api/tournament/b5-433", "/api/draft/b5-433/squad"]
+    for path in not_pure:
+        assert "s-maxage" not in client.get(path).headers.get("cache-control", ""), path

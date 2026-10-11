@@ -661,3 +661,59 @@ def test_a_turn_room_s_team_sheet_shows_on_its_planning_screen_and_in_its_tourna
     guest.post(f"/api/rooms/{code}/plan", json={"changes": None})
     t = host.get(f"/api/rooms/{code}/tournament").json()
     assert name in [c["name"] for c in t["you"]["xi"]]
+
+
+# -- the poll, trimmed (speed sweep) ------------------------------------------------
+
+def count_queries(monkeypatch):
+    """Every statement sent from here on: each is a round trip to the database."""
+    import psycopg
+    seen = []
+    real = psycopg.Connection.execute
+
+    def counting(self, query, *a, **k):
+        seen.append(query)
+        return real(self, query, *a, **k)
+    monkeypatch.setattr(psycopg.Connection, "execute", counting)
+    return seen
+
+
+def test_a_poll_is_one_query_and_unchanged_when_the_room_has_not_moved(clock, monkeypatch):
+    (host, guest), code, room = turn_room()
+    v = room["version"]
+    seen = count_queries(monkeypatch)
+    quiet = guest.get(f"/api/rooms/{code}?v={v}").json()
+    assert quiet == {"code": code, "version": v, "unchanged": True, "server_now": quiet["server_now"]}
+    assert len(seen) == 1
+    seen.clear()
+    full = guest.get(f"/api/rooms/{code}").json()      # room, seats and who is asking: still one
+    assert len(seen) == 1 and full["seated"] and len(full["seats"]) == 2
+    on = host if full["turns"]["turn"]["you"] is False else guest
+    assert take(on, code, full).status_code == 200
+    moved = guest.get(f"/api/rooms/{code}?v={v}").json()
+    assert "unchanged" not in moved and moved["version"] > v and moved["turns"]["expect"] == 1
+
+
+def test_a_poll_naming_the_current_version_still_lets_a_run_out_clock_pick(clock):
+    (host, guest), code, room = turn_room(timer=15)
+    clock.t += 15 + rooms_mod.CLOCK_GRACE_S + 1
+    room = guest.get(f"/api/rooms/{code}?v={room['version']}").json()
+    assert "unchanged" not in room and room["turns"]["expect"] == 1
+
+
+def test_the_room_draft_cache_is_shared_only_by_the_same_deck_and_moves(monkeypatch):
+    import copy
+    from types import SimpleNamespace as NS
+
+    from game.deck import load_deck
+    deck = load_deck()
+    room = NS(seed=11, seats=[NS(formation="433"), NS(formation="442")], moves=[], bench=False)
+    d = rooms_mod.shared_of(deck, room)
+    assert rooms_mod.shared_of(deck, room) is d
+    later = rooms_mod.shared_of(deck, room, [d.takeable(d.active)[0]])
+    assert later is not d and len(later.moves) == 1 and len(d.moves) == 0
+    # Two decks that happen to get the same id (one freed, the next allocated there):
+    # the entry holds its deck, so the second never reads the first's draft.
+    monkeypatch.setattr(rooms_mod, "id", lambda x: 1, raising=False)
+    first = rooms_mod.shared_of(deck, room)
+    assert rooms_mod.shared_of(copy.copy(deck), room) is not first

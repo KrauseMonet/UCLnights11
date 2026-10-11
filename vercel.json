@@ -1,7 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "version": 2,
-  "regions": ["bom1"],
+  "regions": ["sin1"],
   "builds": [
     { "src": "api/index.py", "use": "@vercel/python", "config": { "includeFiles": "data/deck.json" } },
     { "src": "web/static/**", "use": "@vercel/static" }

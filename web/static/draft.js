@@ -89,7 +89,10 @@ async function move(kind, body) {
   if (busy) return;
   busy = true;
   try {
-    setSession(await api(`/api/draft/${S.state}/${kind}${Q}`, { method: "POST", body: body ? JSON.stringify(body) : undefined }));
+    const s = await api(`/api/draft/${S.state}/${kind}${Q}`, { method: "POST", body: body ? JSON.stringify(body) : undefined });
+    // A draft picked in this browser is saved to the profile by itself at the end (cup.js).
+    store.set(draftedKey(s.state), "1");
+    setSession(s);
   } catch (e) {
     // A pick is the state plus one move, so sending it again is harmless; no reply just means try again.
     toast(e.status === 0 ? `${e.message}. Your draft is safe; try that pick again.` : e.message);

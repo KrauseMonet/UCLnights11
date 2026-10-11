@@ -36,7 +36,7 @@ function boardHtml(title, rows, fmt, note = "") {
 
 function recentHtml(p) {
   if (!p.recent.length) return `<section class="panel gate"><div><h2>Nothing saved yet</h2>
-    <p>Finish a tournament and press <b>Save to profile</b>, or play today's daily challenge: it saves itself.</p></div>
+    <p>Finish a tournament you drafted here, or a friends' room, and it saves itself; a link someone sent you saves with <b>Save to profile</b>. Today's daily challenge saves itself too.</p></div>
     <div class="gate-cta"><a class="btn primary" href="/daily">Today's challenge</a><a class="btn ghost" href="/draft">Start a draft</a></div></section>`;
   return `<section class="panel"><div class="panel-h"><span class="label">Recent</span><span class="label">tap to see it again</span></div>
     ${p.recent.map((r) => `<a class="myroom pf-row" href="${esc(resultHref(r))}">

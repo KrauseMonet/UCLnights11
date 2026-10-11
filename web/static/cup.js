@@ -107,7 +107,9 @@ function endActions() {
 }
 
 /* Save to profile (C31): the server replays the tournament and keeps its own summary.
-   Saving twice is harmless; the button says so once it's done. */
+   Signed in, a room's tournament and a solo draft picked in this browser save themselves
+   at the end; a solo link opened from elsewhere (a friend's) waits for the button, since
+   anyone opening a solo link sees it as theirs. Saving twice is harmless. */
 async function saveButton() {
   const source = CUP.room ? "room" : "solo", key = CUP.room ? CUP.room.code : CUP.state;
   $("actions").insertAdjacentHTML("beforeend", `<button class="btn ghost" id="save" disabled>Save to profile</button>`);
@@ -122,12 +124,17 @@ async function saveButton() {
   }
   try { if ((await api(`/api/results/saved?source=${source}&key=${encodeURIComponent(key)}`)).saved) return mark(); }
   catch { /* the button still works */ }
-  btn.disabled = false;
-  btn.onclick = async () => {
+  const save = async (quiet) => {
     btn.disabled = true;
-    try { await api("/api/results", { method: "POST", body: JSON.stringify({ source, key }) }); mark(); toast("Saved to your profile"); }
-    catch (e) { btn.disabled = false; toast(e.message); }
+    try {
+      const r = await api("/api/results", { method: "POST", body: JSON.stringify({ source, key }) });
+      mark();
+      if (r.new) toast("Saved to your profile");
+    } catch (e) { btn.disabled = false; if (!quiet) toast(e.message); }
   };
+  btn.disabled = false;
+  btn.onclick = () => save(false);
+  if (CUP.room || store.get(draftedKey(key))) save(true);
 }
 
 function showJourney() {

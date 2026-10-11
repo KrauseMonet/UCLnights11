@@ -567,3 +567,7 @@ const store = {
   get(k) { try { return localStorage.getItem(k); } catch { return null; } },
   set(k, v) { try { localStorage.setItem(k, v); } catch { /* private mode: not remembered */ } },
 };
+
+// A solo draft is known by its seed (with the bench's "b"): its sheet and plan change the
+// rest of the link after the picks, and it stays the same draft.
+const draftedKey = (state) => `drafted:${state.split("-")[0]}`;

@@ -198,6 +198,27 @@ validator prints what they produce with no "real" column.
   half as many matches as anyone; pass accuracy also needs 20 passes a match and is
   outfield only. An empty rate is "–", never 0.
 
+## 7b. Saved results, the profile and the daily challenge
+
+- **Saved results** (C31): signed in, a finished solo tournament or room can be saved
+  to the account. The server replays it and stores its own summary (how far, record,
+  goals, each player's numbers); keyed (account, source, key), so saving twice is
+  harmless. A daily result saves itself. The profile adds an account's results up:
+  tournaments, titles, finals, best finish, how far you get, career goals/assists/most
+  picked/average mark (6+ apps), and the daily's played, met and streak.
+- **The daily challenge** (C32), one a day by UTC date, made when first asked for and
+  stored. The same eleven squads for everyone, in the day's formation, no rerolls. One
+  ninety-minute match on neutral ground against a real side's best eleven (no extra
+  time, no penalties) with a goal: win, win by 2+, win without conceding, or score 3+.
+  **Each day's goal is measured**: the drafter who takes the best player every deal must
+  reach it 30-60% of the time over 200 simulated matches, and the rate is stored with the
+  day (measured over 60 days: always in the band, mean 41%; a random drafter, 14%).
+- **The seeds are secret**: the deal's and the match's come from SESSION_SECRET by HMAC,
+  so the day can't be known ahead nor the best eleven found offline with the public
+  engine. One ranked attempt per account per day. Signed out, a practice match uses a
+  third seed and is kept nowhere. Ranked by goal met, goal difference, goals scored,
+  the eleven's average mark, then who played first. A streak lasts until a day is missed.
+
 ## 8. Accounts and rooms (playing with friends)
 
 - **Accounts:** username (3–20 of `A–Z a–z 0–9 _`, case-insensitively unique), email

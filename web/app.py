@@ -23,13 +23,13 @@ from fastapi.responses import FileResponse, JSONResponse, Response as PlainRespo
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from game import analysis as analyses, journey as journeys, match
+from game import analysis as analyses, daily as daily_rules, journey as journeys, match
 from game.deck import Card, ClubSeason, load_deck
 from game.draft import IllegalMove, Pick, Reroll, Session, decode, encode, replay, why_not
 from game.formations import DEFAULT, FORMATIONS
-from game.tournament import (CUP_STAGES, Fixture, Side, Tournament, leaders, league_of,
+from game.tournament import (CUP_STAGES, Fixture, Side, Tournament, club_side, leaders, league_of,
                              play_room, play_tournament)
-from web import accounts, admin, auth, db, failures, rooms
+from web import accounts, admin, auth, daily, db, failures, results, rooms
 from web.env import load_dotenv
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -44,6 +44,11 @@ app.mount("/static", StaticFiles(directory=STATIC), name="static")
 
 @app.exception_handler(rooms.RoomError)
 def _room_error(request: Request, e: rooms.RoomError):
+    return JSONResponse({"detail": str(e)}, status_code=e.status)
+
+
+@app.exception_handler(daily.DailyError)
+def _daily_error(request: Request, e: daily.DailyError):
     return JSONResponse({"detail": str(e)}, status_code=e.status)
 
 
@@ -787,6 +792,147 @@ def room_analysis(code: str, request: Request) -> dict:
             "you": side_out(you) if you else None, "room": room_brief(room)}
 
 
+# -- saved results and the profile (C31) ---------------------------------------
+
+class SaveIn(BaseModel):
+    source: str
+    key: str
+
+
+def _journey_to_save(source: str, key: str, request: Request):
+    """The journey of the caller's side, rebuilt by replaying the tournament here."""
+    if source == "solo":
+        t = _solo_tournament(key)
+    elif source == "room":
+        _, t = _room_tournament(key, request)
+    else:
+        raise HTTPException(400, "only a solo run or a room can be saved by hand")
+    you = next((s for s in t.sides if s.you), None)
+    if you is None:
+        raise HTTPException(403, "you don't have a side in that tournament")
+    return journeys.journey(t, you), you.formation.label
+
+
+@app.post("/api/results")
+def save_result(body: SaveIn, request: Request) -> dict:
+    j, formation = _journey_to_save(body.source, body.key, request)
+    key = body.key.upper() if body.source == "room" else body.key
+    with db.connection() as conn:
+        me = _signed_in(conn, request)
+        new = results.save(conn, me, body.source, key, j, formation)
+    return {"saved": True, "new": new}
+
+
+@app.get("/api/results/saved")
+def result_saved(source: str, key: str, request: Request) -> dict:
+    if not request.cookies.get(auth.COOKIE_NAME) or not db.configured():
+        return {"saved": False}
+    with db.connection() as conn:
+        me = _account(conn, request)
+        key = key.upper() if source == "room" else key
+        return {"saved": me is not None and results.is_saved(conn, me, source, key)}
+
+
+@app.get("/api/profile")
+def profile(request: Request) -> dict:
+    with db.connection() as conn:
+        return results.profile(conn, _signed_in(conn, request), daily.today())
+
+
+# -- the daily challenge (C32) -----------------------------------------------------
+
+class DailyIn(BaseModel):
+    moves: str = ""
+
+
+def challenge_out(ch: daily_rules.Challenge) -> dict:
+    deck = load_deck()
+    opp = club_side(deck.by_key[ch.opponent])
+    f = FORMATIONS[ch.formation]
+    return {"day": ch.day, "formation": {"code": f.code, "label": f.label, "lines": f.lines},
+            "opponent": {**side_out(opp), "xi": [card_out(c) for c in opp.xi], "shape": opp.formation.label},
+            "goal": daily_rules.describe(ch.kind, ch.target), "kind": ch.kind, "target": ch.target,
+            "success_rate": pct(ch.success_rate)}
+
+
+def daily_result_out(ch, fx, j, met: bool, ranked: bool) -> dict:
+    r = fx.result
+    return {"met": met, "ranked": ranked, "fixture": fixture_out(fx, timeline=True), "journey": journey_out(j),
+            "gf": r.home_goals, "ga": r.away_goals}
+
+
+@app.get("/api/daily")
+def daily_today(request: Request, day: str | None = None) -> dict:
+    d = daily.parse_day(day)
+    with db.connection() as conn:
+        ch = daily.get_challenge(conn, load_deck(), league(), d)
+        me = _account(conn, request) if request.cookies.get(auth.COOKIE_NAME) else None
+        mine = None
+        if me is not None:
+            row = daily.result_of(conn, d, me.account_id)
+            if row is not None:
+                try:
+                    fx, j = daily.play(load_deck(), league(), ch, daily.moves_of(ch, row[0]), "ranked")
+                    mine = daily_result_out(ch, fx, j, row[1], True)
+                except (IllegalMove, ValueError):
+                    # The picks no longer replay (the deck changed since that day): the
+                    # stored score stands, without the match to watch again.
+                    mine = {"met": row[1], "ranked": True, "fixture": None, "journey": None,
+                            "gf": row[2], "ga": row[3]}
+        board = daily.board(conn, d, me)
+        streak = results.streaks(daily.days_played(conn, me.account_id), daily.today()) if me else None
+    return {"challenge": challenge_out(ch), "today": d == daily.today(), "signed_in": me is not None,
+            "mine": mine, "board": board, "streak": None if streak is None else {"current": streak[0], "best": streak[1]}}
+
+
+@app.get("/api/daily/draft")
+def daily_draft(request: Request, moves: str = "", day: str | None = None) -> dict:
+    d = daily.parse_day(day)
+    with db.connection() as conn:
+        ch = daily.get_challenge(conn, load_deck(), league(), d)
+    try:
+        s = daily_rules.draft(load_deck(), ch, daily.moves_of(ch, moves))
+    except IllegalMove as e:
+        raise HTTPException(400, str(e)) from None
+    return {**session_out(moves, s), "rerolls_left": 0}
+
+
+@app.post("/api/daily/submit")
+def daily_submit(body: DailyIn, request: Request) -> dict:
+    with db.connection() as conn:
+        me = _signed_in(conn, request)
+        try:
+            ch, fx, j, ok = daily.submit(conn, load_deck(), league(), me, daily.today(), body.moves)
+        except IllegalMove as e:
+            raise HTTPException(400, str(e)) from None
+        out = daily_result_out(ch, fx, j, ok, True)
+        board = daily.board(conn, daily.today(), me)
+        streak = results.streaks(daily.days_played(conn, me.account_id), daily.today())
+    return {**out, "board": board, "streak": {"current": streak[0], "best": streak[1]}}
+
+
+@app.post("/api/daily/practice")
+def daily_practice(body: DailyIn) -> dict:
+    """Signed out: the same draft, played against a PRACTICE seed, kept nowhere, so it
+    says nothing about how the ranked match would go."""
+    d = daily.today()
+    with db.connection() as conn:
+        ch = daily.get_challenge(conn, load_deck(), league(), d)
+    try:
+        fx, j = daily.play(load_deck(), league(), ch, daily.moves_of(ch, body.moves), "practice")
+    except IllegalMove as e:
+        raise HTTPException(400, str(e)) from None
+    r = fx.result
+    return daily_result_out(ch, fx, j, daily_rules.met(ch.kind, ch.target, r.home_goals, r.away_goals), False)
+
+
+@app.delete("/api/admin/daily/{account_id}")
+def admin_reset_daily(account_id: int, request: Request) -> dict:
+    with db.connection() as conn:
+        _admin(conn, request)
+        return {"reset": daily.reset(conn, daily.today(), account_id)}
+
+
 # -- what browsers saw go wrong ----------------------------------------------
 
 class FailureIn(BaseModel):
@@ -877,7 +1023,7 @@ def _page(name: str):
 PAGES = (("/", "index"), ("/draft", "draft"), ("/cup", "cup"), ("/archive", "archive"),
          ("/friends", "friends"), ("/room", "room"), ("/about", "about"), ("/faq", "faq"),
          ("/privacy", "privacy"), ("/terms", "terms"), ("/offline", "offline"), ("/admin", "admin"),
-         ("/analysis", "analysis"))
+         ("/analysis", "analysis"), ("/daily", "daily"), ("/profile", "profile"))
 for _path, _name in PAGES:
     app.add_api_route(_path, _page(_name), methods=["GET"], include_in_schema=False)
 

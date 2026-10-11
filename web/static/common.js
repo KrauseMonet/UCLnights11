@@ -21,6 +21,7 @@ function shell(active) {
       <img src="${SITE_LOGO}" alt="${esc(SITE_NAME)}" width="129" height="32"></picture></a>
     <nav class="navlinks">
       <a href="/draft" ${active === "draft" ? 'class="on"' : ""}>Draft</a>
+      <a href="/daily" ${active === "daily" ? 'class="on"' : ""}>Daily</a>
       <a href="/friends" ${active === "friends" ? 'class="on"' : ""}>Friends</a>
       <a href="/archive" ${active === "archive" ? 'class="on"' : ""}>Archive</a>
     </nav>
@@ -148,6 +149,7 @@ function setMe(account) {
            <span class="acct-init" aria-hidden="true">${esc(ME.username[0].toUpperCase())}</span><span class="who-me">${esc(ME.username)}</span></button>
          <div class="acct-menu" id="acctm" role="menu" hidden>
            <div class="acct-who">Signed in as <b>${esc(ME.username)}</b></div>
+           <a role="menuitem" href="/profile">Profile</a>
            ${ME.admin ? `<a role="menuitem" href="/admin">Admin</a>` : ""}
            <button role="menuitem" id="signout">Sign out</button></div>`
       : `<button class="btn small ghost" id="signin">Sign in</button>`;

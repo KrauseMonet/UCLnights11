@@ -624,6 +624,51 @@ button{font:inherit;cursor:pointer}
   .an-scope{margin-left:0}
 }
 
+/* --- the daily challenge (C32) --- */
+.dl-hero{padding:24px 0 0}
+.dl-hero .arch-h em{font-style:normal;color:var(--gold)}
+.dl-card{display:grid;grid-template-columns:auto 1fr 1fr;gap:18px 24px;align-items:center;padding:20px 22px;border-radius:18px;margin-top:6px}
+.dl-card .label{display:block;margin-bottom:6px;color:rgba(255,255,255,.7)}
+.dl-opp b,.dl-goal b{display:block;font:400 30px/1.05 var(--display);text-transform:uppercase;letter-spacing:.01em;color:#fff}
+.dl-goal b{color:var(--gold-2)}
+.dl-card small{display:block;color:rgba(255,255,255,.75);font-size:13px;margin-top:6px}
+.dl-meta{margin:14px 0 0}
+.dl-meta b{color:var(--gold-2)}
+.dl-xi{list-style:none;margin:0;padding:6px 0}
+.dl-xi li{display:flex;align-items:center;gap:10px;padding:7px 16px;border-top:1px solid var(--line);font-size:14px}
+.dl-xi li:first-child{border:0}
+.dl-xi b{flex:1;font-weight:700}
+.dl-board td:nth-child(2),.dl-board th:nth-child(2){text-align:left}
+.dl-note{padding:0 12px 12px}
+.dl-verdict{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin:22px 0 4px;padding:18px 22px;border-radius:18px;border:1px solid var(--line-strong);background:var(--panel)}
+.dl-verdict.met{border-color:var(--mint);background:linear-gradient(90deg,rgba(61,220,151,.14),var(--panel))}
+.dl-verdict.missed{border-color:rgba(255,106,77,.6);background:linear-gradient(90deg,rgba(255,106,77,.12),var(--panel))}
+.dl-v-mark{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;font:400 30px var(--display);flex:none}
+.met .dl-v-mark{background:var(--mint);color:#08132b}
+.missed .dl-v-mark{background:var(--red);color:#08132b}
+.dl-verdict h2{font:400 32px/1 var(--display);text-transform:uppercase;margin:0 0 6px}
+.dl-verdict p{margin:0;color:var(--ink-2)}
+.dl-verdict p b{color:var(--ink)}
+.dl-verdict > div:nth-child(2){flex:1;min-width:220px}
+.dl-v-acts{display:flex;gap:8px;flex-wrap:wrap}
+
+/* --- the profile (C31) --- */
+.pf-hero{padding:24px 0 0}
+.pf-tiles{grid-template-columns:repeat(7,minmax(0,1fr))}
+.pf-grid{margin-top:22px}
+.pf-tiles .an-tile b.txt{font-size:22px;line-height:1.1}
+.pf-row{gap:12px}
+.pf-row > span:nth-child(2){flex:1;min-width:0}
+.pf-row b{display:block}
+.pf-when{color:var(--ink-3);font:600 11px var(--mono);white-space:nowrap}
+.pf-finishes{display:grid;gap:10px;padding-top:6px}
+.pf-fin{display:grid;grid-template-columns:120px 1fr;gap:12px;align-items:center}
+.pf-fin-l{font:600 10.5px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+.pf-ph{margin:-16px -18px 12px}
+@media (max-width:980px){ .pf-tiles{grid-template-columns:repeat(4,minmax(0,1fr))} .dl-card{grid-template-columns:auto 1fr} .dl-goal{grid-column:1/-1} }
+@media (max-width:640px){ .pf-tiles{grid-template-columns:repeat(2,minmax(0,1fr))} .dl-card{grid-template-columns:1fr} .dl-card .crest{display:none}
+  .navlinks a{padding:8px 7px} }
+
 /* --- footer, toast --- */
 .foot{border-top:1px solid var(--line);color:var(--ink-3);font-size:12.5px;padding:26px;text-align:center}
 .foot p{max-width:760px;margin:0 auto 6px}

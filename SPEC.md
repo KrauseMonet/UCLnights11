@@ -460,8 +460,26 @@ phase articles state them; where this game departs from them it says so.
   level aggregate) and a one-match final on neutral ground. It is a pure function of
   (seed, size, the seats' draft states) and is recomputed on every request, never
   stored; a room of one in 36 plays exactly the solo tournament of the same seed.
+- **Watching together** (C52) is the host's choice too, on by default for a new room. Once
+  the room completes the host kicks off (any seat may, three minutes after it completed,
+  if the host hasn't) and every screen follows one clock (`game.watch`): the watch is cut
+  into **rounds**, one per matchday or leg in which a friend plays, each an 8 s countdown,
+  every friend's match of that round at once at 0.1 s a match minute (120 minutes'
+  allowance for a second leg or final, whether or not extra time comes, since an allowance
+  that followed the result would give it away), then 5 s at full time. A round with no
+  friend in it is left out, which tells nobody anything early: who plays round r+1 is
+  settled by the results up to round r. The server stores only when the watch began and
+  lets each round out as the clock reaches it: its pairings at the countdown, its results
+  at kick-off, the friends' standings (league place and points, then who is out) at full
+  time. The whole tournament, its analysis and saving it to a profile are refused until
+  the watch ends, 2 s after the last round. **Only the host can skip**, and only forward:
+  to this round's kick-off or full time, past the league phase, or to the end; a skip
+  moves the start earlier so every screen lands on the same moment, and one naming a
+  round already passed changes nothing. A run to the final watches in about six and a half
+  minutes. A room without it, and every room made before it, lets each friend watch alone.
 - **Stored:** `accounts`, `rooms` (code, size, seed, host, status, memory, style, pick
-  clock, whether it drafts a bench, the room's moves and when the current turn began, a
+  clock, whether it drafts a bench, the room's moves and when the current turn began,
+  whether it watches together, when it completed and when its watch began, a
   version that rises on every write) and `room_seats` (who, seat, formation, draft state
   string, and in a bench room its plan once ready).
   Lobbies nobody started are swept after three days.
@@ -472,7 +490,7 @@ phase articles state them; where this game departs from them it says so.
 
 ## 9. Not in scope yet
 
-Puzzle games, saved career stats, password reset, the daily challenge, auctions. The engine, draft and
+Puzzle games, password reset, auctions. The engine, draft and
 deck are built so each can be added without changing their contracts. No UEFA mark is
 used. Club crests are used on a non-commercial basis, era-correct where a dated file
 exists (`data/crest_eras.csv`), with every source named in `CREDITS.md`.

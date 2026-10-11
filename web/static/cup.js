@@ -5,7 +5,8 @@
 
    The same page shows a room's tournament (/cup?room=CODE): there every friend's eleven
    is a side, the "Friends" table ranks them, and someone without a seat sees it all at
-   once as a spectator. */
+   once as a spectator. A room that watches together (C52) is handed to watch.js until
+   its watch ends, and then shows here with every result out. */
 
 const ROOM = new URLSearchParams(location.search).get("room");
 shell(ROOM ? "friends" : "draft");
@@ -368,10 +369,20 @@ function friendsHtml() {
   loadMeta().catch(() => {});
   const state = ROOM ? `room:${ROOM}` : location.hash.slice(1);
   if (ROOM ? !/^[A-Za-z0-9]{6}$/.test(ROOM) : !/^[\w.-]+$/.test(state)) { location.href = ROOM ? "/friends" : "/draft"; return; }
+  // A room that watches together (C52) is shown on its shared clock until the watch ends.
+  let together = false;
+  if (ROOM) {
+    try {
+      const t0 = Date.now(), w = await api(`/api/rooms/${ROOM}/watch`), t1 = Date.now();
+      if (w.together && !w.ended) return watchStart(w, t0, t1);
+      together = w.together;
+    } catch { /* the tournament's own reply says what is wrong */ }
+  }
   try { CUP = await api(ROOM ? `/api/rooms/${ROOM}/tournament` : `/api/tournament/${state}`); }
   catch (e) { $("hero").innerHTML = `<h1>Something went wrong</h1><p>${esc(e.message)}</p>`; return; }
   CUP.state = state;
-  CUP.revealed = Math.min(+(store.get(`cup:${state}`) || 0), CUP.your_matches.length);
+  // Watched together, every result is out; otherwise each match is revealed as it is seen.
+  CUP.revealed = together ? CUP.your_matches.length : Math.min(+(store.get(`cup:${state}`) || 0), CUP.your_matches.length);
   renderHero();
   renderBody();
 })();

@@ -128,7 +128,7 @@ async function maybeJoin() {
 function render() {
   const you = R.seats.find((s) => s.you);
   $("top").innerHTML = `
-    <div><div class="kicker">${esc(R.format)} · ${esc(STATUS[R.status] || R.status)}${R.style === "turns" ? ` · take turns, ${R.timer}s` : " · own pace"}${R.bench ? " · bench" : ""}${R.memory ? " · Memory" : ""}</div>
+    <div><div class="kicker">${esc(R.format)} · ${esc(STATUS[R.status] || R.status)}${R.style === "turns" ? ` · take turns, ${R.timer}s` : " · own pace"}${R.bench ? " · bench" : ""}${R.together ? " · watch together" : ""}${R.memory ? " · Memory" : ""}</div>
       <h1 class="room-code" aria-label="Room code ${esc(R.code)}">${esc(R.code)}</h1>
       <p class="sub">${R.seats.length} of ${R.size} players${R.fillers ? ` · ${R.fillers} place${R.fillers === 1 ? "" : "s"} for real sides` : ""}${you ? "" : " · watching"}</p></div>
     <div class="room-acts">${R.status === "lobby" ? `<button class="btn ghost small" id="invite">Copy invite link</button>` : ""}
@@ -191,6 +191,12 @@ function renderLobby() {
              <button class="chip" role="radio" aria-checked="${R.bench}" data-b="1">Three substitutes</button>
              <button class="chip" role="radio" aria-checked="${!R.bench}" data-b="0">No bench</button></div>`
         : `<p class="note">${R.bench ? "<b>A bench of three</b> each, and a plan for using it." : "No bench: eleven picks each."}</p>`}</div>
+      <div class="panel-h"><span class="label">Watching</span><span class="label">${R.is_host ? "your call as host" : "the host's call"}</span></div>
+      <div class="room-form">${R.is_host
+        ? `<div class="chips" role="radiogroup" aria-label="Watching">
+             <button class="chip" role="radio" aria-checked="${R.together}" data-w="1">Together · your clock</button>
+             <button class="chip" role="radio" aria-checked="${!R.together}" data-w="0">Each on their own</button></div>`
+        : `<p class="note">${R.together ? "<b>Watched together</b> on the host's clock." : "Everyone watches the tournament on their own."}</p>`}</div>
       <div class="panel-h"><span class="label">Ratings</span><span class="label">${R.is_host ? "your call as host" : "the host's call"}</span></div>
       <div class="room-form">${R.is_host
         ? `<div class="chips" role="radiogroup" aria-label="Ratings">
@@ -213,6 +219,7 @@ function renderLobby() {
           : `<li>Everyone is dealt from the <b>same shuffle</b>, so you all see the same squads in the same order.</li>
              <li>Draft at your own pace: one player per squad, two rerolls, just like the solo game.</li>`}
         ${R.bench ? "<li><b>A bench of three:</b> after your eleven, three more picks. Then everyone plans their changes and says they're ready; the tournament opens when all of you are.</li>" : ""}
+        ${R.together ? "<li><b>Watch it together:</b> once the tournament opens, the host kicks off and everyone sees the same matches at the same moment, a round at a time. Only the host can skip ahead.</li>" : ""}
         ${R.memory ? "<li><b>Memory mode:</b> no ratings until the tournament. Pick on what you remember.</li>" : ""}
         <li>When the last eleven is in: ${esc(R.stages.join(" → "))}. ${R.size === 2 ? "Winner takes all." : R.size === 36 ? "Eight league matches each against eight different sides, then two-legged ties; the final is one night on neutral ground." : "Ties are two legs; the final is one night on neutral ground."}</li>
       </ol>
@@ -230,6 +237,7 @@ function renderLobby() {
   }).catch(() => {});
   $("view").querySelectorAll("[data-m]").forEach((b) => b.onclick = () => act("memory", { memory: b.dataset.m === "1" }));
   $("view").querySelectorAll("[data-b]").forEach((b) => b.onclick = () => act("bench", { bench: b.dataset.b === "1" }));
+  $("view").querySelectorAll("[data-w]").forEach((b) => b.onclick = () => act("together", { together: b.dataset.w === "1" }));
   $("view").querySelectorAll("[data-style]").forEach((b) => b.onclick = () => act("style", { style: b.dataset.style, timer: R.timer }));
   $("view").querySelectorAll("[data-timer]").forEach((b) => b.onclick = () => act("style", { style: R.style, timer: +b.dataset.timer }));
   if ($("startb")) $("startb").onclick = () => act("start");

@@ -19,6 +19,10 @@ A BENCH ROOM (C42) drafts three more each and plays engine 2. After its picks ea
 chooses a substitution plan and says it is ready; the room completes only when every
 seat is, because the tournament is replayed on every read and a plan changed after it
 opened would change what everyone had seen. Rooms made before benches have none.
+
+A ROOM THAT WATCHES TOGETHER (C52) shows its tournament on one clock once it completes:
+the host kicks off, every screen plays the same round at the same moment (game.watch),
+and only the host can skip ahead. Rooms made before it let each friend watch alone.
 """
 
 from __future__ import annotations
@@ -33,6 +37,7 @@ from dataclasses import dataclass
 from game.colours import palette
 from game.deck import Deck
 from game import shared_draft as shared
+from game import watch
 from game.draft import (BENCH, Change, IllegalMove, Move, Pick, Session, carry_plan, check_plan, check_sheet,
                         decode_plan, decode_sheet, decode_state, encode, encode_plan, encode_sheet, replay,
                         why_not)
@@ -121,6 +126,9 @@ class Room:
     turn_started_at: float | None
     failure_reason: str | None
     bench: bool
+    together: bool                  # watches its tournament together (C52)
+    watch_started_at: float | None  # when the watch's first countdown began, moved earlier by a skip
+    completed_at: float | None
     seats: list[Seat]
 
     def seat_of(self, account_id: int | None) -> Seat | None:
@@ -185,7 +193,8 @@ def seat_session(deck: Deck, room: Room, seat: Seat, d: shared.SharedDraft | Non
 # -- reading ----------------------------------------------------------------
 
 ROOM_COLUMNS = ("r.code, r.size, r.seed, r.host_id, r.status, r.version, r.memory, r.style, r.timer_seconds,"
-                " r.moves, r.turn_started_at, r.failure_reason, r.bench")
+                " r.moves, r.turn_started_at, r.failure_reason, r.bench, r.together, r.watch_started_at,"
+                " r.completed_at")
 SEAT_COLUMNS = "s.account_id, a.username, s.seat, s.formation, s.state, s.plan, s.sheet"
 
 
@@ -247,8 +256,10 @@ def my_rooms(conn, account: Account) -> list[dict]:
 # -- writing ----------------------------------------------------------------
 
 def _touch(conn, room: Room, status: str | None = None) -> None:
-    conn.execute("update rooms set version = version + 1, updated_at = now(),"
-                 " status = coalesce(%s, status) where code = %s", (status, room.code))
+    # The moment a room completes is kept, by the app's clock, for the watch (C52).
+    conn.execute("update rooms set version = version + 1, updated_at = now(), status = coalesce(%s, status),"
+                 " completed_at = case when %s = 'complete' then coalesce(completed_at, %s) else completed_at end"
+                 " where code = %s", (status, status, clock(), room.code))
 
 
 def _check_formation(formation: str) -> str:
@@ -266,7 +277,7 @@ def _check_style(style: str, timer: int) -> None:
 
 def create_room(conn, account: Account, size: int, formation: str = DEFAULT,
                 memory: bool = False, style: str = "turns",
-                timer: int = shared.DEFAULT_TIMER, bench: bool = True) -> str:
+                timer: int = shared.DEFAULT_TIMER, bench: bool = True, together: bool = True) -> str:
     if size not in ROOM_SIZES:
         raise RoomError(f"a room holds {', '.join(map(str, ROOM_SIZES))} sides")
     _check_formation(formation)
@@ -277,10 +288,11 @@ def create_room(conn, account: Account, size: int, formation: str = DEFAULT,
     seed = random.SystemRandom().randrange(1, 2**31 - 1)
     for _ in range(20):
         code = "".join(secrets.choice(CODE_ALPHABET) for _ in range(CODE_LENGTH))
-        row = conn.execute("insert into rooms (code, size, seed, host_id, memory, style, timer_seconds, bench)"
-                           " values (%s, %s, %s, %s, %s, %s, %s, %s)"
+        row = conn.execute("insert into rooms (code, size, seed, host_id, memory, style, timer_seconds, bench,"
+                           " together) values (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
                            " on conflict (code) do nothing returning code",
-                           (code, size, seed, account.account_id, memory, style, timer, bench)).fetchone()
+                           (code, size, seed, account.account_id, memory, style, timer, bench,
+                            together)).fetchone()
         if row:
             conn.execute("insert into room_seats (room_code, account_id, seat, formation)"
                          " values (%s, %s, 0, %s)", (code, account.account_id, formation))
@@ -370,6 +382,18 @@ def set_bench(conn, account: Account, code: str, bench: bool) -> None:
     if room.status != "lobby":
         raise Conflict("the bench is settled once the draft starts")
     conn.execute("update rooms set bench = %s where code = %s", (bench, room.code))
+    _touch(conn, room)
+
+
+def set_together(conn, account: Account, code: str, together: bool) -> None:
+    """Whether the room watches its tournament together (C52): the host's call, in the
+    lobby, like the bench. Without it each friend watches alone, at their own pace."""
+    room = load_room(conn, code, lock=True)
+    if room.host_id != account.account_id:
+        raise Forbidden("only the host can choose how the room watches")
+    if room.status != "lobby":
+        raise Conflict("how the room watches is settled once the draft starts")
+    conn.execute("update rooms set together = %s where code = %s", (together, room.code))
     _touch(conn, room)
 
 
@@ -587,6 +611,51 @@ def engine(room: Room) -> int:
     made before benches did."""
     return 2 if room.bench else 1
 
+
+
+# -- watching together (C52) ---------------------------------------------------
+
+def host_waited(room: Room, now: float) -> bool:
+    """The host has let the finished room sit long enough that any seat may kick off, so
+    a host who wandered off can't keep everyone from their tournament."""
+    return room.completed_at is not None and now - room.completed_at >= watch.HOST_WAIT_S
+
+
+def start_watch(conn, account: Account, code: str) -> None:
+    """Kick off: the first round's countdown begins now, on every screen."""
+    room = load_room(conn, code, lock=True)
+    if not room.together:
+        raise RoomError("in this room each friend watches on their own")
+    if room.status != "complete":
+        raise Conflict("the tournament isn't ready yet")
+    if room.watch_started_at is not None:
+        return                                        # kicked off already: harmless
+    if room.host_id != account.account_id:
+        if room.seat_of(account.account_id) is None:
+            raise Forbidden("you are not in this room")
+        if not host_waited(room, clock()):
+            raise Forbidden("only the host can kick off")
+    conn.execute("update rooms set watch_started_at = %s, updated_at = now() where code = %s",
+                 (clock(), room.code))
+
+
+def skip_watch(conn, account: Account, code: str, rounds_of, to: str, expect: int) -> None:
+    """The host's skip: the watch's start moves earlier so every screen lands on the same
+    later moment. Never backwards: a skip to somewhere already passed changes nothing.
+    ``rounds_of(room)`` is the room's watch (game.watch.rounds of its tournament)."""
+    room = load_room(conn, code, lock=True)
+    if room.host_id != account.account_id:
+        raise Forbidden("only the host can skip ahead")
+    if not room.together or room.status != "complete" or room.watch_started_at is None:
+        raise Conflict("the watch hasn't kicked off")
+    try:
+        target = watch.skip_target(rounds_of(room), to, expect)
+    except ValueError as e:
+        raise RoomError(str(e)) from None
+    now = clock()
+    if target > now - room.watch_started_at:
+        conn.execute("update rooms set watch_started_at = %s, updated_at = now() where code = %s",
+                     (now - target, room.code))
 
 
 # -- taking turns (C29) --------------------------------------------------------

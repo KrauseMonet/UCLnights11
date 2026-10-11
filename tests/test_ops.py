@@ -97,7 +97,7 @@ def test_an_admin_sees_the_site_and_can_reset_a_password(conn_url, monkeypatch):
 def test_deleting_an_account_keeps_its_friends_rooms(conn_url, monkeypatch):
     boss, host, guest = player(), player(), player()
     monkeypatch.setenv("ADMIN_ACCOUNT_IDS", str(boss.account_id))
-    code = host.post("/api/rooms", json={"bench": False, "size": 4, "style": "own"}).json()["code"]
+    code = host.post("/api/rooms", json={"bench": False, "together": False, "size": 4, "style": "own"}).json()["code"]
     guest.post(f"/api/rooms/{code}/join")
     host.post(f"/api/rooms/{code}/start")
     room = guest.get(f"/api/rooms/{code}").json()
@@ -119,7 +119,7 @@ def test_deleting_an_account_keeps_its_friends_rooms(conn_url, monkeypatch):
 def test_deleting_the_only_player_takes_the_empty_room_too(conn_url, monkeypatch):
     boss, alone = player(), player()
     monkeypatch.setenv("ADMIN_ACCOUNT_IDS", str(boss.account_id))
-    code = alone.post("/api/rooms", json={"bench": False, "size": 2, "style": "own"}).json()["code"]
+    code = alone.post("/api/rooms", json={"bench": False, "together": False, "size": 2, "style": "own"}).json()["code"]
     boss.delete(f"/api/admin/accounts/{alone.account_id}")
     assert boss.get(f"/api/rooms/{code}").status_code == 404
     assert boss.delete("/api/admin/rooms/ZZZZZZ").status_code == 400

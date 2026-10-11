@@ -508,6 +508,11 @@ button{font:inherit;cursor:pointer}
 .res-goals .h{grid-column:1;text-align:right}.res-goals .a{grid-column:2}
 .res-goals small{color:var(--ink-3)}
 .res-d .mstats{margin:0 18px 14px}
+/* Watching together (C52): every friend's match this round, each a button for the card. */
+.wt-row{width:100%;background:none;border-left:0;border-right:0;border-bottom:0;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.wt-row:hover{background:rgba(255,255,255,.025)}
+.wt-row.on{background:rgba(124,196,255,.07);box-shadow:inset 3px 0 0 var(--ice)}
+.wt-row .sc{font-variant-numeric:tabular-nums}
 
 /* --- match stats: home left, away right, a split bar in each side's colour --- */
 .mstats-wrap.live .mstat b{transition:color .3s}

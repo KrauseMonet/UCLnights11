@@ -187,12 +187,15 @@ function goalLine(g) {
     : `<div class="a">⚽<span class="m">${g.minute}'</span>${esc(g.scorer)}${assist}</div>`;
 }
 
-/* Play `f` into `host` from kick-off. Returns `finish`, which jumps to the whistle;
-   `onDone` runs once, at the whistle either way. */
-function playMatch(host, f, look, onDone) {
+/* A match on the card that can be moved on to any minute: `to(m, show)` plays every
+   change and goal up to minute m and returns the goals it scored (`show` false catches up
+   without the flash and the burst, for a screen that arrives mid-match); `whistle()` goes
+   to full time, and `onWhistle` runs once, at the whistle either way. Driven by
+   playMatch's own clock below, or by the clock a room watches on together (watch.js, C52). */
+function matchRunner(host, f, look, onWhistle = () => {}) {
   host.innerHTML = matchCardHtml(f, "0–0", "0'", look);
   const end = f.extra_time ? 120 : 90, subs = f.subs || [];
-  let minute = 0, h = 0, a = 0, gi = 0, si = 0, pausedUntil = 0, done = false;
+  let minute = 0, h = 0, a = 0, gi = 0, si = 0, over = false;
   // A change after minute m comes before any goal after it, and after a goal in it.
   const nextSub = (upTo) => {
     while (si < subs.length && subs[si].minute <= upTo && !(gi < f.goals.length && f.goals[gi].minute <= subs[si].minute)) {
@@ -203,10 +206,9 @@ function playMatch(host, f, look, onDone) {
   };
   const feed = $("feed"), live = f.stats && f.shots;
   if (live) { $("mstats").innerHTML = statsHtml(f, liveStats(f, 0, end)); $("mstats").classList.add("live"); }
-  const finish = () => {
-    if (done) return;
-    done = true;
-    clearInterval(timer);
+  const whistle = () => {
+    if (over) return;
+    over = true;
     host.querySelector(".goal-burst")?.remove();
     nextSub(end);
     while (gi < f.goals.length) {
@@ -220,30 +222,47 @@ function playMatch(host, f, look, onDone) {
     $("tb").style.width = "100%";
     $("mstats").classList.remove("live");
     $("mstats").innerHTML = statsHtml(f);
-    onDone();
+    onWhistle();
   };
-  const timer = setInterval(() => {
+  const to = (m, show = true) => {
+    const scored = [];
+    if (over) return scored;
+    while (minute < Math.min(m, end)) {
+      minute += 1;
+      nextSub(minute);
+      while (gi < f.goals.length && f.goals[gi].minute <= minute) {
+        const g = f.goals[gi++];
+        g.side === 0 ? h++ : a++;
+        const sc = $("sc");
+        sc.textContent = `${h}–${a}`;
+        if (show) { sc.classList.remove("flash"); void sc.offsetWidth; sc.classList.add("flash"); }
+        feed.insertAdjacentHTML("beforeend", goalLine(g));
+        markScorer(g);
+        if (show) goalBurst(f, g, look);
+        scored.push(g);
+        nextSub(minute);
+      }
+    }
+    $("clk").textContent = `${minute}'`;
+    $("tb").style.width = `${(minute / end) * 100}%`;
+    if (live) updateStats($("mstats"), f, liveStats(f, minute, end));
+    if (minute >= end) whistle();
+    return scored;
+  };
+  return { to, whistle, get minute() { return minute; }, get over() { return over; } };
+}
+
+/* Play `f` into `host` from kick-off, a minute every MINUTE_MS, the clock stopping for a
+   goal. Returns `finish`, which jumps to the whistle; `onDone` runs once, at the whistle
+   either way. */
+function playMatch(host, f, look, onDone) {
+  let timer = null, pausedUntil = 0;
+  const run = matchRunner(host, f, look, () => { clearInterval(timer); onDone(); });
+  timer = setInterval(() => {
     const now = Date.now();
     if (now < pausedUntil) return;                  // a goal is being celebrated
     if (pausedUntil) { pausedUntil = 0; host.querySelector(".goal-burst")?.remove(); }
-    minute += 1;
-    $("clk").textContent = `${minute}'`;
-    $("tb").style.width = `${(minute / end) * 100}%`;
-    nextSub(minute);
-    while (gi < f.goals.length && f.goals[gi].minute <= minute) {
-      const g = f.goals[gi++];
-      g.side === 0 ? h++ : a++;
-      const sc = $("sc");
-      sc.textContent = `${h}–${a}`;
-      sc.classList.remove("flash"); void sc.offsetWidth; sc.classList.add("flash");
-      feed.insertAdjacentHTML("beforeend", goalLine(g));
-      markScorer(g);
-      goalBurst(f, g, look);
-      pausedUntil = now + GOAL_PAUSE_MS;
-      nextSub(minute);
-    }
-    if (live) updateStats($("mstats"), f, liveStats(f, minute, end));
-    if (minute >= end) finish();
+    if (run.to(run.minute + 1).length) pausedUntil = now + GOAL_PAUSE_MS;
   }, MINUTE_MS);
-  return finish;
+  return run.whistle;
 }

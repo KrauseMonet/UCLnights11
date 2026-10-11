@@ -69,8 +69,64 @@ function signedOut() {
   $("gup").onclick = () => openAuth("up");
 }
 
-onAuth(async (me) => {
-  if (!me) return signedOut();
+/* Not on your profile yet (C46): tournaments from before a finished one saved itself.
+   The server keeps no solo run, so this browser names the solo links it has opened (the
+   cup page's cup:<link> marks); the server adds the rooms you sat in and leaves out what
+   is saved. A link a friend sent you may be among them, so each row can be saved alone. */
+function browserLinks() {
+  const out = [];
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith("cup:") && !k.startsWith("cup:room:")) out.push(k.slice(4));
+    }
+  } catch { /* storage blocked: no solo links to offer */ }
+  return out;
+}
+
+async function unsavedPanel() {
+  let u;
+  try { u = await api("/api/results/unsaved", { method: "POST", body: JSON.stringify({ keys: browserLinks() }) }); }
+  catch { return; }
+  const rows = [...u.rooms.map((r) => ({ source: "room", key: r.code, title: `Room ${r.code}`, sub: r.format })),
+                ...u.solo.map((r) => ({ source: "solo", key: r.key, title: `Seed ${r.seed}`, sub: r.formation }))];
+  if (!rows.length) return;
+  const box = document.createElement("section");
+  box.className = "panel";
+  box.id = "pfunsaved";
+  $("pfunsaved")?.remove();   // a second refresh may land first
+  box.innerHTML = `<div class="panel-h"><span class="label">Not on your profile yet</span>
+      <button class="btn primary" id="saveall">Save all ${rows.length}</button></div>
+    <p class="sub pf-unsaved-note">Finished before tournaments saved themselves. Solo runs are the ones opened in this browser; leave out any a friend sent you.</p>
+    ${rows.map((r, i) => `<div class="myroom pf-row" data-i="${i}">
+      <span class="pill">${sourceLabel[r.source]}</span>
+      <span><b><a href="${esc(resultHref(r))}">${esc(r.title)}</a></b><small>${esc(r.sub)}</small></span>
+      <button class="btn ghost" data-save="${i}">Save</button></div>`).join("")}`;
+  $("pfbody").prepend(box);
+  const saveOne = async (i) => {
+    const btn = box.querySelector(`[data-save="${i}"]`);
+    if (btn.disabled) return true;
+    btn.disabled = true;
+    try {
+      await api("/api/results", { method: "POST", body: JSON.stringify({ source: rows[i].source, key: rows[i].key }) });
+      btn.textContent = "Saved ✓";
+      return true;
+    } catch (e) { btn.disabled = false; toast(e.message); return false; }
+  };
+  box.querySelectorAll("[data-save]").forEach((b) => b.onclick = async () => { if (await saveOne(+b.dataset.save)) refresh(); });
+  $("saveall").onclick = async () => {
+    $("saveall").disabled = true;
+    let ok = 0;
+    for (let i = 0; i < rows.length; i++) if (await saveOne(i)) ok++;
+    toast(`Saved ${ok} to your profile`);
+    refresh();
+  };
+}
+
+async function refresh() {
   try { render(await api("/api/profile")); }
-  catch (e) { $("pfbody").innerHTML = `<p class="sub">${esc(e.message)}</p>`; }
-});
+  catch (e) { $("pfbody").innerHTML = `<p class="sub">${esc(e.message)}</p>`; return; }
+  unsavedPanel();
+}
+
+onAuth((me) => me ? refresh() : signedOut());

@@ -191,6 +191,18 @@ def test_saving_a_solo_run_is_replayed_here_and_saving_twice_is_harmless():
             assert scorers.get(pl["name"]) == pl["goals"]
 
 
+def test_unsaved_lists_the_finished_solo_links_not_yet_saved():
+    c = player()
+    done, kept = finished_state(c, 41), finished_state(c, 42)
+    c.post("/api/results", json={"source": "solo", "key": kept})
+    keys = [done, kept, "41-433", "not-a-state", done]
+    u = c.post("/api/results/unsaved", json={"keys": keys}).json()
+    assert [x["key"] for x in u["solo"]] == [done]          # unfinished, junk, saved and repeats left out
+    assert u["solo"][0]["seed"] == 41 and u["solo"][0]["formation"]
+    assert u["rooms"] == []
+    assert TestClient(app).post("/api/results/unsaved", json={"keys": keys}).status_code == 401
+
+
 def test_an_unfinished_draft_or_a_stranger_cannot_save():
     c = player()
     assert c.post("/api/results", json={"source": "solo", "key": "1-433"}).status_code == 409

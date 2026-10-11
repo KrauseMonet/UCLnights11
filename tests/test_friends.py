@@ -222,6 +222,21 @@ def test_the_room_tournament_has_every_friend_and_real_sides_for_the_rest():
     assert spectator["champion"]["key"] == t["champion"]["key"]
 
 
+def test_unsaved_lists_my_completed_rooms_until_saved():
+    host, guest, stranger = player(), player(), player()
+    code = host.post("/api/rooms", json={"bench": False, "size": 2, "style": "own"}).json()["code"]
+    guest.post(f"/api/rooms/{code}/join")
+    unsaved = lambda c: [r["code"] for r in c.post("/api/results/unsaved", json={}).json()["rooms"]]  # noqa: E731
+    host.post(f"/api/rooms/{code}/start")
+    draft_to_the_end(host, code)
+    assert code not in unsaved(host)                         # not complete yet
+    draft_to_the_end(guest, code)
+    assert code in unsaved(host) and code in unsaved(guest)
+    assert code not in unsaved(stranger)                     # no seat, nothing to save
+    assert host.post("/api/results", json={"source": "room", "key": code}).status_code == 200
+    assert code not in unsaved(host) and code in unsaved(guest)
+
+
 def test_a_thirty_two_room_plays_groups():
     host = player()
     code = host.post("/api/rooms", json={"bench": False, "size": 32, "style": "own"}).json()["code"]

@@ -1106,6 +1106,42 @@ def result_saved(source: str, key: str, request: Request) -> dict:
         return {"saved": me is not None and results.is_saved(conn, me, source, key)}
 
 
+MAX_UNSAVED_KEYS = 200
+
+
+class UnsavedIn(BaseModel):
+    keys: list[str] = []   # solo links a browser has opened; the server keeps no solo run
+
+
+@app.post("/api/results/unsaved")
+def unsaved_results(body: UnsavedIn, request: Request) -> dict:
+    """What this account could still save (C46): the finished solo drafts among the links
+    a browser names, and the completed rooms it sat in, less what it has saved already.
+    Saving each is still a POST to /api/results, which replays it."""
+    keys = list(dict.fromkeys(k for k in body.keys if 0 < len(k) <= 200))[:MAX_UNSAVED_KEYS]
+    with db.connection() as conn:
+        me = _signed_in(conn, request)
+        saved = set(conn.execute("select source, natural_key from results where account_id = %s",
+                                 (me.account_id,)).fetchall())
+        codes = [r[0] for r in conn.execute(
+            "select r.code from rooms r join room_seats s on s.room_code = r.code"
+            " where s.account_id = %s and r.status = 'complete' order by r.updated_at desc",
+            (me.account_id,)).fetchall()]
+        mine = [rooms.load_room(conn, c) for c in codes if ("room", c) not in saved]
+    solo = []
+    for k in keys:
+        if ("solo", k) in saved:
+            continue
+        try:
+            s = _replay(k)
+        except HTTPException:
+            continue
+        if s.complete:
+            solo.append({"key": k, "seed": s.seed, "formation": s.formation.label})
+    return {"solo": solo,
+            "rooms": [{"code": r.code, "format": ROOM_FORMATS[r.size]} for r in mine if _replays(r)]}
+
+
 @app.get("/api/profile")
 def profile(request: Request) -> dict:
     with db.connection() as conn:

@@ -6,6 +6,10 @@ and prints them beside real Champions League regulation-time results
 BASE_AWAY ARE the real means), so the rows to read are the draw rate, the
 result split and the spread -- those depend on K and on how wide the deck's
 quality range is, and they are REPORTED, not tuned to match.
+
+``--engine 2`` plays engine 2 (tiredness and substitutes, C39) between club sides with
+their benches, and adds the share of goals after half-time (which TIRE is set by) and
+extra time's goals (which it is not).
 """
 
 from __future__ import annotations
@@ -17,20 +21,26 @@ import statistics
 from game import match
 from game.deck import load_deck
 from game.draft import Pick, replay, why_not
-from game.tournament import best_xi, league_of, leaders, play_tournament, Side
+from game.tournament import (best_xi, club_side, league_of, leaders, play_match, play_tournament,
+                             Side)
 
 
-def validate(trials: int) -> None:
+def validate(trials: int, engine: int = 1) -> None:
     from etl.openfootball import targets
 
     deck = load_deck()
     league = league_of(deck)
     xis = [best_xi(cs)[1] for cs in deck.club_seasons]
+    clubs = [club_side(cs) for cs in deck.club_seasons]
     rng = random.Random(7)
-    home, away, sides = [], [], []
+    home, away, sides, results = [], [], [], []
     for _ in range(trials):
         a, b = rng.sample(range(len(xis)), 2)
-        r = match.play(rng, xis[a], xis[b], league)
+        if engine == 1:
+            r = match.play(rng, xis[a], xis[b], league)
+        else:
+            r = play_match(rng, clubs[a], clubs[b], league, engine)
+        results.append(r)
         home.append(r.home_goals)
         away.append(r.away_goals)
         sides += r.stats
@@ -48,7 +58,35 @@ def validate(trials: int) -> None:
     print(f"{'':12}{'engine':>9}{'real':>9}")
     for k in ("home_goals", "away_goals", "total_sd", "home_win", "draw", "away_win"):
         print(f"{k:12}{sim[k]:9.3f}{real[k]:9.3f}")
+    goals = [g for r in results for g in r.goals]
+    first, second = real["halves"]
+    print(f"{'2nd half':12}{sum(g.minute > 45 for g in goals) / len(goals):9.3f}{second / (first + second):9.3f}")
+    if engine == 2:
+        timing_report(deck, league, results, real["extra_time"])
     match_stats_report(sides)
+
+
+def timing_report(deck, league, results: list[match.Result], real_et: tuple[int, int]) -> None:
+    """Engine 2's substitutes, and extra time: thirty minutes played on from level
+    regulation matches between club sides."""
+    subs = [s for r in results for s in r.subs]
+    n_sides = 2 * len(results)
+    print(f"\nsubstitutes per side {len(subs) / n_sides:.2f} "
+          f"(none {sum(1 for r in results for s in (0, 1) if not any(x.side == s for x in r.subs)) / n_sides:.0%}); "
+          f"mean minute {statistics.mean(s.minute for s in subs):.1f}")
+    on = {(id(r), s.side, s.on.id) for r in results for s in r.subs}
+    by_subs = sum(1 for r in results for g in r.goals if (id(r), g.side, g.scorer.id) in on)
+    print(f"goals by substitutes {by_subs / sum(len(r.goals) for r in results):.1%}")
+    clubs = [club_side(cs) for cs in deck.club_seasons]
+    rng = random.Random(8)
+    et = []
+    while len(et) < 4000:
+        a, b = rng.sample(range(len(clubs)), 2)
+        r = play_match(rng, clubs[a], clubs[b], league, 2, neutral=True, extra_time_if_level=True)
+        if r.extra_time:
+            et.append(sum(1 for g in r.goals if g.minute > 90))
+    print(f"extra-time goals per match: engine {statistics.mean(et):.3f}, "
+          f"real {real_et[1] / real_et[0]:.3f} ({real_et[0]} matches, too few to set anything by)")
 
 
 def match_stats_report(sides: list[match.SideStats]) -> None:
@@ -94,9 +132,10 @@ if __name__ == "__main__":
     ap.add_argument("--validate", action="store_true")
     ap.add_argument("--trials", type=int, default=20000)
     ap.add_argument("--play", type=int)
+    ap.add_argument("--engine", type=int, default=1, choices=match.ENGINES)
     args = ap.parse_args()
     if args.validate:
-        validate(args.trials)
+        validate(args.trials, args.engine)
     elif args.play is not None:
         play(args.play)
     else:

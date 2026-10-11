@@ -22,6 +22,10 @@ the solo opposition is, at most one season per club.
 
 Everything is a pure function of the seed and the human elevens, so the server keeps
 no tournament state at all.
+
+``engine`` picks the match engine (game.match): 1, the original, which every existing
+link and room replays with; or 2, with tiredness and substitutes (C39), where each club
+side brings on its bench (club_bench) by match.AUTO_PLAN.
 """
 
 from __future__ import annotations
@@ -33,7 +37,7 @@ from dataclasses import dataclass, field
 from game import match
 from game.deck import Card, ClubSeason, Deck
 from game.formations import FORMATIONS, Formation
-from game.positions import arrange, place
+from game.positions import arrange, fits, place
 
 TEAMS = 32
 GROUPS = "ABCDEFGH"
@@ -63,6 +67,8 @@ class Side:
     team: str = "#f2c25a"          # your own eleven: the logo's gold "11"
     deep: str = "#4c370b"
     ink: str = "#ffe08e"
+    bench: list[Card] = field(default_factory=list)     # engine 2 only
+    plan: tuple[match.Sub, ...] = ()
 
     def __post_init__(self) -> None:
         # Every side plays with each man in a slot of its formation, carrying the slot's
@@ -89,11 +95,46 @@ def best_xi(cs: ClubSeason) -> tuple[Formation, list[Card]]:
     return got[0], list(got[1])
 
 
+_BENCH: dict[int, list[Card]] = {}
+BENCH_SIZE = 3
+
+
+def club_bench(cs: ClubSeason) -> list[Card]:
+    """A club's substitutes for engine 2: its best-rated outfield players outside the best
+    eleven who could each come on for somebody in it, the formation still filled. The
+    goalkeeper is never changed, so no keeper sits here."""
+    got = _BENCH.get(id(cs))
+    if got is None:
+        f, xi = best_xi(cs)
+        starters = {c.id for c in xi}
+        rest = sorted((c for c in cs.cards if c.id not in starters and c.positions != ("GK",)),
+                      key=lambda c: -c.rating)
+        got = [c for c in rest
+               if any(fits(f.slots, [*(x for x in xi if x is not off), c]) for off in xi if off.pos != "GK")]
+        got = _BENCH[id(cs)] = got[:BENCH_SIZE]
+    return list(got)
+
+
 def club_side(cs: ClubSeason) -> Side:
     f, xi = best_xi(cs)
     return Side(cs.key, cs.title, cs.short, f, xi, club=cs.club, season=cs.season,
                 label=cs.label, club_name=cs.name, crest=cs.crest,
-                team=cs.team, deep=cs.deep, ink=cs.ink)
+                team=cs.team, deep=cs.deep, ink=cs.ink,
+                bench=club_bench(cs), plan=match.AUTO_PLAN)
+
+
+def teamsheet(side: Side) -> match.Teamsheet:
+    return match.Teamsheet(side.formation.slots, tuple(side.xi), tuple(side.bench), side.plan)
+
+
+def play_match(rng: random.Random, home: Side, away: Side, league: match.League, engine: int = 1,
+               **kw) -> match.Result:
+    """One match between two sides, by the chosen engine."""
+    if engine == 1:
+        return match.play(rng, home.xi, away.xi, league, **kw)
+    if engine == 2:
+        return match.play_v2(rng, teamsheet(home), teamsheet(away), league, **kw)
+    raise ValueError(f"no engine {engine!r}")
 
 
 def league_of(deck: Deck) -> match.League:
@@ -221,9 +262,10 @@ def _pairings(rng: random.Random, winners: list[Side], runners: list[Side],
     return list(zip(runners, winners))
 
 
-def _two_legs(rng: random.Random, stage: str, a: Side, b: Side, league: match.League) -> Tie:
-    first = match.play(rng, a.xi, b.xi, league)
-    second = match.play(rng, b.xi, a.xi, league, extra_time_if_level=True,
+def _two_legs(rng: random.Random, stage: str, a: Side, b: Side, league: match.League,
+              engine: int) -> Tie:
+    first = play_match(rng, a, b, league, engine)
+    second = play_match(rng, b, a, league, engine, extra_time_if_level=True,
                         level_on=(first.away_goals, first.home_goals))
     legs = [Fixture(stage, a, b, first, "First leg"), Fixture(stage, b, a, second, "Second leg")]
     tie = Tie(stage, a, b, legs, a)
@@ -258,33 +300,34 @@ def draw_opposition(rng: random.Random, deck: Deck, n: int = TEAMS - 1) -> list[
 
 
 def _knockout(rng: random.Random, t: Tournament, alive: list[Side], stages: list[str],
-              league: match.League) -> None:
+              league: match.League, engine: int) -> None:
     """Open-draw two-legged rounds, then a one-match final at a neutral ground."""
     for stage in stages[:-1]:
         rng.shuffle(alive)
         nxt = []
         for i in range(0, len(alive), 2):
-            tie = _two_legs(rng, stage, alive[i], alive[i + 1], league)
+            tie = _two_legs(rng, stage, alive[i], alive[i + 1], league, engine)
             t.ties.append(tie)
             t.fixtures += tie.legs
             nxt.append(tie.winner)
         alive = nxt
 
     a, b = alive
-    final = match.play(rng, a.xi, b.xi, league, neutral=True, extra_time_if_level=True)
+    final = play_match(rng, a, b, league, engine, neutral=True, extra_time_if_level=True)
     fx = Fixture("Final", a, b, final, "Final")
     t.fixtures.append(fx)
     t.ties.append(Tie("Final", a, b, [fx], a if final.winner == 0 else b))
     t.champion = t.ties[-1].winner
 
 
-def play_tournament(deck: Deck, league: match.League, seed: int, you: Side) -> Tournament:
+def play_tournament(deck: Deck, league: match.League, seed: int, you: Side,
+                    engine: int = 1) -> Tournament:
     """Your eleven against 31 real sides: the solo game."""
-    return _group_tournament(deck, league, seed, [you])
+    return _group_tournament(deck, league, seed, [you], engine)
 
 
 def play_room(deck: Deck, league: match.League, seed: int, humans: list[Side],
-              size: int) -> Tournament:
+              size: int, engine: int = 1) -> Tournament:
     """A room's tournament: every human eleven, and real sides filling the other places.
 
     ``size`` is one of ROOM_SIZES. 32 plays groups and knockouts exactly as the solo
@@ -294,16 +337,16 @@ def play_room(deck: Deck, league: match.League, seed: int, humans: list[Side],
     if not 1 <= len(humans) <= size:
         raise ValueError(f"{len(humans)} players cannot fill a {size}-side room")
     if size == TEAMS:
-        return _group_tournament(deck, league, seed, humans)
+        return _group_tournament(deck, league, seed, humans, engine)
     rng = random.Random(f"{seed}:cup")
     sides = list(humans) + [club_side(cs) for cs in draw_opposition(rng, deck, size - len(humans))]
     t = Tournament(sides, {}, {})
-    _knockout(rng, t, list(sides), CUP_STAGES[size], league)
+    _knockout(rng, t, list(sides), CUP_STAGES[size], league, engine)
     return t
 
 
 def _group_tournament(deck: Deck, league: match.League, seed: int,
-                      humans: list[Side]) -> Tournament:
+                      humans: list[Side], engine: int) -> Tournament:
     rng = random.Random(f"{seed}:cup")
     sides = list(humans) + [club_side(cs) for cs in draw_opposition(rng, deck, TEAMS - len(humans))]
     groups = _draw_groups(rng, sides)
@@ -314,7 +357,7 @@ def _group_tournament(deck: Deck, league: match.League, seed: int,
         for g in GROUPS:
             for h, a in rounds:
                 home, away = groups[g][h], groups[g][a]
-                f = Fixture("Group stage", home, away, match.play(rng, home.xi, away.xi, league),
+                f = Fixture("Group stage", home, away, play_match(rng, home, away, league, engine),
                             f"Matchday {md}", group=g)
                 group_fixtures[g].append(f)
                 t.fixtures.append(f)
@@ -327,12 +370,12 @@ def _group_tournament(deck: Deck, league: match.League, seed: int,
     # The runner-up hosts the first leg; the group winner is at home in the second.
     alive = []
     for r, w in _pairings(rng, winners, runners, group_of):
-        tie = _two_legs(rng, "Round of 16", r, w, league)
+        tie = _two_legs(rng, "Round of 16", r, w, league, engine)
         t.ties.append(tie)
         t.fixtures += tie.legs
         alive.append(tie.winner)
 
-    _knockout(rng, t, alive, STAGES[2:], league)
+    _knockout(rng, t, alive, STAGES[2:], league, engine)
     return t
 
 

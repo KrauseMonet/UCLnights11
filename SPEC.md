@@ -225,6 +225,52 @@ validator prints what they produce with no "real" column.
   scorer's disc lights up with a ball per goal. A line-up carries each man's name and slot
   only, never a rating, so a blind daily stays blind (C33).
 
+### Engine 2: tiredness and substitutes (C39)
+
+Every tournament is played by one engine, chosen when it is played. **Engine 1 is
+everything above and does not change**: every shared link, saved result and room
+replays its tournament from scratch, so a new rule there would rewrite results people
+have already watched; a pinned hash of six tournaments guards it. Engine 2 is opt-in
+(`play_tournament(..., engine=2)`, `game --validate --engine 2`); nothing on the site
+uses it yet.
+
+- **A match is played in five-minute blocks.** In each, a side's expected goals are
+  engine 1's formula over the eleven ON THE PITCH, with each outfield man's rating moved by
+  his tiredness: `u = (min(minutes played, 90) - 45) / 45`, from -1 at kick-off to +1 at
+  ninety. He defends `13 x u` points below his rating and attacks `6.5 x u` below it. A
+  goalkeeper does not tire. Over a full ninety `u` averages zero, so two average sides
+  still score the real rates.
+- **Tiredness hurts defending more than attacking**, which is what moves goals late: if
+  both sides lost the same in both, the strength edge, and so the scoring, would never
+  change. `TIRE = 13` is SET by the real share of goals after half-time, **55.7%** of
+  5,975 (openfootball half-time scores): the engine gives 55.7%; with no tiredness it
+  gives 50%. The attacking half is declared. The real share also holds added time
+  (second halves run longer) and game state, which the engine folds into tiredness,
+  so 13 is the most tiredness the yardstick allows, not a measurement of tiredness.
+- **Tiredness stops growing at ninety minutes** (declared). Extra time then scores 1.24
+  a match; real extra time scored 1.00 in 24 matches, too few to set anything by.
+- **Substitutes.** A side has a bench and a plan; up to three changes, made between
+  blocks. A plan line names a bench man, the earliest minute, a condition (any, behind,
+  level, ahead, not ahead, not behind; on the tie's aggregate in a second leg) and
+  either the man he replaces or none, when the engine picks the change that most helps
+  attack (behind), defence (ahead) or both, and **makes none if nothing helps**. The
+  goalkeeper is never changed. A change must leave an eleven that fills the formation
+  (game.positions), and everyone may move to make room. A substitute comes on fresh.
+- **Club sides' benches**: the three best-rated outfield men outside the best eleven who
+  could each come on for someone; their plan is a change from 60', 70' and 80'. Measured
+  over 20,000 matches: 2.98 changes a side, at 70' on average; substitutes score 6.3% of
+  goals; an equal-rated bench gives a side 44% more goals after the hour than none.
+- **Statistics** are engine 1's, block by block, from a stream of the match's own: each
+  block's shots come from its own expected goals and the men on the pitch, passes are
+  shared among them, and every shot has its minute, so the timeline is the statistics.
+  Each player line carries his minutes; a side's add up to eleven men for the whole match.
+- **Scorers and assisters** are drawn from the men on the pitch at the goal's minute; a
+  shoot-out's takers are the eleven on the pitch at the end.
+
+Engine 2 against the real results, 20,000 matches between club sides with benches:
+home goals 1.767 (real 1.719), away 1.360 (1.327), total SD 1.801 (1.783), home win
+0.474 (0.477), draw 0.216 (0.204), away win 0.310 (0.319), after half-time 0.557 (0.557).
+
 ## 7. The tournament
 
 - 32 sides: yours plus **31 different clubs**, each in one season drawn uniformly

@@ -106,7 +106,7 @@ def player_totals(t: Tournament) -> dict[tuple[int, str], PlayerTotals]:
                 assists = sum(1 for g in r.goals if g.side == idx and g.assist is c)
                 p = out.setdefault((id(side), c.id), PlayerTotals(c, side))
                 p.apps += 1
-                p.minutes += minutes
+                p.minutes += minutes if line.minutes is None else line.minutes
                 p.goals += goals
                 p.assists += assists
                 p.shots += line.shots

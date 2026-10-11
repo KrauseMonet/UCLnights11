@@ -36,7 +36,7 @@ BLOCKED = re.compile(
 IN_OR_OUT = re.compile(r"^(in|out|ins|outs)$", re.I)
 TABLE_SECTION = re.compile(r"squad|player|statistic|appearance|first[- ]team|roster", re.I)
 SQUAD_TEMPLATES = re.compile(
-    r"(?:fs player|football squad player2?|fb si player|efs player2?|fs2 player)\s*\|", re.I
+    r"(?:fs player|football squad player2?|fb si player|fb siassists player|efs player\d?|fs2 player)\s*\|", re.I
 )
 
 POSITIONS = {
@@ -105,6 +105,35 @@ def split_params(body: str) -> list[str]:
         i += 1
     parts.append("".join(cur))
     return parts
+
+
+def table_cells(row: str) -> list[str]:
+    """A table row's cells: split on a line starting ``|`` or ``!`` and on ``||``/``!!``,
+    but never inside ``{{ }}`` or ``[[ ]]``. Splitting on every ``||`` cut
+    ``{{sortname||Rodri|Rodri (footballer, born 1996)}}`` in two and hid Rodri,
+    Fernandinho, Ederson and Gündoğan from Manchester City 2021-22 (C36)."""
+    text, cells, cur, depth, i = "\n" + row, [], [], 0, 0
+    while i < len(text):
+        two = text[i:i + 2]
+        if two in ("{{", "[["):
+            depth += 1
+            cur.append(two)
+            i += 2
+            continue
+        if two in ("}}", "]]"):
+            depth = max(0, depth - 1)   # an unbalanced close must not open a phantom level
+            cur.append(two)
+            i += 2
+            continue
+        if depth == 0 and (two in ("||", "!!") or two in ("\n|", "\n!")):
+            cells.append("".join(cur))
+            cur = []
+            i += 2
+            continue
+        cur.append(text[i])
+        i += 1
+    cells.append("".join(cur))
+    return [c.strip() for c in cells if c.strip()]
 
 
 def template_params(call: str) -> tuple[str, dict[str, str], list[str]]:
@@ -224,7 +253,7 @@ def _from_tables(body: str) -> list[Listed]:
     for table in re.finditer(r"\{\|.*?\n\|\}", body, re.S):
         group = None
         for row in re.split(r"\n\|-[^\n]*", table.group(0)):
-            cells = [c.strip() for c in re.split(r"\n[|!]|\|\||!!", "\n" + row) if c.strip()]
+            cells = table_cells(row)
             if len(cells) == 1 and group_header(cells[0]):
                 group = group_header(cells[0])
                 continue

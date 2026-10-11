@@ -23,7 +23,7 @@ Claudio Bravo|86
 Marc-André ter Stegen|85
 Dani Alves|86
 Gerard Piqué|88
-Javier Mascherano|86|DF
+Javier Mascherano|86
 Jordi Alba|86
 Jérémy Mathieu|80
 Marc Bartra|78
@@ -95,8 +95,8 @@ Héctor Herrera|83
 Rúben Neves|76
 Evandro (footballer, born 1986)|74
 Yacine Brahimi|85
-Ricardo Quaresma|80|MF
-Cristian Tello|78|MF
+Ricardo Quaresma|80
+Cristian Tello|78
 Jackson Martínez|86
 Vincent Aboubakar|76
 Adrián López|73

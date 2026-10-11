@@ -12,7 +12,7 @@ João Neves|89
 Fabián Ruiz|86
 Warren Zaïre-Emery|80
 Lee Kang-in|79
-Ousmane Dembélé|95|FW
+Ousmane Dembélé|95
 Khvicha Kvaratskhelia|90
 Désiré Doué|87
 Bradley Barcola|85
@@ -33,7 +33,7 @@ Boubacar Kamara|83
 Amadou Onana|81
 John McGinn|82
 Jacob Ramsey|77
-Morgan Rogers|85|MF
+Morgan Rogers|85
 Marco Asensio|82
 Marcus Rashford|82
 Ollie Watkins|85
@@ -49,7 +49,7 @@ Jurriën Timber|84
 Ben White (footballer)|80
 Jakub Kiwior|79
 Riccardo Calafiori|80
-Myles Lewis-Skelly|80|DF
+Myles Lewis-Skelly|80
 Declan Rice|90
 Thomas Partey|83
 Martin Ødegaard|87
@@ -76,7 +76,7 @@ Ferland Mendy|80
 Fran García (footballer, born 1999)|78
 Federico Valverde|88
 Jude Bellingham|88
-Aurélien Tchouaméni|84|MF
+Aurélien Tchouaméni|84
 Eduardo Camavinga|81
 Luka Modrić|82
 Dani Ceballos|80
@@ -121,7 +121,7 @@ Pascal Groß|82
 Marcel Sabitzer|81
 Felix Nmecha|80
 Julian Brandt|82
-Jamie Gittens|82|FW
+Jamie Gittens|82
 Karim Adeyemi|81
 Maximilian Beier|79
 Serhou Guirassy|88
@@ -134,7 +134,7 @@ Dayot Upamecano|84
 Kim Min-jae (footballer)|83
 Eric Dier|79
 Hiroki Itō (footballer, born 1999)|79
-Alphonso Davies|82|DF
+Alphonso Davies|82
 Raphaël Guerreiro|79
 Sacha Boey|74
 Josip Stanišić|80
@@ -144,7 +144,7 @@ Leon Goretzka|82
 Konrad Laimer|81
 João Palhinha|78
 Jamal Musiala|90
-Thomas Müller|79|MF
+Thomas Müller|79
 Michael Olise|88
 Leroy Sané|83
 Serge Gnabry|79
@@ -161,7 +161,7 @@ Benjamin Pavard|83
 Stefan de Vrij|81
 Yann Aurel Bisseck|78
 Matteo Darmian|78
-Denzel Dumfries|85|DF
+Denzel Dumfries|85
 Federico Dimarco|85
 Carlos Augusto (footballer)|77
 Nicolò Barella|88

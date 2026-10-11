@@ -1,0 +1,164 @@
+# Arsenal F.C.
+David Seaman|GK
+Alex Manninger|GK
+Tony Adams|CB
+Martin Keown|CB
+Lee Dixon|RB
+Lauren (Cameroonian footballer)|RB,RM
+Sylvinho|LB
+Oleh Luzhnyi|RB,CB
+Ashley Cole|LB
+Gilles Grimandi|CB,DM,RB
+Patrick Vieira|CM
+Robert Pires|LM,RM
+Freddie Ljungberg|RM,CM
+Ray Parlour|CM,RM
+Edu (footballer, born 1978)|CM
+Thierry Henry|ST
+Dennis Bergkamp|ST
+Sylvain Wiltord|ST,RM
+Nwankwo Kanu|ST
+
+# FC Bayern Munich
+Oliver Kahn|GK
+Bixente Lizarazu|LB
+Samuel Kuffour|CB
+Patrik Andersson|CB
+Willy Sagnol|RB,RM
+Thomas Linke|CB
+Michael Tarnat|LB,LM
+Stefan Effenberg|CM
+Mehmet Scholl|AM,LM
+Hasan Salihamidžić|RM,LM
+Jens Jeremies|DM,CM
+Owen Hargreaves|CM,DM,RM
+Thorsten Fink|DM,CM
+Ciriaco Sforza|CM,DM,CB
+Giovane Élber|ST
+Carsten Jancker|ST
+Paulo Sérgio (footballer, born June 1969)|ST,RM
+Alexander Zickler|ST,LM
+Roque Santa Cruz|ST
+
+# Deportivo de La Coruña
+Jacques Songo'o|GK
+José Francisco Molina|GK
+Noureddine Naybet|CB
+Manuel Pablo|RB
+Joan Capdevila|LB
+César Martín|CB
+Enrique Romero|LB,LW
+Juan Carlos Valerón|AM
+Djalminha|AM
+Mauro Silva|DM
+Fran (footballer, born 1969)|LW
+Emerson (footballer, born 1972)|DM,CM
+Víctor Sánchez (footballer, born 1976)|RW,LW
+Lionel Scaloni|RW,RB
+Aldo Duscher|DM,CM
+Diego Tristán|ST
+Roy Makaay|ST
+Walter Pandiani|ST
+
+# Galatasaray S.K. (football)
+Cláudio Taffarel|GK
+Bülent Korkmaz|CB
+Gheorghe Popescu|CB,DM
+Fatih Akyel|CB
+Hakan Ünsal|LB
+Capone (footballer)|RB
+Gheorghe Hagi|AM
+Hasan Şaş|LM,AM
+Emre Belözoğlu|CM,AM
+Okan Buruk|RM,CM
+Ergün Penbe|LM,LB
+Ümit Davala|RM,RB
+Suat Kaya|CM,DM
+Mário Jardel|ST
+Arif Erdem|ST
+Serkan Aykut|ST
+
+# Leeds United F.C.
+Nigel Martyn|GK
+Paul Robinson (footballer, born 1979)|GK
+Rio Ferdinand|CB
+Jonathan Woodgate|CB
+Lucas Radebe|CB
+Dominic Matteo|CB,LB
+Ian Harte|LB,LM
+Gary Kelly (footballer, born 1974)|RB
+Danny Mills|RB
+Lee Bowyer|RM,CM
+Olivier Dacourt|CM
+David Batty|CM
+Eirik Bakke|CM,RM
+Jason Wilcox|LM
+Stephen McPhail|CM
+Mark Viduka|ST
+Harry Kewell|LM,ST
+Alan Smith (footballer, born 1980)|ST
+Robbie Keane|ST
+Michael Bridges|ST
+
+# Manchester United F.C.
+Fabien Barthez|GK
+Raimond van der Gouw|GK
+Jaap Stam|CB
+Gary Neville|RB
+Denis Irwin|LB
+Mikaël Silvestre|LB,CB
+Wes Brown|CB,RB
+Ronny Johnsen|CB
+Phil Neville|LB,RB
+David Beckham|RM,CM
+Roy Keane|CM
+Paul Scholes|CM,AM
+Ryan Giggs|LM
+Nicky Butt|CM
+Luke Chadwick|RM,LM
+Teddy Sheringham|ST,AM
+Andy Cole|ST
+Ole Gunnar Solskjær|ST,RM
+Dwight Yorke|ST
+
+# Real Madrid CF
+Iker Casillas|GK
+Roberto Carlos|LB
+Fernando Hierro|CB
+Iván Helguera|CB,DM,CM
+Míchel Salgado|RB
+Iván Campo|CB
+Aitor Karanka|CB
+Luís Figo|RM,RW
+Claude Makélélé|DM
+Steve McManaman|CM,LM
+Guti|AM,ST
+Flávio Conceição|CM,DM
+Santiago Solari|LM
+Sávio (footballer, born 1974)|LM
+Geremi|RB,RM,CM
+Albert Celades|CM,DM
+Raúl González|ST
+Fernando Morientes|ST
+Pedro Munitis|RM,ST
+
+# Valencia CF
+Santiago Cañizares|GK
+Roberto Ayala|CB
+Mauricio Pellegrino|CB
+Amedeo Carboni|LB
+Jocelyn Angloma|RB
+Fábio Aurélio|LB,LM
+Gaizka Mendieta|CM,RM
+Kily González|LM
+Pablo Aimar|AM,ST
+Rubén Baraja|CM,DM
+Zlatko Zahovič|AM,ST
+David Albelda|DM
+Didier Deschamps|DM,CM
+Miguel Ángel Angulo|RM,ST
+Miroslav Đukić|CB
+Vicente Rodríguez|LM
+John Carew|ST
+Juan Sánchez (footballer, born 1972)|ST
+Diego Alonso|ST

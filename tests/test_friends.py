@@ -438,3 +438,23 @@ def test_a_spectator_watches_but_has_no_draft(clock):
     (host, guest), code, room = turn_room()
     seen = player().get(f"/api/rooms/{code}").json()
     assert seen["draft"] is None and seen["turns"]["deal"] and not seen["turns"]["turn"]["you"]
+
+
+def test_a_memory_room_hides_ratings_in_the_placed_eleven_too():
+    host = player()
+    code = host.post("/api/rooms", json={"size": 2, "memory": True, "style": "own"}).json()["code"]
+    host.post(f"/api/rooms/{code}/start")
+    d = draft_to_the_end(host, code, stop_after=3)["draft"]
+    assert len(d["xi"]) == 3 and {c["rating"] for c in d["xi"]} == {None}
+    assert all(c["slot"] in c["positions"] for c in d["xi"])
+
+
+def test_a_room_whose_picks_no_longer_replay_says_so_instead_of_failing(clock):
+    """A room drafted before positions (C35) may hold moves the new rules don't deal: it
+    shows as failed with the reason, and its tournament is refused, rather than a 500."""
+    (host, guest), code, room = turn_room()
+    with db.connection() as conn:
+        conn.execute("update rooms set moves = %s where code = %s", ("999", code))
+    seen = host.get(f"/api/rooms/{code}")
+    assert seen.status_code == 200
+    assert seen.json()["status"] == "failed" and "positions" in seen.json()["failure_reason"]

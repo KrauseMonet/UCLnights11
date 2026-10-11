@@ -32,7 +32,7 @@ Radja Nainggolan|86
 Kevin Strootman|83
 Lorenzo Pellegrini|80
 Maxime Gonalons|76
-Diego Perotti|80|MF
+Diego Perotti|80
 Stephan El Shaarawy|80
 Cengiz Ünder|80
 Edin Džeko|88
@@ -44,7 +44,7 @@ David Soria|77
 Simon Kjær|80
 Clément Lenglet|80
 Gabriel Mercado|79
-Jesús Navas|81|DF
+Jesús Navas|81
 Sergio Escudero (footballer, born 1989)|79
 Steven Nzonzi|84
 Éver Banega|85
@@ -66,7 +66,7 @@ Joshua Kimmich|87
 David Alaba|86
 Rafinha (footballer, born 1985)|80
 Juan Bernat|77
-Javi Martínez|83|MF
+Javi Martínez|83
 Thiago Alcântara|88
 Arturo Vidal|85
 James Rodríguez|87
@@ -95,7 +95,7 @@ Sami Khedira|84
 Blaise Matuidi|83
 Claudio Marchisio|78
 Rodrigo Bentancur|75
-Juan Cuadrado|82|MF
+Juan Cuadrado|82
 Douglas Costa|85
 Federico Bernardeschi|79
 Paulo Dybala|89
@@ -152,7 +152,7 @@ John Stones|83
 Nicolás Otamendi|86
 Vincent Kompany|82
 Aymeric Laporte|83
-Fabian Delph|78|DF
+Fabian Delph|78
 Danilo (footballer, born July 1991)|77
 Benjamin Mendy|76
 Fernandinho (footballer, born May 1985)|87

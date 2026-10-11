@@ -11,8 +11,13 @@ from game.deck import Card
 LEAGUE = match.League(attack=80.0, defence=80.0)
 
 
+# A hand-built man plays anywhere in his line, so any 1-4-3-3 of them fills a 4-3-3.
+LINE_POSITIONS = {"GK": ("GK",), "DF": ("RB", "CB", "LB"), "MF": ("DM", "CM", "AM", "RM"), "FW": ("RW", "ST", "LW")}
+
+
 def card(pos, rating=80, n=0):
-    return Card(id=f"{pos}{n}", name=f"{pos} {n}", title=f"{pos} {n}", pos=pos, nation=None,
+    return Card(id=f"{pos}{n}", name=f"{pos} {n}", title=f"{pos} {n}", pos=pos,
+                positions=LINE_POSITIONS[pos], source="declared", nation=None,
                 rating=rating, season=2004, label="2004–05", club="T", club_name="T", short="T", key="k", crest="T")
 
 

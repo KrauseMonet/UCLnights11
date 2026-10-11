@@ -1,0 +1,164 @@
+# Arsenal F.C.
+Jens Lehmann|GK
+Manuel Almunia|GK
+Kolo Touré|CB
+Ashley Cole|LB
+Sol Campbell|CB
+Lauren (Cameroonian footballer)|RB
+Philippe Senderos|CB
+Emmanuel Eboué|RB
+Gaël Clichy|LB
+Pascal Cygan|CB
+Cesc Fàbregas|CM,AM
+Gilberto Silva|DM,CM
+Robert Pires|LM
+Alexander Hleb|RM,LM,AM
+Freddie Ljungberg|LM,RM
+Mathieu Flamini|CM,LB,DM
+Abou Diaby|CM
+Thierry Henry|ST
+Dennis Bergkamp|ST
+José Antonio Reyes|LM,ST
+Robin van Persie|ST,RM
+Emmanuel Adebayor|ST
+
+# FC Barcelona
+Víctor Valdés|GK
+Carles Puyol|CB,RB
+Rafael Márquez|CB,DM
+Giovanni van Bronckhorst|LB
+Juliano Belletti|RB
+Oleguer Presas|RB,CB
+Sylvinho|LB
+Ronaldinho|LW
+Deco|CM,AM
+Xavi (footballer, born 1980)|CM
+Andrés Iniesta|CM,LW
+Ludovic Giuly|RW
+Mark van Bommel|DM,CM
+Edmílson|DM,CB
+Thiago Motta|DM,CM
+Samuel Eto'o|ST
+Lionel Messi|RW
+Henrik Larsson|ST,LW
+Maxi López|ST
+
+# S.L. Benfica
+José Moreira|GK
+Quim (footballer, born 1975)|GK
+Luisão|CB
+Ricardo Rocha (footballer, born 1978)|CB
+Anderson (footballer, born 1980)|CB
+Léo (footballer, born 1975)|LB
+Nélson Marcos|RB
+Alcides (footballer)|RB,CB
+Simão Sabrosa|LW,LM
+Petit (Portuguese footballer)|DM,CM
+Giorgos Karagounis|CM,AM
+Manuel Fernandes (footballer, born 1986)|CM
+Beto (footballer, born November 1976)|DM,CM
+Andrei Karyaka|AM,RM
+Geovanni|RM,RW
+Nuno Gomes|ST
+Fabrizio Miccoli|ST
+
+# Inter Milan
+Júlio César (football goalkeeper, born 1979)|GK
+Francesco Toldo|GK
+Javier Zanetti|RB,LB,CM
+Walter Samuel|CB
+Iván Córdoba|CB
+Marco Materazzi|CB
+Nicolás Burdisso|CB,RB
+Siniša Mihajlović|CB,LB
+Esteban Cambiasso|CM,DM
+Luís Figo|RM,RW
+Dejan Stanković|CM,LM
+Juan Sebastián Verón|CM
+David Pizarro|DM,CM
+Cristiano Zanetti|DM
+Santiago Solari|LM
+Adriano (footballer, born February 1982)|ST
+Julio Cruz (Argentine footballer)|ST
+Obafemi Martins|ST
+Álvaro Recoba|ST,AM
+
+# Juventus FC
+Gianluigi Buffon|GK
+Fabio Cannavaro|CB
+Lilian Thuram|CB,RB
+Jonathan Zebina|RB
+Federico Balzaretti|LB
+Giorgio Chiellini|LB,CB
+Robert Kovač|CB
+Gianluca Zambrotta|LB,RB
+Pavel Nedvěd|LM,AM
+Patrick Vieira|CM
+Emerson (footballer, born 1976)|DM,CM
+Mauro Camoranesi|RM
+Giuliano Giannichedda|CM
+Manuele Blasi|CM
+David Trezeguet|ST
+Zlatan Ibrahimović|ST
+Alessandro Del Piero|ST
+Adrian Mutu|ST,LM
+
+# Olympique Lyonnais
+Grégory Coupet|GK
+Cris (footballer, born 1977)|CB
+Eric Abidal|LB
+Cláudio Caçapa|CB
+Anthony Réveillère|RB
+François Clerc|RB
+Juninho Pernambucano|CM,AM
+Mahamadou Diarra|DM
+Florent Malouda|LW
+Tiago Mendes|CM,DM
+Sidney Govou|RW,ST
+Hatem Ben Arfa|RW,LW
+Jérémy Clément|CM
+Fred (footballer, born 1983)|ST
+Sylvain Wiltord|ST,LW
+John Carew|ST
+Karim Benzema|ST
+
+# AC Milan
+Dida (footballer, born 1973)|GK
+Alessandro Nesta|CB
+Paolo Maldini|CB,LB
+Cafu|RB
+Jaap Stam|CB,RB
+Kakha Kaladze|CB,LB
+Alessandro Costacurta|CB
+Kaká|AM
+Andrea Pirlo|DM
+Gennaro Gattuso|CM,DM
+Clarence Seedorf|CM,AM
+Marek Jankulovski|LB,LM
+Massimo Ambrosini|CM,DM
+Rui Costa|AM
+Serginho (footballer, born 1971)|LB,LM
+Johann Vogel (footballer)|DM,CM
+Andriy Shevchenko|ST
+Alberto Gilardino|ST
+Filippo Inzaghi|ST
+Christian Vieri|ST
+
+# Villarreal CF
+Sebastián Viera|GK
+Gonzalo Rodríguez (footballer, born 1984)|CB
+Juan Manuel Peña|CB
+Juan Pablo Sorín|LB,LM
+Quique Álvarez|CB
+Rodolfo Arruabarrena|LB
+Javi Venta|RB
+Juan Román Riquelme|AM
+Marcos Senna|DM,CM
+Josico|CM,DM
+Alessio Tacchinardi|DM,CM
+Santi Cazorla|LM,RM
+Héctor Font|RM,LM
+Roger García|LM
+Diego Forlán|ST
+José Mari (footballer, born 1978)|ST
+Guillermo Franco|ST

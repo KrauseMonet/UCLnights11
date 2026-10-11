@@ -37,7 +37,7 @@ Mateo Kovačić|82
 N'Golo Kanté|82
 Conor Gallagher|79
 Mason Mount|80
-Kai Havertz|81|FW
+Kai Havertz|81
 Raheem Sterling|80
 João Félix|80
 Mykhailo Mudryk|75
@@ -71,7 +71,7 @@ Stefan de Vrij|81
 Milan Škriniar|84
 Matteo Darmian|80
 Federico Dimarco|84
-Denzel Dumfries|82|DF
+Denzel Dumfries|82
 Robin Gosens|77
 Nicolò Barella|88
 Hakan Çalhanoğlu|86
@@ -100,7 +100,7 @@ Kevin De Bruyne|91
 Bernardo Silva|89
 Kalvin Phillips|74
 Phil Foden|85
-Jack Grealish|86|MF
+Jack Grealish|86
 Riyad Mahrez|85
 Erling Haaland|95
 Julián Alvarez|84
@@ -112,7 +112,7 @@ Manuel Neuer|86
 Dayot Upamecano|83
 Matthijs de Ligt|86
 Benjamin Pavard|83
-Alphonso Davies|85|DF
+Alphonso Davies|85
 João Cancelo|82
 Noussair Mazraoui|78
 Lucas Hernandez|80
@@ -121,7 +121,7 @@ Leon Goretzka|84
 Ryan Gravenberch|76
 Marcel Sabitzer|76
 Jamal Musiala|89
-Thomas Müller|85|MF
+Thomas Müller|85
 Leroy Sané|85
 Kingsley Coman|86
 Serge Gnabry|83

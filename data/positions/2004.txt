@@ -1,0 +1,163 @@
+# FC Bayern Munich
+Oliver Kahn|GK
+Lúcio|CB
+Willy Sagnol|RB
+Bixente Lizarazu|LB
+Martín Demichelis|CB,DM
+Robert Kovač|CB
+Samuel Kuffour|CB
+Thomas Linke|CB
+Michael Ballack|CM,AM
+Zé Roberto|LM,CM
+Torsten Frings|CM,DM
+Owen Hargreaves|DM,CM,RB
+Sebastian Deisler|RM
+Bastian Schweinsteiger|LM,RM
+Hasan Salihamidžić|RM,RB
+Mehmet Scholl|AM
+Roy Makaay|ST
+Claudio Pizarro|ST
+Roque Santa Cruz|ST
+Paolo Guerrero|ST
+
+# Chelsea F.C.
+Petr Čech|GK
+Carlo Cudicini|GK
+John Terry|CB
+Ricardo Carvalho|CB
+William Gallas|CB,LB
+Paulo Ferreira|RB
+Wayne Bridge|LB
+Glen Johnson|RB
+Robert Huth|CB
+Frank Lampard|CM
+Claude Makélélé|DM
+Arjen Robben|LW,RW
+Damien Duff|RW,LW
+Joe Cole|RW,AM,LW
+Tiago Mendes|CM,DM
+Geremi|CM,RB
+Alexey Smertin|CM,DM
+Didier Drogba|ST
+Eiður Guðjohnsen|ST,AM
+Mateja Kežman|ST
+
+# Inter Milan
+Francesco Toldo|GK
+Fabián Carini|GK
+Javier Zanetti|RB,LB,CM
+Iván Córdoba|CB
+Marco Materazzi|CB
+Siniša Mihajlović|CB
+Giuseppe Favalli|LB,CB
+Nicolás Burdisso|CB
+Esteban Cambiasso|CM,DM
+Juan Sebastián Verón|CM,AM
+Dejan Stanković|CM,RM
+Edgar Davids|CM,LM
+Emre Belözoğlu|CM
+Kily González|LM
+Cristiano Zanetti|DM,CM
+Andy van der Meyde|RM
+Adriano (footballer, born February 1982)|ST
+Christian Vieri|ST
+Álvaro Recoba|ST,AM
+Obafemi Martins|ST
+Julio Cruz (Argentine footballer)|ST
+
+# Juventus FC
+Gianluigi Buffon|GK
+Fabio Cannavaro|CB
+Lilian Thuram|CB,RB
+Gianluca Zambrotta|LB,RB
+Paolo Montero|CB
+Jonathan Zebina|RB,CB
+Gianluca Pessotto|LB,RB
+Nicola Legrottaglie|CB
+Pavel Nedvěd|LM,AM
+Emerson (footballer, born 1976)|DM,CM
+Mauro Camoranesi|RM
+Alessio Tacchinardi|CM,DM
+Stephen Appiah|CM
+Manuele Blasi|CM,DM
+Zlatan Ibrahimović|ST
+Alessandro Del Piero|ST
+David Trezeguet|ST
+Marcelo Zalayeta|ST
+
+# Liverpool F.C.
+Jerzy Dudek|GK
+Chris Kirkland|GK
+Jamie Carragher|CB
+Sami Hyypiä|CB
+John Arne Riise|LB,LW
+Steve Finnan|RB
+Djimi Traoré|LB,CB
+Josemi|RB
+Mauricio Pellegrino|CB
+Steven Gerrard|CM,AM,RM
+Xabi Alonso|CM
+Luis García (footballer, born 1978)|AM,RW,LW
+Dietmar Hamann|DM,CM
+Vladimír Šmicer|RW,LW
+Igor Bišćan|DM,CB
+Milan Baroš|ST
+Djibril Cissé|ST,RW
+Fernando Morientes|ST
+Harry Kewell|LW,LM
+Florent Sinama Pongolle|ST
+
+# Olympique Lyonnais
+Grégory Coupet|GK
+Cris (footballer, born 1977)|CB
+Cláudio Caçapa|CB
+Eric Abidal|LB
+Anthony Réveillère|RB
+Lamine Diatta|CB
+Juninho Pernambucano|CM,AM
+Michael Essien|CM,DM
+Mahamadou Diarra|DM
+Florent Malouda|LW
+Sidney Govou|RW,ST
+Sylvain Wiltord|ST,RW,LW
+Nilmar|ST
+Pierre-Alain Frau|ST
+Karim Benzema|ST
+
+# AC Milan
+Dida (footballer, born 1973)|GK
+Christian Abbiati|GK
+Alessandro Nesta|CB
+Paolo Maldini|CB,LB
+Cafu|RB
+Jaap Stam|CB,RB
+Kakha Kaladze|CB,LB
+Alessandro Costacurta|CB
+Serginho (footballer, born 1971)|LB,LM
+Kaká|AM
+Andrea Pirlo|DM
+Clarence Seedorf|CM,AM
+Gennaro Gattuso|CM,DM
+Rui Costa|AM
+Massimo Ambrosini|CM
+Andriy Shevchenko|ST
+Hernán Crespo|ST
+Filippo Inzaghi|ST
+Jon Dahl Tomasson|ST
+
+# PSV Eindhoven
+Heurelho Gomes|GK
+Alex (footballer, born June 1982)|CB
+Lee Young-pyo|LB
+Wilfred Bouma|CB,LB
+André Ooijer|CB,RB
+Theo Lucius|RB
+Mark van Bommel|CM,DM
+Phillip Cocu|CM,DM
+Park Ji-sung|RW,LW,AM
+Johann Vogel (footballer)|DM
+DaMarcus Beasley|LW
+Ibrahim Afellay|CM,AM
+Jan Vennegoor of Hesselink|ST
+Jefferson Farfán|RW,ST
+Johan Vonlanthen|ST

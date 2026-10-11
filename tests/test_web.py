@@ -67,6 +67,18 @@ def test_a_memory_draft_sends_no_ratings_and_lists_each_line_by_name():
     assert len(s["picks"]) == 4
 
 
+def test_a_draft_shows_its_eleven_placed_and_memory_hides_its_ratings():
+    for memory in (False, True):
+        q = "?memory=1" if memory else ""
+        s = client.post(f"/api/draft{q}", json={"seed": 11, "formation": "352"}).json()
+        assert s["formation"]["slots"][0] == "GK" and len(s["formation"]["slots"]) == 11
+        for _ in range(3):
+            i = next(c["i"] for c in s["deal"]["cards"] if c["takeable"])
+            s = client.post(f"/api/draft/{s['state']}/pick{q}", json={"index": i}).json()
+        assert len(s["xi"]) == 3 and all(c["slot"] in c["positions"] for c in s["xi"])
+        assert all((c["rating"] is None) == memory for c in s["xi"])
+
+
 def test_memory_mode_lists_a_squad_out_of_rating_order():
     # The deck lists a squad best first; listing it that way in Memory mode would give
     # the ratings away. Seed 11's first squad is one where the two orders differ.

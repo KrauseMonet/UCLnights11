@@ -1,5 +1,14 @@
 # Credits
 
+## Positions
+
+From 2013–14, each player's positions are counted from Transfermarkt's match line-ups
+(<https://www.transfermarkt.com>), as published by the transfermarkt-datasets project
+(<https://github.com/dcaribou/transfermarkt-datasets>, released under CC0). The files used
+are `games.csv.gz` and `game_lineups.csv.gz`; their SHA-256s are in
+`data/positions/measured.json`. Players are linked through Wikidata's Transfermarkt player
+id (P2446, CC0). Positions before 2013–14 are this game's own judgement.
+
 ## Club crests
 
 Every crest belongs to its club. They appear here on a non-commercial fan site, at the site

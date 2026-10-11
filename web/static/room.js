@@ -236,7 +236,7 @@ function renderDrafting() {
         <div class="gate-cta">${R.is_host ? `<button class="btn ghost" id="finishb">Finish their drafts</button>` : ""}</div></section>
       ${R.draft ? `<aside class="panel"><div class="panel-h"><span class="label">Your XI</span><span class="label">${esc(R.draft.formation.label)}</span></div>
         <div class="pitch" id="pitch"></div></aside>` : ""}</div>`;
-    if (R.draft) renderPitch($("pitch"), R.draft.formation.code, R.draft.picks, null);
+    if (R.draft) renderPitch($("pitch"), R.draft.formation.slots, R.draft.xi, null);
     if ($("finishb")) $("finishb").onclick = () => { if (confirm(`Finish the drafts of ${waitingOn.map((s) => s.username).join(", ")}?`)) act("finish"); };
     return;
   }
@@ -257,13 +257,13 @@ function renderDrafting() {
   $("formname").textContent = d.formation.label;
   $("pickno").textContent = d.picks.length + 1;
   $("bar").style.width = `${(d.picks.length / 11) * 100}%`;
-  lineChips($("lines"), d.formation, d.picks);
+  lineChips($("lines"), d.formation, d.xi);
   const expect = movesIn(d.state);
   renderDeal($("deal"), d.deal, {
     heading: "Dealt to the room", rerollsLeft: d.rerolls_left, fresh,
     onTake: (i) => act("pick", { index: i, expect }), onReroll: () => act("reroll", { expect }),
   });
-  renderPitch($("pitch"), d.formation.code, d.picks, d.picks.length ? d.picks[d.picks.length - 1].id : null);
+  renderPitch($("pitch"), d.formation.slots, d.xi, d.picks.length ? d.picks[d.picks.length - 1].id : null);
   $("xisub").textContent = `${d.picks.length} / 11`;
   xiFoot($("xifoot"), d);
 }
@@ -308,8 +308,8 @@ function renderTurns() {
   document.title = mine ? `● Your pick · ${TITLE}` : TITLE;
   if (d) {
     $("formname").textContent = d.formation.label;
-    lineChips($("lines"), d.formation, d.picks);
-    renderPitch($("pitch"), d.formation.code, d.picks, d.picks.length ? d.picks[d.picks.length - 1].id : null);
+    lineChips($("lines"), d.formation, d.xi);
+    renderPitch($("pitch"), d.formation.slots, d.xi, d.picks.length ? d.picks[d.picks.length - 1].id : null);
     $("xisub").textContent = `${d.picks.length} / 11`;
   }
   if (T.deal && shownTurn !== T.expect) {
@@ -324,7 +324,7 @@ function renderTurns() {
   $("pickcount").textContent = `${T.expect} made`;
   $("recent").innerHTML = T.recent.length ? T.recent.map((r) => `<li style="${teamStyle(r)}">
       <span class="dot" aria-hidden="true"></span><b>${esc(r.username)}</b>
-      <span class="pk">${esc(r.card.name)}</span><span class="pos ${r.card.pos}">${r.card.pos}</span>
+      <span class="pk">${esc(r.card.name)}</span>${positionsHtml(r.card)}
       <small>${esc(r.card.short)} ${esc(r.card.season.slice(2))}${r.card.rating == null ? "" : ` · ${r.card.rating}`}</small></li>`).join("")
     : `<li class="empty">No picks yet.</li>`;
   startTicker();

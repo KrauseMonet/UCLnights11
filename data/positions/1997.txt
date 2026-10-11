@@ -1,0 +1,113 @@
+# Bayer 04 Leverkusen
+Dirk Heinen|GK
+Jens Nowotny|CB
+Christian Wörns|CB
+Carsten Ramelow|DM,CB
+Jan Heintze|LB,LM
+Robert Kovač|CB
+Markus Happe|CB
+Emerson (footballer, born 1976)|DM,CM
+Stefan Beinlich|AM,CM
+Niko Kovač|CM,RM
+Dirk Lottner|AM,LM
+Hans-Peter Lehnhoff|RM,CM
+Ulf Kirsten|ST
+Erik Meijer (footballer)|ST
+Paulo Rink|ST
+Markus Feldhoff|ST
+
+# FC Bayern Munich
+Oliver Kahn|GK
+Bixente Lizarazu|LB,LM
+Lothar Matthäus|CB
+Markus Babbel|CB,RB
+Thomas Helmer|CB
+Michael Tarnat|LB,LM
+Samuel Kuffour|CB
+Mehmet Scholl|AM,LM
+Mario Basler|RM
+Dietmar Hamann|CM,DM
+Thomas Strunz|RM,RB,CM
+Christian Nerlinger|CM
+Thorsten Fink|DM,CM
+Giovane Élber|ST
+Carsten Jancker|ST
+Alexander Zickler|ST,LM
+Ruggiero Rizzitelli|ST
+
+# Borussia Dortmund
+Stefan Klos|GK
+Jürgen Kohler|CB
+Stefan Reuter|RB,RM
+Júlio César (footballer, born 1963)|CB
+Wolfgang Feiersinger|CB
+Martin Kree|CB,LB
+Andreas Möller|AM,CM
+Matthias Sammer|CB
+Jörg Heinrich|LM,RM
+Lars Ricken|AM,RM
+Michael Zorc|CM,DM
+Steffen Freund|DM,CM
+Knut Reinhardt|LB,LM
+Stéphane Chapuisat|ST
+Heiko Herrlich|ST
+Harry Decheiver|ST
+
+# Juventus FC
+Angelo Peruzzi|GK
+Ciro Ferrara|CB
+Paolo Montero|CB
+Mark Iuliano|CB
+Moreno Torricelli|RB,CB
+Gianluca Pessotto|LB,RB
+Alessandro Birindelli|RB,RM
+Dimas (footballer)|LB
+Zinedine Zidane|AM,CM
+Edgar Davids|CM,LM
+Didier Deschamps|DM
+Antonio Conte|CM,RM
+Angelo Di Livio|RM,LM
+Alessio Tacchinardi|CM,DM
+Fabio Pecchia|CM
+Alessandro Del Piero|ST,LW
+Filippo Inzaghi|ST
+Daniel Fonseca|ST
+Nicola Amoruso|ST
+
+# Manchester United F.C.
+Peter Schmeichel|GK
+Denis Irwin|LB,RB
+Gary Neville|RB,CB
+Gary Pallister|CB
+Ronny Johnsen|CB,DM
+Henning Berg|CB
+Phil Neville|LB,LM
+David Beckham|RM,CM
+Ryan Giggs|LM
+Roy Keane|CM
+Paul Scholes|CM,AM,ST
+Nicky Butt|CM
+Karel Poborský|RM
+Andy Cole|ST
+Teddy Sheringham|ST
+Ole Gunnar Solskjær|ST
+
+# Real Madrid CF
+Bodo Illgner|GK
+Santiago Cañizares|GK
+Roberto Carlos|LB,LM
+Fernando Hierro|CB,DM
+Christian Panucci|RB
+Manolo Sanchís|CB
+Aitor Karanka|CB
+Fernando Redondo|DM
+Clarence Seedorf|CM,RM
+Christian Karembeu|RM,CM,RB
+Sávio (footballer, born 1974)|LM,LW
+Guti|AM,CM
+José Amavisca|LM
+Jaime Sánchez (footballer, born 1973)|CM
+Raúl González|ST
+Predrag Mijatović|ST
+Davor Šuker|ST
+Fernando Morientes|ST

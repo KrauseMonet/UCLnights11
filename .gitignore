@@ -11,3 +11,5 @@ node_modules/
 # Database addresses and secrets: `neon deploy` writes .env.local.
 .env.*
 .neon
+# Transfermarkt line-ups (etl.positions): a re-downloadable input, not source.
+/data/transfermarkt/

@@ -1,0 +1,159 @@
+# FC Barcelona
+Ruud Hesp|GK
+Francesc Arnau|GK
+Frank de Boer|CB,LB
+Michael Reiziger|RB
+Sergi Barjuán|LB
+Abelardo Fernández|CB
+Carles Puyol|RB,CB
+Frédéric Déhu|CB,DM
+Winston Bogarde|CB,LB
+Luís Figo|RW
+Rivaldo|LW,AM,ST
+Pep Guardiola|DM
+Phillip Cocu|CM,DM,LM
+Luis Enrique|CM,AM,RW
+Boudewijn Zenden|LW,LM
+Xavi (footballer, born 1980)|CM,DM
+Ronald de Boer|CM,AM
+Simão Sabrosa|LW,RW
+Patrick Kluivert|ST
+Jari Litmanen|ST,AM
+Dani García (footballer, born 1974)|ST
+
+# FC Bayern Munich
+Oliver Kahn|GK
+Bixente Lizarazu|LB
+Patrik Andersson|CB
+Markus Babbel|RB,CB
+Samuel Kuffour|CB
+Lothar Matthäus|CB
+Thomas Linke|CB
+Michael Tarnat|LB,LM
+Stefan Effenberg|CM
+Mehmet Scholl|AM,LM
+Jens Jeremies|DM,CM
+Hasan Salihamidžić|RM,LM
+Thorsten Fink|DM,CM
+Thomas Strunz|RM,RB
+Giovane Élber|ST
+Carsten Jancker|ST
+Paulo Sérgio (footballer, born June 1969)|ST,RM
+Alexander Zickler|ST,LM
+Roque Santa Cruz|ST
+
+# Chelsea F.C.
+Ed de Goey|GK
+Marcel Desailly|CB
+Frank Leboeuf|CB
+Graeme Le Saux|LB,LM
+Celestine Babayaro|LB,LM
+Dan Petrescu|RB,RM
+Albert Ferrer|RB
+Didier Deschamps|DM,CM
+Gus Poyet|AM,CM
+Dennis Wise|CM,LM
+Roberto Di Matteo|CM
+Jody Morris|CM
+Gianfranco Zola|ST,AM
+Tore André Flo|ST
+George Weah|ST
+Chris Sutton|ST
+
+# SS Lazio
+Luca Marchegiani|GK
+Alessandro Nesta|CB
+Siniša Mihajlović|CB,LB
+Fernando Couto|CB
+Giuseppe Favalli|LB
+Paolo Negro|RB,CB
+Giuseppe Pancaro|LB,RB
+Juan Sebastián Verón|CM,AM
+Pavel Nedvěd|LM
+Diego Simeone|CM
+Dejan Stanković|RM,CM
+Sérgio Conceição|RM
+Matías Almeyda|DM,CM
+Marcelo Salas|ST
+Alen Bokšić|ST
+Simone Inzaghi|ST
+Roberto Mancini|ST,AM
+
+# Manchester United F.C.
+Mark Bosnich|GK
+Raimond van der Gouw|GK
+Massimo Taibi|GK
+Jaap Stam|CB
+Gary Neville|RB
+Denis Irwin|LB
+Ronny Johnsen|CB
+Mikaël Silvestre|LB,CB
+Henning Berg|CB
+Phil Neville|LB,RB
+Roy Keane|CM
+David Beckham|RM
+Ryan Giggs|LM
+Paul Scholes|CM
+Nicky Butt|CM
+Jesper Blomqvist|LM
+Quinton Fortune|LM
+Andy Cole|ST
+Dwight Yorke|ST
+Ole Gunnar Solskjær|ST
+Teddy Sheringham|ST
+
+# FC Porto
+Vítor Baía|GK
+Jorge Costa|CB
+Aloísio (footballer, born 1963)|CB
+Carlos Secretário|RB
+Rubens Júnior|LB
+Esquerdinha (footballer, born 1972)|LB
+Ljubinko Drulović|LM,LW
+Deco|AM,CM
+Capucho (footballer)|RM,RW
+Paulinho Santos|DM,LB
+Carlos Chaínho|CM,DM
+Rui Barros|AM,CM
+Mário Jardel|ST
+Domingos Paciência|ST
+Clayton (footballer, born 1975)|ST,RW
+
+# Real Madrid CF
+Iker Casillas|GK
+Bodo Illgner|GK
+Roberto Carlos|LB
+Fernando Hierro|CB
+Iván Helguera|CB,DM
+Míchel Salgado|RB
+Iván Campo|CB
+Aitor Karanka|CB
+Manolo Sanchís|CB
+Fernando Redondo|DM
+Steve McManaman|CM,LM
+Clarence Seedorf|CM,RM
+Christian Karembeu|RM,CM
+Guti|AM,CM
+Sávio (footballer, born 1974)|LM,LW
+Geremi|CM,RB
+Raúl González|ST
+Fernando Morientes|ST
+Nicolas Anelka|ST
+Samuel Eto'o|ST
+
+# Valencia CF
+Santiago Cañizares|GK
+Miroslav Đukić|CB
+Mauricio Pellegrino|CB
+Amedeo Carboni|LB
+Jocelyn Angloma|RB
+Joachim Björklund|CB
+Gaizka Mendieta|CM,RM
+Gerard López|CM,AM
+Kily González|LM
+Javier Farinós|CM,AM
+Miguel Ángel Angulo|RM,LM,ST
+David Albelda|DM,CM
+Claudio López (footballer)|ST
+Adrian Ilie|ST
+Juan Sánchez (footballer, born 1972)|ST

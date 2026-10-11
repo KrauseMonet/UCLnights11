@@ -127,6 +127,9 @@ button{font:inherit;cursor:pointer}
 .pos{--c:var(--ink-2);font:700 10.5px/1 var(--sans);font-stretch:80%;letter-spacing:.08em;padding:4px 6px;border-radius:6px;
   color:var(--c);background:color-mix(in srgb,var(--c) 15%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--c) 38%,transparent)}
 .pos.GK{--c:var(--gk)}.pos.DF{--c:var(--df)}.pos.MF{--c:var(--mf)}.pos.FW{--c:var(--fw)}
+/* A player's other positions (C35), before his nationality on the small line. */
+.alts{color:var(--ink-2);font-weight:650;letter-spacing:.04em;margin-right:8px}
+.pos-note{margin:10px 16px 0;color:var(--ink-3);font-size:12.5px}
 
 /* --- a club's band: its colours, lit from the corner, the centre circle drawn round its crest --- */
 .band{position:relative;overflow:hidden;isolation:isolate;
@@ -278,6 +281,8 @@ button{font:inherit;cursor:pointer}
   font:700 10px var(--display);letter-spacing:.02em;background:rgba(3,10,8,.35);border:1.5px dashed rgba(255,255,255,.4);color:rgba(255,255,255,.75)}
 .slot.filled .disc{border:0;background:none}
 .slot.filled .disc .crest{width:46px;height:46px}
+.slot .sl{position:absolute;left:-12px;top:-5px;font:700 9.5px/1 var(--sans);font-stretch:80%;letter-spacing:.06em;
+  padding:3px 4px;border-radius:6px;background:rgba(3,10,8,.82);color:rgba(255,255,255,.85);box-shadow:0 2px 6px rgba(0,0,0,.45)}
 .slot .r{position:absolute;right:-10px;bottom:-4px;font:700 10.5px/1 var(--display);padding:4px 5px;border-radius:7px;
   background:var(--silver);color:#090b15;box-shadow:0 3px 10px rgba(0,0,0,.5)}
 .slot .nm{font-size:12.5px;font-weight:650;text-shadow:0 1px 4px rgba(0,0,0,.9);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}

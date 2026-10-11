@@ -208,9 +208,9 @@ function renderBody() {
   }
   $("left").innerHTML = left.join("");
   $("right").innerHTML = right.join("");
-  if (CUP.you) renderPitch($("cuppitch"), CUP.you.code, CUP.you.xi, null);
+  if (CUP.you) renderPitch($("cuppitch"), CUP.you.slots, CUP.you.xi, null);
   if ($("whose")) {
-    const show = () => { const p = others[+$("whose").value]; renderPitch($("theirpitch"), p.code, p.xi, null); };
+    const show = () => { const p = others[+$("whose").value]; renderPitch($("theirpitch"), p.slots, p.xi, null); };
     $("whose").onchange = show;
     show();
   }

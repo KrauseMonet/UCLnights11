@@ -69,7 +69,7 @@ Holger Badstuber|84
 Daniel Van Buyten|79
 Rafinha (footballer, born 1985)|79
 Diego Contento|77
-David Alaba|80|DF
+David Alaba|80
 Bastian Schweinsteiger|90
 Toni Kroos|85
 Luiz Gustavo|83
@@ -91,7 +91,7 @@ Joan Capdevila|76
 Jardel (footballer, born 1986)|76
 Javi García|83
 Axel Witsel|84
-Nemanja Matić|78|MF
+Nemanja Matić|78
 Pablo Aimar|83
 Ruben Amorim|77
 Bruno César|80
@@ -132,10 +132,10 @@ Gerard Piqué|87
 Carles Puyol|85
 Eric Abidal|81
 Adriano (footballer, born 1984)|79
-Javier Mascherano|86|DF
+Javier Mascherano|86
 Andreu Fontàs|72
 Xavi (footballer, born 1980)|93
-Andrés Iniesta|93|MF
+Andrés Iniesta|93
 Sergio Busquets|88
 Cesc Fàbregas|87
 Seydou Keita|81

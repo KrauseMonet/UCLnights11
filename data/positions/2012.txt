@@ -1,0 +1,166 @@
+# FC Barcelona
+Víctor Valdés|GK
+Dani Alves|RB
+Gerard Piqué|CB
+Javier Mascherano|CB
+Jordi Alba|LB
+Carles Puyol|CB
+Adriano (footballer, born 1984)|LB,CB
+Marc Bartra|CB
+Eric Abidal|CB,LB
+Andrés Iniesta|CM,LW
+Xavi (footballer, born 1980)|CM
+Sergio Busquets|DM
+Cesc Fàbregas|CM,AM
+Thiago Alcântara|CM
+Alex Song|DM,CB
+Lionel Messi|ST
+Pedro (footballer, born 1987)|RW,LW
+Alexis Sánchez|LW,RW
+David Villa|LW,ST
+Cristian Tello|LW,RW
+
+# FC Bayern Munich
+Manuel Neuer|GK
+Tom Starke|GK
+Philipp Lahm|RB
+Dante (footballer)|CB
+David Alaba|LB
+Jérôme Boateng|CB
+Holger Badstuber|CB
+Daniel Van Buyten|CB
+Rafinha (footballer, born 1985)|RB,DM
+Franck Ribéry|LW
+Bastian Schweinsteiger|DM,CM
+Arjen Robben|RW
+Thomas Müller|RW,AM,ST
+Javi Martínez|DM
+Toni Kroos|AM,CM
+Luiz Gustavo|DM,CM
+Xherdan Shaqiri|RW,LW,AM
+Anatoliy Tymoshchuk|DM,CB
+Mario Mandžukić|ST
+Mario Gómez|ST
+Claudio Pizarro|ST
+
+# Borussia Dortmund
+Roman Weidenfeller|GK
+Mitchell Langerak|GK
+Mats Hummels|CB
+Neven Subotić|CB
+Łukasz Piszczek|RB
+Marcel Schmelzer|LB
+Felipe Santana|CB
+Mario Götze|AM,RW
+İlkay Gündoğan|CM,DM
+Jakub Błaszczykowski|RW
+Sven Bender|DM,CM
+Kevin Großkreutz|LW,RW,RB
+Sebastian Kehl|DM
+Nuri Şahin|CM,DM
+Robert Lewandowski|ST
+Marco Reus|LW,AM
+Julian Schieber|ST
+
+# Galatasaray S.K. (football)
+Fernando Muslera|GK
+Semih Kaya|CB
+Emmanuel Eboué|RB,RM
+Dany Nounkeu|CB
+Gökhan Zan|CB
+Hakan Balta|LB,CB
+Wesley Sneijder|AM
+Felipe Melo|DM
+Selçuk İnan|CM
+Hamit Altıntop|CM,RM
+Albert Riera|LM,LW
+Nordin Amrabat|RW,RM
+Sabri Sarıoğlu|RB
+Burak Yılmaz|ST
+Didier Drogba|ST
+Johan Elmander|ST,LW
+Umut Bulut|ST,LW
+
+# Juventus FC
+Gianluigi Buffon|GK
+Marco Storari|GK
+Andrea Barzagli|CB
+Giorgio Chiellini|CB
+Leonardo Bonucci|CB
+Stephan Lichtsteiner|RM,RB
+Martín Cáceres|CB,RB
+Mauricio Isla|RM,RB
+Federico Peluso|LM,CB
+Paolo De Ceglie|LM
+Andrea Pirlo|DM
+Arturo Vidal|CM
+Claudio Marchisio|CM
+Kwadwo Asamoah|LM,CM
+Paul Pogba|CM
+Simone Padoin|CM,RM
+Mirko Vučinić|ST
+Fabio Quagliarella|ST
+Sebastian Giovinco|ST
+Alessandro Matri|ST
+Emanuele Giaccherini|CM,LM
+
+# Málaga CF
+Willy Caballero|GK
+Carlos Kameni|GK
+Martín Demichelis|CB
+Weligton|CB
+Jesús Gámez|RB
+Vitorino Antunes|LB
+Sergio Sánchez (footballer, born 1986)|CB,RB
+Isco|AM,LW
+Jérémy Toulalan|DM,CB
+Ignacio Camacho|DM,CM
+Júlio Baptista|AM,ST
+Manuel Iturra|DM
+Joaquín (footballer, born 1981)|RW
+Eliseu|LW,LB
+Javier Saviola|ST,AM
+Roque Santa Cruz|ST
+Duda (footballer, born 1980)|LW,AM
+
+# Paris Saint-Germain FC
+Salvatore Sirigu|GK
+Thiago Silva|CB
+Alex (footballer, born June 1982)|CB
+Maxwell (footballer, born 1981)|LB
+Gregory van der Wiel|RB
+Mamadou Sakho|CB,LB
+Christophe Jallet|RB
+Blaise Matuidi|CM,LM
+Thiago Motta|DM
+Javier Pastore|AM,LW
+Marco Verratti|CM
+Lucas Moura|RW,RM
+Jérémy Ménez|RW,LW
+David Beckham|CM
+Clément Chantôme|CM,DM
+Zlatan Ibrahimović|ST
+Ezequiel Lavezzi|LW,ST
+Kevin Gameiro|ST
+
+# Real Madrid CF
+Iker Casillas|GK
+Diego López (Spanish footballer, born 1981)|GK
+Sergio Ramos|CB,RB
+Pepe (footballer, born February 1983)|CB
+Marcelo (footballer, born 1988)|LB
+Raphaël Varane|CB
+Fábio Coentrão|LB
+Álvaro Arbeloa|RB,LB
+Ricardo Carvalho|CB
+Mesut Özil|AM,RW
+Xabi Alonso|DM,CM
+Luka Modrić|CM,AM
+Sami Khedira|DM,CM
+Kaká|AM
+Michael Essien|DM,RB
+Cristiano Ronaldo|LW
+Karim Benzema|ST
+Gonzalo Higuaín|ST
+Ángel Di María|RW,LW
+José Callejón|RW,LW

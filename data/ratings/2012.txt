@@ -123,7 +123,7 @@ Cristian Tello|77
 Manuel Neuer|91
 Tom Starke|74
 Philipp Lahm|90
-Dante (footballer)|86|DF
+Dante (footballer)|86
 Jérôme Boateng|85
 David Alaba|86
 Holger Badstuber|81
@@ -157,7 +157,7 @@ Arturo Vidal|88
 Claudio Marchisio|85
 Paul Pogba|80
 Kwadwo Asamoah|83
-Mauricio Isla|77|DF
+Mauricio Isla|77
 Emanuele Giaccherini|78
 Simone Padoin|75
 Mirko Vučinić|83

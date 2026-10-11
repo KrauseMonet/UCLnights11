@@ -1,0 +1,174 @@
+# Arsenal F.C.
+Jens Lehmann|GK
+Manuel Almunia|GK
+Kolo Touré|CB,RB
+William Gallas|CB
+Bacary Sagna|RB
+Gaël Clichy|LB
+Emmanuel Eboué|RM,RB
+Philippe Senderos|CB
+Johan Djourou|CB,RB
+Cesc Fàbregas|CM
+Alexander Hleb|LM,RM,AM
+Mathieu Flamini|CM
+Tomáš Rosický|RM,LM
+Gilberto Silva|DM,CM
+Abou Diaby|LM,CM
+Alex Song|CM,CB
+Denílson (footballer, born 1988)|CM
+Emmanuel Adebayor|ST
+Robin van Persie|ST
+Eduardo (footballer, born 1983)|ST
+Theo Walcott|RM,ST
+Nicklas Bendtner|ST
+
+# FC Barcelona
+Víctor Valdés|GK
+Carles Puyol|CB,RB
+Gabriel Milito|CB
+Gianluca Zambrotta|RB,LB
+Eric Abidal|LB,CB
+Rafael Márquez|CB,DM
+Lilian Thuram|CB
+Oleguer Presas|RB
+Sylvinho|LB
+Xavi (footballer, born 1980)|CM,DM
+Andrés Iniesta|CM,LW
+Deco|CM
+Yaya Touré|DM,CM
+Edmílson|DM,CB
+Lionel Messi|RW
+Samuel Eto'o|ST
+Ronaldinho|LW
+Thierry Henry|LW,ST
+Bojan Krkić|ST,RW,LW
+Eiður Guðjohnsen|CM,AM
+Giovani dos Santos|RW,LW
+
+# Chelsea F.C.
+Petr Čech|GK
+Carlo Cudicini|GK
+John Terry|CB
+Ricardo Carvalho|CB
+Ashley Cole|LB
+Alex (footballer, born June 1982)|CB
+Juliano Belletti|RB,DM
+Paulo Ferreira|RB
+Wayne Bridge|LB
+Frank Lampard|CM
+Michael Ballack|CM
+Michael Essien|CM,RB,DM
+Joe Cole|LW,RW,AM
+Claude Makélélé|DM
+Florent Malouda|LW
+Mikel John Obi|DM
+Shaun Wright-Phillips|RW
+Didier Drogba|ST
+Nicolas Anelka|ST
+Salomon Kalou|RW,LW
+Andriy Shevchenko|ST
+
+# Fenerbahçe S.K. (football)
+Volkan Demirel|GK
+Diego Lugano|CB
+Roberto Carlos|LB
+Edu Dracena|CB
+Gökhan Gönül|RB
+Önder Turacı|RB,CB
+Can Arat|CB
+Alex (footballer, born 1977)|AM
+Mehmet Aurélio|DM
+Claudio Maldonado|DM,CM
+Stephen Appiah|CM
+Uğur Boral|LM,RM
+Selçuk Şahin (footballer, born 1981)|CM
+Deivid|ST
+Semih Şentürk|ST
+Mateja Kežman|ST
+Colin Kazim-Richards|RM,ST
+
+# Liverpool F.C.
+Pepe Reina|GK
+Jamie Carragher|CB,RB
+Martin Škrtel|CB
+Daniel Agger|CB
+Sami Hyypiä|CB
+Álvaro Arbeloa|RB,LB
+Fábio Aurélio|LB
+John Arne Riise|LB,LM
+Steve Finnan|RB
+Steven Gerrard|CM,AM
+Javier Mascherano|DM,CM
+Xabi Alonso|CM
+Yossi Benayoun|RM,LM,AM
+Jermaine Pennant|RM
+Lucas Leiva|CM
+Harry Kewell|LM
+Fernando Torres|ST
+Dirk Kuyt|ST,RM
+Peter Crouch|ST
+Ryan Babel|LM,LW,ST
+Andriy Voronin|ST
+
+# Manchester United F.C.
+Edwin van der Sar|GK
+Ben Foster (footballer)|GK
+Rio Ferdinand|CB
+Nemanja Vidić|CB
+Patrice Evra|LB
+Wes Brown|RB,CB
+Gary Neville|RB
+John O'Shea|RB,LB,CM
+Gerard Piqué|CB
+Cristiano Ronaldo|RW,ST,LW
+Michael Carrick|CM,DM
+Paul Scholes|CM
+Ryan Giggs|LM,LW,CM
+Owen Hargreaves|DM,CM,RB
+Park Ji-sung|LM,RM
+Nani (footballer)|LW,RW
+Anderson (footballer, born 1988)|CM
+Darren Fletcher|CM,RM
+Wayne Rooney|ST,AM
+Carlos Tevez|ST
+Louis Saha|ST
+
+# AS Roma
+Doni (footballer)|GK
+Philippe Mexès|CB
+Juan (footballer, born 1979)|CB
+Christian Panucci|RB,CB
+Cicinho|RB
+Max Tonetto|LB
+Marco Cassetti|RB,LB
+Matteo Ferrari|CB
+Daniele De Rossi|DM,CM
+David Pizarro|DM,CM
+Simone Perrotta|AM,CM
+Alberto Aquilani|CM
+Rodrigo Taddei|RW,LW
+Matteo Brighi|CM
+Francesco Totti|ST
+Mirko Vučinić|LW,ST
+Mancini (Brazilian footballer)|LW,RW
+Ludovic Giuly|RW
+
+# FC Schalke 04
+Manuel Neuer|GK
+Heiko Westermann|CB,LB
+Marcelo Bordon|CB
+Rafinha (footballer, born 1985)|RB
+Mladen Krstajić|CB
+Christian Pander|LB
+Levan Kobiashvili|LB,CM
+Benedikt Höwedes|CB
+Jermaine Jones|DM,CM
+Fabian Ernst|DM
+Albert Streit|RM,LM
+Halil Altıntop|RM,ST
+Ivan Rakitić|CM,AM
+Gerald Asamoah|ST,RM
+Zé Roberto (footballer, born 1980)|LM,RM
+Kevin Kurányi|ST
+Peter Løvenkrands|LM,ST
+Søren Larsen|ST

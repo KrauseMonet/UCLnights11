@@ -31,8 +31,9 @@ function shell(active) {
   foot.className = "foot";
   foot.innerHTML = `<div class="foot-in"><div class="foot-brand"><img src="${SITE_EMBLEM}" alt="" width="40" height="40">
     <div><p>Squads from Wikipedia (CC BY-SA). Club crests belong to their clubs and appear here on a
-    non-commercial fan site. Ratings are this game's own judgement. Real results for the match engine come from
-    openfootball (CC0).</p><p>An independent fan game, not affiliated with UEFA or any club.</p></div></div>
+    non-commercial fan site. Ratings are this game's own judgement, as are positions before 2013–14; later
+    positions come from Transfermarkt's line-ups via transfermarkt-datasets (CC0). Real results for the match
+    engine come from openfootball (CC0).</p><p>An independent fan game, not affiliated with UEFA or any club.</p></div></div>
     <nav class="foot-links" aria-label="About the site"><a href="/about">About</a><a href="/faq">FAQ</a>
       <a href="/privacy">Privacy</a><a href="/terms">Terms</a></nav></div>`;
   document.body.append(foot);
@@ -280,6 +281,19 @@ function teamStyle(x) {
 /* A dealt squad, by line, with a Take button on every player who fits. Shared by the
    solo draft and a room's draft; `opts` carries what differs between them. */
 const LINES = { GK: "Goalkeepers", DF: "Defenders", MF: "Midfielders", FW: "Forwards" };
+// Each position's line (game.positions.LINE), for colouring a position chip.
+const LINE_OF = { GK: "GK", RB: "DF", CB: "DF", LB: "DF", DM: "MF", CM: "MF", AM: "MF",
+  RM: "MF", LM: "MF", RW: "FW", ST: "FW", LW: "FW" };
+
+/* A player's positions: the one he played most as a chip, the rest beside it (C35). */
+function posChip(p) { return `<span class="pos ${LINE_OF[p] || p}">${p}</span>`; }
+function positionsHtml(c) {
+  const ps = c.positions && c.positions.length ? c.positions : [c.pos];
+  return posChip(ps[0]);
+}
+function altPositions(c) {
+  return c.positions && c.positions.length > 1 ? `<span class="alts">${c.positions.slice(1).join(" · ")}</span>` : "";
+}
 
 function renderDeal(el, d, opts) {
   // In Memory mode the API sends no ratings and lists each line by name (session_out);
@@ -290,8 +304,8 @@ function renderDeal(el, d, opts) {
   const rows = Object.entries(byLine).filter(([, cs]) => cs.length).map(([pos, cs]) =>
     `<div class="line-h">${LINES[pos]}</div>` + cs.map(([c, i]) => `
       <div class="row ${c.takeable ? "" : "off"}">
-        <span class="pos ${c.pos}">${c.pos}</span>
-        <div class="who"><b>${esc(c.name)}</b><small>${esc(c.nation || "")}</small></div>
+        ${positionsHtml(c)}
+        <div class="who"><b>${esc(c.name)}</b><small>${altPositions(c)}${esc(c.nation || "")}</small></div>
         ${c.rating == null ? "" : rate(c.rating)}
         ${opts.readOnly ? (c.takeable ? "" : `<span class="why">${esc(c.reason)}</span>`)
           : c.takeable ? `<button class="take" data-i="${i}" aria-label="Take ${esc(c.name)}">Take</button>`
@@ -320,15 +334,18 @@ function renderDeal(el, d, opts) {
   if (opts.onReroll) el.querySelector("[data-reroll]").onclick = opts.onReroll;
 }
 
-/* How full each line of the eleven is, for the bar above the deal: on a phone the pitch
-   is below the squad, so this is what tells you a line is already full. */
-function lineChips(el, formation, picks) {
-  el.innerHTML = LINE_KEYS.map((pos) => {
-    const need = formation.lines[pos], have = picks.filter((c) => c.pos === pos).length;
-    return `<span class="linechip ${have >= need ? "full" : ""}"><span class="pos ${pos}">${pos}</span>${have}/${need}</span>`;
+/* Which of the formation's places are filled, for the bar above the deal: on a phone the
+   pitch is below the squad, so this is what tells you the right-back is already taken.
+   `xi` is the picks as placed (each with its `slot`); places are listed as the formation
+   lists them, a position held twice (CB, CM, ST) once with its count. */
+function lineChips(el, formation, xi) {
+  const need = {};
+  formation.slots.forEach((s) => { need[s] = (need[s] || 0) + 1; });
+  el.innerHTML = Object.entries(need).map(([s, n]) => {
+    const have = xi.filter((c) => c.slot === s).length;
+    return `<span class="linechip ${have >= n ? "full" : ""}">${posChip(s)}${n > 1 ? `${have}/${n}` : have ? "✓" : ""}</span>`;
   }).join("");
 }
-const LINE_KEYS = ["GK", "DF", "MF", "FW"];
 
 /* The numbers under a drafting eleven. A Memory draft has no ratings to average. */
 function xiFoot(el, d) {
@@ -336,33 +353,38 @@ function xiFoot(el, d) {
   el.innerHTML = `<div><b>${avg}</b>${d.memory ? "Memory" : "Average"}</div><div><b>${new Set(d.picks.map((c) => c.club)).size}</b>Clubs</div><div><b>${d.rerolls_left}</b>Rerolls left</div>`;
 }
 
-const LAYOUT = {           // rows from the back, counts per row
-  433: { GK: [1], DF: [4], MF: [3], FW: [3] },
-  442: { GK: [1], DF: [4], MF: [4], FW: [2] },
-  4231: { GK: [1], DF: [4], MF: [2, 3], FW: [1] },
-  352: { GK: [1], DF: [3], MF: [5], FW: [2] },
-  343: { GK: [1], DF: [3], MF: [4], FW: [3] },
-};
+/* Where each position stands on the pitch, attacking upwards: [top %, left %] for one man;
+   a position held more than once spreads across the middle by GAP. */
+const SPOT = { GK: [90, 50], RB: [67, 86], CB: [70, 50], LB: [67, 14], DM: [55, 50], CM: [44, 50],
+  AM: [30, 50], RM: [41, 87], LM: [41, 13], RW: [20, 82], ST: [11, 50], LW: [20, 18] };
+const GAP = { CB: 25, CM: 32, DM: 24, ST: 24, AM: 30 };
 
-function renderPitch(el, code, picks, newest) {
-  const layout = LAYOUT[code];
-  const ys = { GK: [90], DF: [70], MF: layout.MF.length === 2 ? [53, 36] : [46], FW: [16] };
-  const html = [];
-  for (const pos of ["GK", "DF", "MF", "FW"]) {
-    const taken = picks.filter((c) => c.pos === pos);
-    let k = 0;
-    layout[pos].forEach((n, row) => {
-      for (let j = 0; j < n; j++, k++) {
-        const c = taken[k];
-        const x = ((j + 1) / (n + 1)) * 100, y = ys[pos][row];
-        html.push(`<div class="slot ${c ? "filled" : ""} ${c && c.id === newest ? "new" : ""}" style="left:${x}%;top:${y}%">
-          <div class="disc">${c ? crest(c.crest, 48, c.club) + (c.rating == null ? "" : `<span class="r">${c.rating}</span>`) : pos}</div>
-          ${c ? `<div class="nm">${esc(c.name)}</div><div class="cl">${esc(c.short)} ${esc(c.season.slice(2))}</div>` : ""}
-        </div>`);
-      }
-    });
-  }
-  el.innerHTML = html.join("");
+function slotSpots(slots) {
+  const count = {}, seen = {};
+  slots.forEach((s) => { count[s] = (count[s] || 0) + 1; });
+  const pivot = count.DM === 1 && count.CM === 1;   // a double pivot sits side by side
+  return slots.map((s) => {
+    const k = (seen[s] = (seen[s] || 0) + 1), n = count[s];
+    let [y, x] = SPOT[s];
+    if (n > 1) x = 50 + (k - (n + 1) / 2) * (GAP[s] || 24);
+    if (pivot && s === "DM") { x = 38; y = 53; }
+    if (pivot && s === "CM") { x = 62; y = 49; }
+    return { x, y };
+  });
+}
+
+function renderPitch(el, slots, xi, newest) {
+  const spots = slotSpots(slots);
+  const left = [...xi];
+  el.innerHTML = slots.map((s, j) => {
+    const at = left.findIndex((c) => c.slot === s);
+    const c = at >= 0 ? left.splice(at, 1)[0] : null;
+    const { x, y } = spots[j];
+    return `<div class="slot ${c ? "filled" : ""} ${c && c.id === newest ? "new" : ""}" style="left:${x}%;top:${y}%">
+      <div class="disc">${c ? crest(c.crest, 48, c.club) + (c.rating == null ? "" : `<span class="r">${c.rating}</span>`) + `<span class="sl">${s}</span>` : s}</div>
+      ${c ? `<div class="nm">${esc(c.name)}</div><div class="cl">${esc(c.short)} ${esc(c.season.slice(2))}</div>` : ""}
+    </div>`;
+  }).join("");
 }
 
 const store = {

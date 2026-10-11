@@ -1,0 +1,342 @@
+# 2014-MON Monaco 2014–15
+Danijel Subašić|GK|83
+Fabinho|DF|82
+Aymen Abdennour|DF|81
+Ricardo Carvalho|DF|80
+Layvin Kurzawa|DF|79
+Andrea Raggi|DF|76
+Wallace|DF|76
+Elderson Echiéjilé|DF|74
+João Moutinho|MF|85
+Geoffrey Kondogbia|MF|83
+Jérémy Toulalan|MF|83
+Bernardo Silva|MF|82
+Yannick Carrasco|MF|81
+Nabil Dirar|MF|78
+Tiémoué Bakayoko|MF|76
+Anthony Martial|FW|80
+Dimitar Berbatov|FW|79
+Valère Germain|FW|75
+Lacina Traoré|FW|74
+
+# 2016-BAY Bayern Munich 2016–17
+Manuel Neuer|GK|91
+Sven Ulreich|GK|76
+Mats Hummels|DF|88
+David Alaba|DF|87
+Philipp Lahm|DF|87
+Jérôme Boateng|DF|85
+Javi Martínez|DF|84
+Rafinha|DF|78
+Juan Bernat|DF|77
+Thiago Alcântara|MF|89
+Arjen Robben|MF|88
+Arturo Vidal|MF|88
+Franck Ribéry|MF|85
+Xabi Alonso|MF|84
+Joshua Kimmich|MF|83
+Douglas Costa|MF|82
+Renato Sanches|MF|76
+Robert Lewandowski|FW|93
+Thomas Müller|FW|85
+Kingsley Coman|FW|81
+
+# 2018-AJA Ajax 2018–19
+André Onana|GK|85
+Matthijs de Ligt|DF|89
+Nicolás Tagliafico|DF|84
+Daley Blind|DF|83
+Noussair Mazraoui|DF|82
+Joël Veltman|DF|79
+Lisandro Magallán|DF|74
+Frenkie de Jong|MF|91
+Hakim Ziyech|MF|88
+Donny van de Beek|MF|87
+Lasse Schöne|MF|82
+Dušan Tadić|FW|90
+David Neres|FW|84
+Kasper Dolberg|FW|78
+Klaas-Jan Huntelaar|FW|78
+
+# 2018-JUV Juventus 2018–19
+Wojciech Szczęsny|GK|86
+Mattia Perin|GK|77
+Giorgio Chiellini|DF|88
+João Cancelo|DF|85
+Leonardo Bonucci|DF|85
+Alex Sandro|DF|82
+Daniele Rugani|DF|78
+Leonardo Spinazzola|DF|78
+Martín Cáceres|DF|77
+Mattia De Sciglio|DF|77
+Miralem Pjanić|MF|87
+Blaise Matuidi|MF|83
+Emre Can|MF|82
+Juan Cuadrado|MF|80
+Rodrigo Bentancur|MF|80
+Sami Khedira|MF|80
+Cristiano Ronaldo|FW|93
+Mario Mandžukić|FW|84
+Paulo Dybala|FW|84
+Douglas Costa|FW|81
+Federico Bernardeschi|FW|80
+Moise Kean|FW|76
+
+# 2019-ATA Atalanta 2019–20
+Pierluigi Gollini|GK|81
+Marco Sportiello|GK|74
+Robin Gosens|DF|84
+Rafael Tolói|DF|82
+Hans Hateboer|DF|81
+Berat Djimsiti|DF|80
+José Luis Palomino|DF|79
+Timothy Castagne|DF|79
+Mattia Caldara|DF|76
+Papu Gómez|MF|88
+Josip Iličić|MF|87
+Marten de Roon|MF|83
+Remo Freuler|MF|83
+Mario Pašalić|MF|81
+Ruslan Malinovskyi|MF|81
+Duván Zapata|FW|85
+Luis Muriel|FW|84
+
+# 2019-BAR Barcelona 2019–20
+Marc-André ter Stegen|GK|90
+Neto|GK|77
+Gerard Piqué|DF|86
+Jordi Alba|DF|85
+Clément Lenglet|DF|82
+Nélson Semedo|DF|79
+Samuel Umtiti|DF|76
+Junior Firpo|DF|75
+Ronald Araújo|DF|74
+Frenkie de Jong|MF|85
+Sergio Busquets|MF|85
+Arturo Vidal|MF|82
+Arthur Melo|MF|81
+Ivan Rakitić|MF|80
+Sergi Roberto|MF|80
+Riqui Puig|MF|74
+Lionel Messi|FW|96
+Luis Suárez|FW|86
+Antoine Griezmann|FW|85
+Ansu Fati|FW|78
+Ousmane Dembélé|FW|78
+
+# 2019-LYO Lyon 2019–20
+Anthony Lopes|GK|84
+Jason Denayer|DF|81
+Marcelo|DF|80
+Léo Dubois|DF|79
+Joachim Andersen|DF|78
+Fernando Marçal|DF|77
+Rafael|DF|75
+Houssem Aouar|MF|85
+Bruno Guimarães|MF|82
+Maxence Caqueret|MF|80
+Lucas Tousart|MF|79
+Maxwel Cornet|MF|79
+Thiago Mendes|MF|77
+Jeff Reine-Adélaïde|MF|76
+Memphis Depay|FW|86
+Moussa Dembélé|FW|84
+Karl Toko Ekambi|FW|80
+Bertrand Traoré|FW|79
+
+# 2022-BEN Benfica 2022–23
+Odysseas Vlachodimos|GK|82
+Álex Grimaldo|DF|86
+Nicolás Otamendi|DF|84
+António Silva|DF|83
+Alexander Bah|DF|80
+Gilberto|DF|75
+Rafa Silva|MF|85
+Enzo Fernández|MF|84
+João Mário|MF|84
+David Neres|MF|82
+Fredrik Aursnes|MF|82
+Florentino Luís|MF|81
+Chiquinho|MF|79
+João Neves|MF|76
+Gonçalo Ramos|FW|85
+Petar Musa|FW|76
+
+# 2022-CHE Chelsea 2022–23
+Kepa Arrizabalaga|GK|83
+Édouard Mendy|GK|79
+Reece James|DF|85
+Thiago Silva|DF|85
+Ben Chilwell|DF|82
+Kalidou Koulibaly|DF|82
+Wesley Fofana|DF|81
+Benoît Badiashile|DF|78
+César Azpilicueta|DF|78
+Marc Cucurella|DF|78
+Trevoh Chalobah|DF|78
+Enzo Fernández|MF|85
+Mateo Kovačić|MF|82
+N'Golo Kanté|MF|82
+Mason Mount|MF|80
+Conor Gallagher|MF|79
+Kai Havertz|FW|81
+João Félix|FW|80
+Raheem Sterling|FW|80
+Christian Pulisic|FW|76
+Mykhailo Mudryk|FW|75
+Pierre-Emerick Aubameyang|FW|75
+
+# 2022-INT Inter 2022–23
+André Onana|GK|87
+Samir Handanović|GK|76
+Alessandro Bastoni|DF|87
+Federico Dimarco|DF|84
+Milan Škriniar|DF|84
+Francesco Acerbi|DF|83
+Denzel Dumfries|DF|82
+Stefan de Vrij|DF|81
+Matteo Darmian|DF|80
+Robin Gosens|DF|77
+Nicolò Barella|MF|88
+Hakan Çalhanoğlu|MF|86
+Marcelo Brozović|MF|84
+Henrikh Mkhitaryan|MF|83
+Kristjan Asllani|MF|74
+Lautaro Martínez|FW|89
+Edin Džeko|FW|82
+Romelu Lukaku|FW|81
+Joaquín Correa|FW|75
+
+# 2022-MCI Manchester City 2022–23
+Ederson|GK|88
+Stefan Ortega|GK|78
+John Stones|DF|89
+Rúben Dias|DF|88
+Manuel Akanji|DF|85
+Kyle Walker|DF|84
+Nathan Aké|DF|84
+Aymeric Laporte|DF|80
+João Cancelo|DF|80
+Rico Lewis|DF|78
+Rodri|MF|92
+Kevin De Bruyne|MF|91
+Bernardo Silva|MF|89
+İlkay Gündoğan|MF|89
+Jack Grealish|MF|86
+Phil Foden|MF|85
+Kalvin Phillips|MF|74
+Erling Haaland|FW|95
+Riyad Mahrez|FW|85
+Julián Alvarez|FW|84
+
+# 2023-ATM Atlético Madrid 2023–24
+Jan Oblak|GK|86
+José María Giménez|DF|82
+Mario Hermoso|DF|80
+Nahuel Molina|DF|80
+Stefan Savić|DF|80
+Axel Witsel|DF|79
+César Azpilicueta|DF|78
+Reinildo Mandava|DF|78
+Marcos Llorente|MF|84
+Rodrigo De Paul|MF|84
+Koke|MF|83
+Samuel Lino|MF|81
+Rodrigo Riquelme|MF|79
+Saúl|MF|79
+Pablo Barrios|MF|78
+Antoine Griezmann|FW|90
+Álvaro Morata|FW|84
+Ángel Correa|FW|80
+Memphis Depay|FW|79
+
+# 2023-PSG Paris Saint-Germain 2023–24
+Gianluigi Donnarumma|GK|87
+Arnau Tenas|GK|72
+Achraf Hakimi|DF|87
+Marquinhos|DF|86
+Nuno Mendes|DF|85
+Lucas Hernandez|DF|80
+Milan Škriniar|DF|80
+Danilo Pereira|DF|78
+Lucas Beraldo|DF|77
+Vitinha|MF|88
+Warren Zaïre-Emery|MF|84
+Fabián Ruiz|MF|82
+Lee Kang-in|MF|80
+Manuel Ugarte|MF|79
+Kylian Mbappé|FW|93
+Ousmane Dembélé|FW|85
+Bradley Barcola|FW|80
+Gonçalo Ramos|FW|79
+Marco Asensio|FW|78
+Randal Kolo Muani|FW|78
+
+# 2024-RMA Real Madrid 2024–25
+Thibaut Courtois|GK|90
+Andriy Lunin|GK|78
+Antonio Rüdiger|DF|85
+Ferland Mendy|DF|80
+Éder Militão|DF|80
+Dani Carvajal|DF|78
+Fran García|DF|78
+Raúl Asencio|DF|78
+Lucas Vázquez|DF|76
+David Alaba|DF|74
+Federico Valverde|MF|88
+Jude Bellingham|MF|88
+Aurélien Tchouaméni|MF|84
+Luka Modrić|MF|82
+Eduardo Camavinga|MF|81
+Arda Güler|MF|80
+Dani Ceballos|MF|80
+Kylian Mbappé|FW|93
+Vinícius Júnior|FW|91
+Rodrygo|FW|84
+Brahim Díaz|FW|80
+Endrick|FW|74
+
+# 2025-LIV Liverpool 2025–26
+Alisson Becker|GK|88
+Giorgi Mamardashvili|GK|80
+Virgil van Dijk|DF|88
+Ibrahima Konaté|DF|84
+Jeremie Frimpong|DF|80
+Milos Kerkez|DF|80
+Andy Robertson|DF|78
+Conor Bradley|DF|78
+Joe Gomez|DF|78
+Ryan Gravenberch|MF|87
+Alexis Mac Allister|MF|86
+Dominik Szoboszlai|MF|86
+Florian Wirtz|MF|86
+Curtis Jones|MF|79
+Wataru Endo|MF|74
+Mohamed Salah|FW|87
+Alexander Isak|FW|85
+Hugo Ekitike|FW|84
+Cody Gakpo|FW|83
+Federico Chiesa|FW|76
+
+# 2025-SCP Sporting CP 2025–26
+Rui Silva|GK|80
+João Virgínia|GK|74
+Gonçalo Inácio|DF|83
+Ousmane Diomande|DF|83
+Maximiliano Araújo|DF|80
+Zeno Debast|DF|80
+Eduardo Quaresma|DF|78
+Georgios Vagiannidis|DF|77
+Matheus Reis|DF|77
+Iván Fresneda|DF|76
+Morten Hjulmand|MF|85
+Pedro Gonçalves|MF|84
+Hidemasa Morita|MF|80
+Daniel Bragança|MF|78
+Giorgi Kochorashvili|MF|76
+Francisco Trincão|FW|85
+Luis Suárez|FW|83
+Geovany Quenda|FW|80
+Geny Catamo|FW|79
+Fotis Ioannidis|FW|78
+

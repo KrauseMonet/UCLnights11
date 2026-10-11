@@ -1,0 +1,163 @@
+# FC Barcelona
+Roberto Bonano|GK
+Carles Puyol|RB,CB
+Frank de Boer|CB
+Michael Reiziger|RB
+Patrik Andersson|CB
+Abelardo Fernández|CB
+Sergi Barjuán|LB
+Philippe Christanval|CB
+Rivaldo|LW,AM,ST
+Phillip Cocu|CM,DM,LB
+Luis Enrique|CM,AM,RW
+Xavi (footballer, born 1980)|CM,DM
+Marc Overmars|LW
+Gerard López|CM,AM
+Fábio Rochemback|CM,DM
+Geovanni|RW,AM
+Patrick Kluivert|ST
+Javier Saviola|ST
+
+# Bayer 04 Leverkusen
+Hans-Jörg Butt|GK
+Lúcio|CB
+Jens Nowotny|CB
+Boris Živković|RB,CB
+Diego Placente|LB
+Michael Ballack|CM,AM,DM
+Bernd Schneider (footballer)|RM,RW
+Zé Roberto|LM,LB
+Yıldıray Baştürk|AM
+Carsten Ramelow|DM,CB
+Marko Babić (footballer)|LM,LB
+Oliver Neuville|ST,LW
+Dimitar Berbatov|ST
+Ulf Kirsten|ST
+Thomas Brdarić|ST
+
+# FC Bayern Munich
+Oliver Kahn|GK
+Samuel Kuffour|CB
+Bixente Lizarazu|LB
+Willy Sagnol|RB,RM
+Thomas Linke|CB
+Robert Kovač|CB
+Michael Tarnat|LB,LM
+Stefan Effenberg|CM
+Mehmet Scholl|AM,LM
+Owen Hargreaves|DM,CM,RM
+Hasan Salihamidžić|RM,LM
+Jens Jeremies|DM
+Niko Kovač|CM,DM
+Thorsten Fink|DM
+Ciriaco Sforza|CM
+Giovane Élber|ST
+Claudio Pizarro|ST
+Paulo Sérgio (footballer, born June 1969)|ST,RM
+Carsten Jancker|ST
+Roque Santa Cruz|ST
+
+# Deportivo de La Coruña
+José Francisco Molina|GK
+Nuno Espírito Santo|GK
+Noureddine Naybet|CB
+Joan Capdevila|LB
+Manuel Pablo|RB
+César Martín|CB
+Enrique Romero|LB,LW
+Juan Carlos Valerón|AM
+Mauro Silva|DM
+Djalminha|AM
+Fran (footballer, born 1969)|LW
+Sergio González (footballer, born 1976)|CM,DM
+Aldo Duscher|DM
+Lionel Scaloni|RW,RB
+Víctor Sánchez (footballer, born 1976)|RW,LW
+Diego Tristán|ST
+Roy Makaay|ST
+Walter Pandiani|ST
+
+# Liverpool F.C.
+Jerzy Dudek|GK
+Sander Westerveld|GK
+Sami Hyypiä|CB
+Stéphane Henchoz|CB
+Jamie Carragher|RB,LB,CB
+John Arne Riise|LB,LM
+Markus Babbel|RB
+Abel Xavier|RB,CB
+Steven Gerrard|CM,RM
+Dietmar Hamann|DM,CM
+Danny Murphy (footballer, born 1977)|CM,RM,LM
+Vladimír Šmicer|RM,AM
+Gary McAllister|CM
+Patrik Berger|LM
+Michael Owen|ST
+Emile Heskey|ST,LM
+Jari Litmanen|ST,AM
+Nicolas Anelka|ST
+Robbie Fowler|ST
+Milan Baroš|ST
+
+# Manchester United F.C.
+Fabien Barthez|GK
+Gary Neville|RB
+Wes Brown|CB,RB
+Laurent Blanc|CB
+Mikaël Silvestre|LB,CB
+Denis Irwin|LB
+Ronny Johnsen|CB,DM
+Phil Neville|LB,RB,CM
+John O'Shea|CB,LB
+David Beckham|RM
+Roy Keane|CM
+Paul Scholes|AM,CM
+Ryan Giggs|LM
+Juan Sebastián Verón|CM
+Nicky Butt|CM
+Quinton Fortune|LM
+Ruud van Nistelrooy|ST
+Ole Gunnar Solskjær|ST,RM
+Andy Cole|ST
+Dwight Yorke|ST
+Diego Forlán|ST
+
+# Panathinaikos F.C.
+Antonios Nikopolidis|GK
+René Henriksen|CB
+Giourkas Seitaridis|RB
+Takis Fyssas|LB
+Giannis Goumas|CB
+Sotirios Kyrgiakos|CB
+Angelos Basinas|DM,CM
+Giorgos Karagounis|CM,AM
+Paulo Sousa|CM
+Fernando Galetto|DM,CM
+Jan Michaelsen|CM,RM
+Emmanuel Olisadebe|ST
+Goran Vlaović|ST
+Joonas Kolkka|LM,RM
+Nikos Liberopoulos|ST
+Krzysztof Warzycha|ST
+Michalis Konstantinou|ST
+
+# Real Madrid CF
+Iker Casillas|GK
+César Sánchez|GK
+Roberto Carlos|LB
+Fernando Hierro|CB
+Iván Helguera|CB,DM
+Míchel Salgado|RB
+Iván Campo|CB
+Francisco Pavón|CB
+Zinedine Zidane|AM,LM
+Luís Figo|RM,RW
+Claude Makélélé|DM
+Steve McManaman|CM,LM
+Guti|AM,ST
+Santiago Solari|LM
+Flávio Conceição|CM,DM
+Geremi|CM,RB
+Raúl González|ST
+Fernando Morientes|ST
+Pedro Munitis|RM,ST

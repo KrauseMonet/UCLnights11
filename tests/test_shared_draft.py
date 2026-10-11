@@ -31,8 +31,9 @@ def test_everyone_gets_eleven_and_nobody_shares_a_man(deck):
     assert d.complete and [len(p) for p in d.picks] == [11] * 4
     ids = [c.id for p in d.picks for c in p]
     assert len(ids) == len(set(ids))
+    from game.positions import arrange
     for f, picks in zip(d.formations, d.picks):
-        assert {pos: sum(c.pos == pos for c in picks) for pos in f.lines} == f.lines
+        assert sorted(c.slot for c in arrange(f.slots, picks)) == sorted(f.slots)
 
 
 def test_a_man_taken_by_anyone_is_gone_for_everyone_in_any_season(deck):

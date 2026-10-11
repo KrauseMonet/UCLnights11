@@ -13,13 +13,14 @@ the decisions log.
   League era) to 2025–26, the last completed season: **32 seasons**.
 - **Club-seasons:** the eight quarter-finalists of each season, **256** in all,
   read from Wikipedia (`etl.quarterfinalists`; exactly eight per season is asserted).
-- **In the deck: 243.** Twelve have no squad that can be read (eleven have no
-  club-season article at all; Hajduk Split 1994–95's article lists no squad), and
-  AC Milan 2011–12's squad table parses only its midfielders, so it is left
-  unrated rather than half-rated. The twelve:
+- **In the deck: 242.** Thirteen have no squad that can be read (eleven have no
+  club-season article at all; Hajduk Split 1994–95's article lists no squad; AC Milan
+  2011–12's tables yield nobody once cells are split correctly, C36). One more cannot
+  field an eleven in any formation once positions count (§3a): Ajax 1995–96, whose
+  declared positions are too thin to complete a shape. The thirteen:
   Göteborg 1994–95, Hajduk Split 1994–95, Nantes, Spartak Moscow and Legia Warsaw
   1995–96, Auxerre, Porto, Ajax and Rosenborg 1996–97, Dynamo Kyiv and Monaco
-  1997–98, CSKA Moscow 2009–10.
+  1997–98, CSKA Moscow 2009–10, AC Milan 2011–12.
 
 ## 2. Data
 
@@ -29,6 +30,9 @@ the decisions log.
 | Squads | Wikipedia club-season articles | CC BY-SA | `etl.squads` → `data/squads.json` |
 | Player identity | Wikidata id via the article (pageprops) | CC0 | `etl.wiki.resolve` |
 | Ratings | this game's judgement | — | hand-written `data/ratings/<season>.txt` |
+| Positions, 2013–14 on | Transfermarkt line-ups via transfermarkt-datasets | CC0 (as published) | `etl.positions` → `data/positions/measured.json` |
+| Positions, before | this game's judgement | — | hand-written `data/positions/<season>.txt` |
+| Transfermarkt ids | Wikidata P2446 | CC0 | `etl.positions` |
 | Club names, codes, colours | declared | — | `data/clubs.csv` |
 | Engine yardstick | openfootball Champions League results | CC0 | `etl.openfootball` |
 
@@ -58,10 +62,9 @@ FIFA's: one integer per player-season, 50–99. The scale used:
 | below 75 | fringe |
 
 Each `data/ratings/<season>.txt` holds a `# Club title` line per club and then
-`Player title|rating[|POS]` lines. Titles are the canonical Wikipedia titles from
-`data/squads.json` (a title can never contain `|` or `#`). `POS` optionally
-corrects the position Wikipedia gave (Redondo listed as a defender, Iniesta as a
-forward).
+`Player title|rating` lines. Titles are the canonical Wikipedia titles from
+`data/squads.json` (a title can never contain `|` or `#`). (A third column once
+corrected Wikipedia's line; positions replaced it, §3a, and the build now refuses it.)
 
 **A rating may only name a player the squad lists.** `etl.deck` refuses to build
 otherwise. This is the guard against the one real risk in hand ratings: writing a
@@ -73,21 +76,71 @@ club-season). Unrated players are not draftable.
 **2025–26 is the least reliable season** — it runs past the knowledge the ratings
 were written from — and is the first to re-check before going public.
 
+## 3a. Positions (C35)
+
+Twelve positions: GK, RB, CB, LB, DM, CM, AM, RM, LM, RW, ST, LW. Each belongs to a line
+(GK; RB CB LB = DF; DM CM AM RM LM = MF; RW ST LW = FW). Wide midfielders (LM/RM) and
+wingers (LW/RW) are different positions, at the user's choice. A player-season holds
+**one to four** positions, most-played first; four is a maximum, not a target.
+
+- **2013–14 onwards: measured.** Every position he STARTED at least once for that club
+  that season, in Transfermarkt's line-ups (transfermarkt-datasets, CC0), counted over
+  every competition the dataset holds; ranked by starts, ties in the order above, the
+  first four kept. A second striker counts as ST (the user's choice), a sweeper as CB;
+  line-only labels ("Midfield", "Attack") are dropped. Only starts count: a substitute's
+  line-up row carries no match position. A player is linked by Wikidata's Transfermarkt
+  id (P2446), never by name; a club-season's Transfermarkt club is the one its squad
+  started most for. Transfermarkt's line-ups begin with 2013–14.
+- **Before 2013–14: declared**, by hand, like the ratings, in `data/positions/<season>.txt`
+  (`# Club title`, then `Player title|CB,RB`). Positions follow Transfermarkt's own
+  conventions, so the two eras read alike: wide men are LM/RM in a 4-4-2 and LW/RW in a
+  4-3-3 or 4-2-3-1, wing-backs in a back three are LM/RM. A declaration records the roles
+  a player held that season and will miss one-off cameos a line-up would catch.
+  **Measured, blind, on 299 player-seasons from the measured era** (C35): 92% of the
+  positions written were ones he started at least once; 89% of his positions with three
+  or more starts were written; the first one written was his most-started 87% of the time.
+- A measured-season player with no starts for the club (a reserve keeper) takes a
+  declared line in the same files. The build refuses a declared line for anyone who has
+  measured starts, a declared line for a player who is not rated, and a rated player
+  with no positions.
+- A card's line (`pos`) is the line of its first position.
+
 ## 4. The deck
 
 A club-season enters `data/deck.json` only if its rated players can field a legal
 eleven in at least one formation, so the opposition never needs an invented
-player. The deck is generated (`etl.deck`) and committed; `etl.deck --check` fails
-if it is stale.
+player. Its strongest eleven (the highest total rating over every formation, a
+maximum-weight assignment of players to slots they hold; ties to the eleven nearer
+each man's most-played positions, then to the formation listed first) is worked out by
+`etl.deck` and stored with the squad, so the server never searches for it. The deck is
+generated (`etl.deck`) and committed; `etl.deck --check` fails if it is stale.
 
 ## 5. The draft
 
-- Formations: 4-3-3, 4-4-2, 4-2-3-1, 3-5-2, 3-4-3, chosen before the first deal.
+- Formations, chosen before the first deal, are eleven slots each, Transfermarkt's
+  commonest line-up for the shape (measured over 2013–14 to 2025–26):
+
+  | | slots |
+  |---|---|
+  | 4-3-3 | GK RB CB CB LB DM CM CM RW ST LW |
+  | 4-4-2 | GK RB CB CB LB RM CM CM LM ST ST |
+  | 4-2-3-1 | GK RB CB CB LB DM CM RW AM LW ST |
+  | 4-3-1-2 | GK RB CB CB LB DM CM CM AM ST ST |
+  | 3-5-2 | GK CB CB CB RM DM CM CM LM ST ST |
+  | 3-4-3 | GK CB CB CB RM CM CM LM RW ST LW |
+  | 3-4-1-2 | GK CB CB CB RM DM CM LM AM ST ST |
+
+  The diamond and the 3-4-1-2 came with positions: Ancelotti's Milan, the Porto and PSV
+  diamonds and Dortmund 1997–98 field none of the first five.
 - Each turn deals **one club-season, uniformly at random over the deck** — Bayern,
   in 24 quarter-finals, comes round 24 times as often as APOEL with one. Rarity is
   meant to feel like an event.
-- The drafter takes one rated player into an open slot **in his own line**
-  (GK, DF, MF, FW), or spends one of **two rerolls**.
+- The drafter takes one rated player, or spends one of **two rerolls**. A pick is legal
+  while **the whole eleven so far can still be given distinct slots, each man in a slot
+  whose position he holds** (a bipartite matching). Where each man stands is worked out
+  afresh after every pick, favouring each man's most-played positions, so the order of a
+  draft never strands anyone: a right-back taken after a right-back who also plays
+  midfield moves the first one into midfield.
 - **One person once**: the same man on another card (Messi 2008–09 after Messi
   2011–12) cannot be taken again.
 - **Deal-time guarantee:** a deal with nothing takeable is redrawn before it is
@@ -112,6 +165,8 @@ Goals are Poisson. A side's expected goals are
   is their mean.
 - `attack` and `defence` are weighted means of the eleven's ratings. Weights by
   line, attack: GK 0, DF 0.15, MF 0.6, FW 1.0; defence: GK 1.6, DF 1.0, MF 0.45, FW 0.1.
+  The line is **the line of the slot a man stands in** (C35), not his natural one: a
+  midfielder placed at right-back defends, scores and passes as a defender.
 - `league_attack`, `league_defence` are the deck's mean best eleven, derived at
   boot, so two average sides score exactly the real rates.
 - `K = 0.075` per rating point is a declared constant.

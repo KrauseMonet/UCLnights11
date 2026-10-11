@@ -43,7 +43,7 @@ function heroHtml() {
 function opponentHtml() {
   const o = D.challenge.opponent;
   return `<section class="panel"><div class="panel-h"><span class="label">${esc(o.name)}'s eleven</span><span class="label">${esc(o.shape)}</span></div>
-    <ol class="dl-xi">${o.xi.map((c) => `<li><span class="pos ${c.pos}">${c.pos}</span><b>${esc(c.name)}</b>${c.rating == null ? "" : rate(c.rating)}</li>`).join("")}</ol></section>`;
+    <ol class="dl-xi">${o.xi.map((c) => `<li>${posChip(c.slot || c.positions[0])}<b>${esc(c.name)}</b>${c.rating == null ? "" : rate(c.rating)}</li>`).join("")}</ol></section>`;
 }
 
 function boardHtml(b) {
@@ -82,9 +82,9 @@ function renderDraft(fresh) {
       <section class="panel deal" id="deal" aria-live="polite"></section>
       <aside class="cup-stack"><section class="panel"><div class="panel-h"><span class="label">Your XI</span><span class="label">${S.picks.length} / 11</span></div>
         <div class="pitch" id="pitch"></div></section>${opponentHtml()}</aside></div>`;
-  lineChips($("lines"), S.formation, S.picks);
+  lineChips($("lines"), S.formation, S.xi);
   renderDeal($("deal"), S.deal, { heading: `Squad ${S.picks.length + 1} of 11`, fresh, onTake: take });
-  renderPitch($("pitch"), S.formation.code, S.picks, S.picks.length ? S.picks[S.picks.length - 1].id : null);
+  renderPitch($("pitch"), S.formation.slots, S.xi, S.picks.length ? S.picks[S.picks.length - 1].id : null);
 }
 
 let busy = false;
@@ -112,7 +112,7 @@ function renderReady() {
         <button class="btn ghost" id="redo">Start the draft again</button></div></section>
     <aside class="panel"><div class="panel-h"><span class="label">Your XI</span><span class="label">${esc(S.formation.label)}</span></div>
       <div class="pitch" id="pitch"></div></aside></div>`;
-  renderPitch($("pitch"), S.formation.code, S.picks, null);
+  renderPitch($("pitch"), S.formation.slots, S.xi, null);
   $("go").onclick = play;
   $("redo").onclick = () => { if (confirm("Throw this eleven away and draft again?")) { MOVES = []; store.set(movesKey(), ""); startDraft(); } };
   if ($("sign")) $("sign").onclick = () => openAuth("in", "Sign in to take today's ranked attempt.");

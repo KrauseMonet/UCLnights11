@@ -24522,91 +24522,6 @@
   },
   {
    "season": 2011,
-   "club": "AC Milan",
-   "article": "2011–12 AC Milan season",
-   "players": [
-    {
-     "id": "Q116980",
-     "title": "Gennaro Gattuso",
-     "pos": "MF",
-     "nation": "ITA"
-    },
-    {
-     "id": "Q484909",
-     "title": "Clarence Seedorf",
-     "pos": "MF",
-     "nation": "NED"
-    },
-    {
-     "id": "Q193768",
-     "title": "Sulley Muntari",
-     "pos": "MF",
-     "nation": "GHA"
-    },
-    {
-     "id": "Q204848",
-     "title": "Mathieu Flamini",
-     "pos": "MF",
-     "nation": "FRA"
-    },
-    {
-     "id": "Q213546",
-     "title": "Antonio Nocerino",
-     "pos": "MF",
-     "nation": "ITA"
-    },
-    {
-     "id": "Q188564",
-     "title": "Massimo Ambrosini",
-     "pos": "MF",
-     "nation": "ITA"
-    },
-    {
-     "id": "Q44663",
-     "title": "Rodney Strasser",
-     "pos": "MF",
-     "nation": "SLE"
-    },
-    {
-     "id": "Q151034",
-     "title": "Kevin-Prince Boateng",
-     "pos": "MF",
-     "nation": "GHA"
-    },
-    {
-     "id": "Q311043",
-     "title": "Urby Emanuelson",
-     "pos": "MF",
-     "nation": "NED"
-    },
-    {
-     "id": "Q4241246",
-     "title": "Bryan Cristante",
-     "pos": "MF",
-     "nation": "ITA"
-    },
-    {
-     "id": "Q327205",
-     "title": "Aleksandr Merkel",
-     "pos": "MF",
-     "nation": "GER"
-    },
-    {
-     "id": "Q10530495",
-     "title": "Simone Calvano",
-     "pos": "MF",
-     "nation": "ITA"
-    },
-    {
-     "id": "Q979937",
-     "title": "Mattia Valoti",
-     "pos": "MF",
-     "nation": "ITA"
-    }
-   ]
-  },
-  {
-   "season": 2011,
    "club": "FC Barcelona",
    "article": "2011–12 FC Barcelona season",
    "players": [
@@ -30619,6 +30534,12 @@
      "nation": "ENG"
     },
     {
+     "id": "Q20688718",
+     "title": "Angeliño",
+     "pos": "DF",
+     "nation": "ESP"
+    },
+    {
      "id": "Q16236124",
      "title": "George Evans (footballer, born 1994)",
      "pos": "MF",
@@ -31570,6 +31491,18 @@
      "title": "Fabian Benko",
      "pos": "MF",
      "nation": "GER"
+    },
+    {
+     "id": "Q151278",
+     "title": "Holger Badstuber",
+     "pos": "DF",
+     "nation": "GER"
+    },
+    {
+     "id": "Q15241424",
+     "title": "Julian Green",
+     "pos": "FW",
+     "nation": "USA"
     }
    ]
   },
@@ -32879,6 +32812,24 @@
      "title": "Fabian Benko",
      "pos": "MF",
      "nation": "GER"
+    },
+    {
+     "id": "Q27047920",
+     "title": "Kwasi Okyere Wriedt",
+     "pos": "FW",
+     "nation": "GHA"
+    },
+    {
+     "id": "Q28692516",
+     "title": "Marco Friedl",
+     "pos": "DF",
+     "nation": "AUT"
+    },
+    {
+     "id": "Q18394009",
+     "title": "Renato Sanches",
+     "pos": "MF",
+     "nation": "POR"
     }
    ]
   },
@@ -34214,12 +34165,6 @@
      "nation": "ENG"
     },
     {
-     "id": "Q131339568",
-     "title": "Fabin",
-     "pos": "MF",
-     "nation": "BRA"
-    },
-    {
      "id": "Q60484119",
      "title": "Ki-Jana Hoever",
      "pos": "DF",
@@ -34784,6 +34729,12 @@
      "id": "Q59938996",
      "title": "Eric Garcia (footballer, born 2001)",
      "pos": "DF",
+     "nation": "ESP"
+    },
+    {
+     "id": "Q26973015",
+     "title": "Brahim Díaz",
+     "pos": "MF",
      "nation": "ESP"
     },
     {
@@ -38417,18 +38368,6 @@
      "nation": "Belgium"
     },
     {
-     "id": "Q131339568",
-     "title": "Fabin",
-     "pos": "MF",
-     "nation": "BRA"
-    },
-    {
-     "id": "Q2704240",
-     "title": "Thumbnail crab",
-     "pos": "MF",
-     "nation": "ESP"
-    },
-    {
      "id": "Q78828950",
      "title": "Leighton Clarkson",
      "pos": "MF",
@@ -38912,6 +38851,12 @@
      "nation": "ENG"
     },
     {
+     "id": "Q161089",
+     "title": "İlkay Gündoğan",
+     "pos": "MF",
+     "nation": "GER"
+    },
+    {
      "id": "Q19708656",
      "title": "Gabriel Jesus",
      "pos": "FW",
@@ -38942,6 +38887,12 @@
      "nation": "ESP"
     },
     {
+     "id": "Q20994118",
+     "title": "Rodri",
+     "pos": "MF",
+     "nation": "ESP"
+    },
+    {
      "id": "Q357984",
      "title": "Kevin De Bruyne",
      "pos": "MF",
@@ -38960,6 +38911,12 @@
      "nation": "FRA"
     },
     {
+     "id": "Q459356",
+     "title": "Fernandinho (footballer, born May 1985)",
+     "pos": "MF",
+     "nation": "BRA"
+    },
+    {
      "id": "Q8338725",
      "title": "Riyad Mahrez",
      "pos": "FW",
@@ -38970,6 +38927,12 @@
      "title": "João Cancelo",
      "pos": "DF",
      "nation": "POR"
+    },
+    {
+     "id": "Q17074511",
+     "title": "Ederson (footballer, born 1993)",
+     "pos": "GK",
+     "nation": "BRA"
     },
     {
      "id": "Q295627",
@@ -38996,20 +38959,8 @@
      "nation": "ENG"
     },
     {
-     "id": "Q105478432",
-     "title": "Samuel Edozie",
-     "pos": "FW",
-     "nation": "ENG"
-    },
-    {
      "id": "Q108665573",
      "title": "CJ Egan-Riley",
-     "pos": "DF",
-     "nation": "ENG"
-    },
-    {
-     "id": "Q108665614",
-     "title": "Luke Mbete",
      "pos": "DF",
      "nation": "ENG"
     },
@@ -39023,6 +38974,18 @@
      "id": "Q108653498",
      "title": "James McAtee",
      "pos": "MF",
+     "nation": "ENG"
+    },
+    {
+     "id": "Q105478432",
+     "title": "Samuel Edozie",
+     "pos": "FW",
+     "nation": "ENG"
+    },
+    {
+     "id": "Q108665614",
+     "title": "Luke Mbete",
+     "pos": "DF",
      "nation": "ENG"
     },
     {
@@ -40025,24 +39988,6 @@
      "title": "Nat Phillips",
      "pos": "DF",
      "nation": "ENG"
-    },
-    {
-     "id": "Q131339568",
-     "title": "Fabin",
-     "pos": "MF",
-     "nation": "BRA"
-    },
-    {
-     "id": "Q2704240",
-     "title": "Thumbnail crab",
-     "pos": "MF",
-     "nation": "ESP"
-    },
-    {
-     "id": "Q20830298",
-     "title": "Adri",
-     "pos": "GK",
-     "nation": "ESP"
     },
     {
      "id": "Q78828832",
@@ -45146,8 +45091,8 @@
      "nation": "ESP"
     },
     {
-     "id": "Q2297605",
-     "title": "Vitín",
+     "id": "Q66818509",
+     "title": "Vitinha",
      "pos": "MF",
      "nation": "POR"
     },
@@ -45234,12 +45179,6 @@
      "title": "Dimitri Lucea",
      "pos": "DF",
      "nation": "FRA"
-    },
-    {
-     "id": "Q66818509",
-     "title": "Vitinha",
-     "pos": "MF",
-     "nation": "POR"
     },
     {
      "id": "Q136388980",
@@ -46823,6 +46762,7 @@
   "1996–97 Rosenborg BK (no article)",
   "1997–98 FC Dynamo Kyiv (no article)",
   "1997–98 AS Monaco FC (no article)",
-  "2009–10 PFC CSKA Moscow (no article)"
+  "2009–10 PFC CSKA Moscow (no article)",
+  "2011–12 AC Milan"
  ]
 }

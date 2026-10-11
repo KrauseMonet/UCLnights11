@@ -1,0 +1,162 @@
+# Arsenal F.C.
+Jens Lehmann|GK
+Sol Campbell|CB
+Ashley Cole|LB
+Kolo Touré|CB
+Lauren (Cameroonian footballer)|RB
+Martin Keown|CB
+Pascal Cygan|CB
+Patrick Vieira|CM
+Robert Pires|LM
+Freddie Ljungberg|RM
+Gilberto Silva|DM,CM
+Edu (footballer, born 1978)|CM,LM
+Ray Parlour|CM,RM
+Cesc Fàbregas|CM
+Thierry Henry|ST
+Dennis Bergkamp|ST
+José Antonio Reyes|ST,LM
+Sylvain Wiltord|ST,RM
+Nwankwo Kanu|ST
+
+# Chelsea F.C.
+Carlo Cudicini|GK
+John Terry|CB
+William Gallas|CB,RB,LB
+Marcel Desailly|CB
+Wayne Bridge|LB
+Glen Johnson|RB
+Celestine Babayaro|LB
+Mario Melchiot|RB
+Robert Huth|CB
+Frank Lampard|CM
+Claude Makélélé|DM
+Damien Duff|LM,LW
+Juan Sebastián Verón|CM
+Joe Cole|AM,LM,RM
+Scott Parker|CM
+Jesper Grønkjær|RM
+Geremi|CM,RM
+Emmanuel Petit|CM
+Jimmy Floyd Hasselbaink|ST
+Hernán Crespo|ST
+Adrian Mutu|ST
+Eiður Guðjohnsen|ST,AM
+
+# Deportivo de La Coruña
+José Francisco Molina|GK
+Gustavo Munúa|GK
+Jorge Andrade|CB
+Noureddine Naybet|CB
+Joan Capdevila|LB
+Manuel Pablo|RB
+Enrique Romero|LB,LW
+César Martín|CB
+Juan Carlos Valerón|AM
+Mauro Silva|DM
+Sergio González (footballer, born 1976)|CM,DM
+Aldo Duscher|DM
+Fran (footballer, born 1969)|LW
+Lionel Scaloni|RW,RB
+Víctor Sánchez (footballer, born 1976)|RW,LW
+Albert Luque|LW,ST
+Diego Tristán|ST
+Walter Pandiani|ST
+Pedro Munitis|RW,ST
+
+# Olympique Lyonnais
+Grégory Coupet|GK
+Edmílson|CB,DM
+Cláudio Caçapa|CB
+Patrick Müller (footballer)|CB
+Éric Deflandre|RB
+Anthony Réveillère|RB
+Juninho Pernambucano|CM,AM
+Michael Essien|CM,DM
+Florent Malouda|LM,LW
+Mahamadou Diarra|DM
+Eric Carrière|AM,CM
+Sidney Govou|RM,RW,ST
+Vikash Dhorasoo|CM,RM
+Giovane Élber|ST
+Peguy Luyindula|ST
+
+# AC Milan
+Dida (footballer, born 1973)|GK
+Christian Abbiati|GK
+Alessandro Nesta|CB
+Paolo Maldini|CB,LB
+Cafu|RB
+Kakha Kaladze|CB,LB
+Alessandro Costacurta|CB
+Roque Júnior|CB
+Giuseppe Pancaro|LB
+Andrea Pirlo|DM
+Kaká|AM
+Gennaro Gattuso|CM,DM
+Clarence Seedorf|CM,AM
+Rui Costa|AM
+Massimo Ambrosini|CM
+Serginho (footballer, born 1971)|LM,LB
+Cristian Brocchi|CM
+Andriy Shevchenko|ST
+Filippo Inzaghi|ST
+Jon Dahl Tomasson|ST
+Rivaldo|AM,ST
+
+# AS Monaco FC
+Flavio Roma|GK
+Tony Sylva|GK
+Patrice Evra|LB
+Hugo Ibarra|RB
+Julien Rodriguez|CB
+Gaël Givet|CB
+Sébastien Squillaci|CB
+Ludovic Giuly|RM,ST
+Jérôme Rothen|LM
+Lucas Bernardi|CM,DM
+Akis Zikos|DM,CM
+Édouard Cissé|CM,RM
+Jaroslav Plašil|LM,CM
+Fernando Morientes|ST
+Dado Pršo|ST
+Shabani Nonda|ST
+Emmanuel Adebayor|ST
+
+# FC Porto
+Vítor Baía|GK
+Nuno Espírito Santo|GK
+Ricardo Carvalho|CB
+Jorge Costa|CB
+Paulo Ferreira|RB
+Nuno Valente|LB
+Pedro Emanuel|CB
+César Peixoto|LB,LM
+Deco|AM
+Maniche|CM
+Costinha|DM
+Dmitri Alenichev|CM,AM
+Pedro Mendes (footballer, born 1979)|CM,DM
+Carlos Alberto (footballer, born December 1984)|AM,RW
+Benni McCarthy|ST
+Derlei|ST
+Edgaras Jankauskas|ST
+
+# Real Madrid CF
+Iker Casillas|GK
+Roberto Carlos|LB
+Iván Helguera|CB,DM
+Míchel Salgado|RB
+Raúl Bravo|CB,LB
+Francisco Pavón|CB
+Óscar Miñambres|RB
+Zinedine Zidane|AM,LM
+Luís Figo|RM,RW
+David Beckham|CM,RM
+Guti|CM,AM
+Esteban Cambiasso|DM,CM
+Santiago Solari|LM
+Borja Fernández (footballer, born 1981)|CM
+Ronaldo (Brazilian footballer)|ST
+Raúl González|ST,LM
+Javier Portillo (Spanish footballer)|ST

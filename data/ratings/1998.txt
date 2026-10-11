@@ -7,7 +7,7 @@ Manolo Sanchís|79
 Iván Campo|77
 Aitor Karanka|76
 Robert Jarni|77
-Fernando Redondo|88|MF
+Fernando Redondo|88
 Clarence Seedorf|86
 Christian Karembeu|80
 Guti|78
@@ -129,7 +129,7 @@ Hasan Salihamidžić|78
 Mehmet Scholl|82
 Thorsten Fink|79
 Thomas Strunz|76
-Mario Basler|84|MF
+Mario Basler|84
 Giovane Élber|86
 Carsten Jancker|81
 Alexander Zickler|78

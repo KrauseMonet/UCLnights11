@@ -95,7 +95,7 @@ Siniša Mihajlović|77
 Esteban Cambiasso|87
 Juan Sebastián Verón|83
 Dejan Stanković|84
-Luís Figo|85|MF
+Luís Figo|85
 David Pizarro|80
 Cristiano Zanetti|77
 Santiago Solari|76

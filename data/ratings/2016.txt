@@ -72,7 +72,7 @@ Jemerson|81
 Djibril Sidibé (footballer, born 1992)|83
 Benjamin Mendy|84
 Andrea Raggi|76
-Fabinho (footballer, born 1993)|86|MF
+Fabinho (footballer, born 1993)|86
 Tiémoué Bakayoko|84
 João Moutinho|85
 Thomas Lemar|85
@@ -89,7 +89,7 @@ Manuel Neuer|91
 Sven Ulreich|76
 Mats Hummels|88
 Jérôme Boateng|85
-Javi Martínez|84|DF
+Javi Martínez|84
 David Alaba|87
 Philipp Lahm|87
 Rafinha (footballer, born 1985)|78
@@ -146,7 +146,7 @@ Claudio Marchisio|83
 Stefano Sturaro|76
 Tomás Rincón|76
 Mario Lemina|76
-Juan Cuadrado|83|MF
+Juan Cuadrado|83
 Paulo Dybala|90
 Gonzalo Higuaín|89
 Mario Mandžukić|85

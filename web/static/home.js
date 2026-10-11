@@ -31,7 +31,7 @@ function renderMemory() {
 }
 
 function deckCard(cs) {
-  const rows = cs.cards.map((c) => `<div class="deck-row"><span class="pos ${c.pos}">${c.pos}</span>
+  const rows = cs.cards.map((c) => `<div class="deck-row">${positionsHtml(c)}
     <span>${esc(c.name)}</span>${rate(c.rating)}</div>`).join("");
   return `<div class="deck-card" style="${teamStyle(cs)}">
     <div class="band">${crest(cs.crest, 64, cs.name)}<div class="deck-year">${esc(cs.season)}</div>

@@ -47,7 +47,7 @@ Sven Ulreich|76
 Jérôme Boateng|88
 Javi Martínez|83
 David Alaba|87
-Philipp Lahm|88|DF
+Philipp Lahm|88
 Rafinha (footballer, born 1985)|79
 Juan Bernat|80
 Medhi Benatia|80
@@ -72,7 +72,7 @@ Victor Lindelöf|79
 Lisandro López (footballer, born 1989)|77
 Jardel (footballer, born 1986)|79
 Nélson Semedo|77
-André Almeida (footballer, born 1990)|78|DF
+André Almeida (footballer, born 1990)|78
 Eliseu|77
 Ljubomir Fejsa|81
 Andreas Samaris|79
@@ -166,7 +166,7 @@ Fabian Delph|76
 David Silva|88
 Kevin De Bruyne|88
 Samir Nasri|78
-Jesús Navas|79|MF
+Jesús Navas|79
 Raheem Sterling|82
 Sergio Agüero|91
 Kelechi Iheanacho|77

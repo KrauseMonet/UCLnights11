@@ -6,10 +6,10 @@ Aymeric Laporte|86
 Nicolás Otamendi|79
 João Cancelo|80
 Benjamin Mendy|78
-Oleksandr Zinchenko (footballer)|78|DF
+Oleksandr Zinchenko (footballer)|78
 Eric Garcia (footballer, born 2001)|76
 Rodri|86
-Fernandinho (footballer, born May 1985)|83|DF
+Fernandinho (footballer, born May 1985)|83
 Kevin De Bruyne|93
 İlkay Gündoğan|84
 David Silva|85
@@ -37,7 +37,7 @@ Jeff Reine-Adélaïde|76
 Memphis Depay|86
 Moussa Dembélé (French footballer)|84
 Karl Toko Ekambi|80
-Maxwel Cornet|79|MF
+Maxwel Cornet|79
 Bertrand Traoré|79
 
 # RB Leipzig
@@ -49,9 +49,9 @@ Marcel Halstenberg|80
 Angeliño|83
 Nordi Mukiele|79
 Willi Orbán|79
-Konrad Laimer|82|MF
+Konrad Laimer|82
 Kevin Kampl|81
-Marcel Sabitzer|86|MF
+Marcel Sabitzer|86
 Tyler Adams|79
 Dani Olmo|83
 Christopher Nkunku|83
@@ -109,7 +109,7 @@ Ousmane Dembélé|78
 Manuel Neuer|91
 Sven Ulreich|76
 Alphonso Davies|86
-David Alaba|86|DF
+David Alaba|86
 Jérôme Boateng|83
 Benjamin Pavard|83
 Niklas Süle|80
@@ -120,7 +120,7 @@ Leon Goretzka|86
 Thiago Alcântara|89
 Corentin Tolisso|78
 Javi Martínez|78
-Thomas Müller|89|MF
+Thomas Müller|89
 Philippe Coutinho|80
 Serge Gnabry|88
 Kingsley Coman|85
@@ -141,7 +141,7 @@ Marten de Roon|83
 Remo Freuler|83
 Mario Pašalić|81
 Ruslan Malinovskyi|81
-Papu Gómez|88|MF
+Papu Gómez|88
 Josip Iličić|87
 Duván Zapata|85
 Luis Muriel|84

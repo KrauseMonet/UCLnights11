@@ -3,7 +3,7 @@ Víctor Valdés|85
 José Manuel Pinto|73
 Dani Alves|86
 Gerard Piqué|85
-Javier Mascherano|85|DF
+Javier Mascherano|85
 Jordi Alba|85
 Carles Puyol|76
 Marc Bartra|78
@@ -36,7 +36,7 @@ Arda Turan|86
 Raúl García (footballer, born 1986)|83
 Mario Suárez (footballer)|80
 Diego (footballer, born 1985)|79
-Cristian Rodríguez|77|MF
+Cristian Rodríguez|77
 Diego Costa|90
 David Villa|83
 Adrián López|76

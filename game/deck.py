@@ -12,12 +12,19 @@ DECK = Path(__file__).resolve().parent.parent / "data" / "deck.json"
 
 @dataclass(frozen=True, eq=False)
 class Card:
-    """One player in one club-season. ``id`` is the person (a Wikidata id)."""
+    """One player in one club-season. ``id`` is the person (a Wikidata id).
+
+    ``positions`` are what he can play, most-played first (game.positions); ``source``
+    says whether they were measured or declared. ``pos`` is a LINE (GK/DF/MF/FW): his
+    natural one, from his first position, until he is placed in an eleven, when it
+    becomes the line of his slot and ``slot`` names the slot's position."""
 
     id: str
     name: str
     title: str
     pos: str
+    positions: tuple[str, ...]
+    source: str
     nation: str | None
     rating: int
     season: int
@@ -27,6 +34,7 @@ class Card:
     short: str
     key: str
     crest: str
+    slot: str | None = None
 
 
 @dataclass(frozen=True, eq=False)
@@ -44,6 +52,7 @@ class ClubSeason:
     deep: str
     ink: str
     cards: tuple[Card, ...]
+    best: tuple[str, tuple[tuple[int, str], ...]]   # (formation code, ((card index, slot), ...))
 
     @property
     def title(self) -> str:
@@ -61,16 +70,19 @@ def build_deck(doc: dict) -> Deck:
     for s in doc["club_seasons"]:
         cards = tuple(
             Card(
-                id=p["id"], name=p["name"], title=p["title"], pos=p["pos"], nation=p["nation"],
+                id=p["id"], name=p["name"], title=p["title"], pos=p["pos"],
+                positions=tuple(p["positions"]), source=p["source"], nation=p["nation"],
                 rating=p["rating"], season=s["season"], label=s["label"], club=s["club"],
                 club_name=s["name"], short=s["short"], key=s["key"], crest=s["crest"],
             )
             for p in s["players"]
         )
+        index = {c.id: i for i, c in enumerate(cards)}
+        best = (s["best"]["formation"], tuple((index[pid], slot) for pid, slot in s["best"]["xi"]))
         seasons.append(ClubSeason(
             key=s["key"], season=s["season"], label=s["label"], club=s["club"], name=s["name"],
             short=s["short"], primary=s["primary"], secondary=s["secondary"], crest=s["crest"],
-            team=s["team"], deep=s["deep"], ink=s["ink"], cards=cards,
+            team=s["team"], deep=s["deep"], ink=s["ink"], cards=cards, best=best,
         ))
     return Deck(tuple(seasons), {s.key: s for s in seasons})
 

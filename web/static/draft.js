@@ -23,12 +23,12 @@ function render(fresh) {
   $("pickno").textContent = S.picks.length + 1;
   $("bar").style.width = `${(S.picks.length / 11) * 100}%`;
   $("memtag").hidden = !S.memory;
-  lineChips($("lines"), S.formation, S.picks);
+  lineChips($("lines"), S.formation, S.xi);
   renderDeal($("deal"), S.deal, {
     rerollsLeft: S.rerolls_left, fresh,
     onTake: (i) => move("pick", { index: i }), onReroll: () => move("reroll"),
   });
-  renderPitch($("pitch"), S.formation.code, S.picks, S.picks.length ? S.picks[S.picks.length - 1].id : null);
+  renderPitch($("pitch"), S.formation.slots, S.xi, S.picks.length ? S.picks[S.picks.length - 1].id : null);
   $("xisub").textContent = `${S.picks.length} / 11`;
   xiFoot($("xifoot"), S);
 }

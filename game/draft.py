@@ -3,10 +3,13 @@
 Each turn deals one club-season uniformly at random from the deck (so Bayern,
 with 24 quarter-final seasons, turns up 24 times as often as APOEL with one --
 rarity should feel like an event). The drafter takes ONE rated player from it
-into an open slot in that player's own line, or spends a reroll.
+into the formation, or spends a reroll. A player can stand only in a slot whose
+position he holds (C35, game.positions); a pick is legal while the whole eleven so far
+can still be given distinct slots, and where each man stands is settled afresh after
+every pick, so the order of a draft never strands anyone.
 
-A deal that offers nothing takeable -- every player already picked, or every
-line he could fill already full -- is redrawn before it is shown. That is the
+A deal that offers nothing takeable -- every player already picked, or none who
+fits the places left -- is redrawn before it is shown. That is the
 deal-time guarantee, and ``redraws`` counts it so a deck too thin to serve its
 drafters is visible rather than hidden.
 
@@ -21,6 +24,7 @@ from dataclasses import dataclass, field
 
 from game.deck import Card, ClubSeason, Deck
 from game.formations import FORMATIONS, Formation
+from game.positions import arrange, fits
 
 REROLLS_ALLOWED = 2
 REDRAW_CAP = 2_000
@@ -43,17 +47,16 @@ class Pick:
 Move = Pick | Reroll
 
 
-def open_lines(formation: Formation, picks: list[Card]) -> dict[str, int]:
-    return {pos: n - sum(1 for c in picks if c.pos == pos) for pos, n in formation.lines.items()}
-
-
 def why_not(card: Card, formation: Formation, picks: list[Card]) -> str | None:
     """None if the card can be taken now, else the reason it cannot."""
     if any(c.id == card.id for c in picks):
         return "already in your eleven"
-    if open_lines(formation, picks)[card.pos] <= 0:
-        return {"GK": "goalkeeper taken", "DF": "defence full", "MF": "midfield full",
-                "FW": "attack full"}[card.pos]
+    if not set(card.positions) & set(formation.slots):
+        return f"no {'/'.join(card.positions)} in a {formation.label}"
+    if not fits(formation.slots, [*picks, card]):
+        if card.positions == ("GK",):
+            return "goalkeeper taken"
+        return f"no {'/'.join(card.positions)} place left"
     return None
 
 
@@ -70,6 +73,11 @@ class Session:
     @property
     def complete(self) -> bool:
         return len(self.picks) == 11
+
+    @property
+    def xi(self) -> list[Card]:
+        """The picks placed in their slots, in slot order (game.positions.arrange)."""
+        return arrange(self.formation.slots, self.picks)
 
 
 def _deal(rng: random.Random, deck: Deck, s: Session) -> ClubSeason:

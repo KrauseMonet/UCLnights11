@@ -27,6 +27,8 @@ from game import analysis as analyses, daily as daily_rules, journey as journeys
 from game.deck import Card, ClubSeason, load_deck
 from game.draft import IllegalMove, Pick, Reroll, Session, decode, encode, replay, why_not
 from game.formations import DEFAULT, FORMATIONS
+from game.positions import arrange
+from game.shared_draft import Stranded
 from game.tournament import (CUP_STAGES, Fixture, Side, Tournament, club_side, leaders, league_of,
                              play_room, play_tournament)
 from web import accounts, admin, auth, daily, db, failures, results, rooms
@@ -84,8 +86,11 @@ def colours(x) -> dict:
 
 
 def card_out(c: Card, reason: str | None = None) -> dict:
+    """``pos`` is a line, ``positions`` what he can play (most-played first), and ``slot``
+    where he stands when the card is placed in an eleven (C35)."""
     return {
-        "id": c.id, "name": c.name, "pos": c.pos, "nation": c.nation, "rating": c.rating,
+        "id": c.id, "name": c.name, "pos": c.pos, "positions": list(c.positions), "source": c.source,
+        "slot": c.slot, "nation": c.nation, "rating": c.rating,
         "club": c.club_name, "short": c.short, "season": c.label, "key": c.key,
         "crest": crest_url(c.crest),
         "wiki": "https://en.wikipedia.org/wiki/" + c.title.replace(" ", "_"),
@@ -102,6 +107,16 @@ def club_season_out(cs: ClubSeason, cards: list[dict] | None = None) -> dict:
 
 
 LINE_ORDER = ("GK", "DF", "MF", "FW")
+
+
+def formation_out(f) -> dict:
+    return {"code": f.code, "label": f.label, "lines": f.lines, "slots": list(f.slots)}
+
+
+def eleven_out(f, picks: list[Card], memory: bool) -> list[dict]:
+    """The picks placed in their slots, in slot order (game.positions.arrange)."""
+    out = [card_out(c) for c in arrange(f.slots, picks)]
+    return hide_ratings(out) if memory else out
 
 
 def session_out(state: str, s: Session, memory: bool = False) -> dict:
@@ -121,8 +136,8 @@ def session_out(state: str, s: Session, memory: bool = False) -> dict:
             c["rating"] = None
     return {
         "state": state, "seed": s.seed, "memory": memory,
-        "formation": {"code": s.formation.code, "label": s.formation.label, "lines": s.formation.lines},
-        "picks": picks,
+        "formation": formation_out(s.formation),
+        "picks": picks, "xi": eleven_out(s.formation, s.picks, memory),
         "deal": deal, "rerolls_left": s.rerolls_left, "complete": s.complete,
     }
 
@@ -298,7 +313,7 @@ def tournament_out(t: Tournament) -> dict:
     return {
         "you": None if you is None else {
             **side_out(you), "formation": you.formation.label, "code": you.formation.code,
-            "xi": [card_out(c) for c in you.xi]},
+            "slots": list(you.formation.slots), "xi": [card_out(c) for c in you.xi]},
         "your_matches": [fixture_out(f, timeline=True) for f in t.fixtures if you in (f.home, f.away)],
         "groups": groups, "knockout": knockout,
         "champion": side_out(t.champion), "reached": t.reached(you) if you else None,
@@ -527,10 +542,33 @@ ROOM_FORMATS = {2: "Final", 4: "4-team cup", 8: "8-team cup", 16: "16-team cup",
                 32: "32-team tournament"}
 
 
+STALE_ROOM = ("This room was drafted before players had positions, and its picks no longer "
+              "replay under the new rules.")
+
+
+def _replays(room: rooms.Room) -> bool:
+    """Whether the room's draft still replays. One drafted before positions (C35) may not:
+    its moves name cards in deals the new rules no longer make."""
+    if room.status not in ("drafting", "complete"):
+        return True
+    try:
+        if room.turns:
+            rooms.shared_of(load_deck(), room)
+        else:
+            for seat in room.seats:
+                if seat.state:
+                    replay(load_deck(), *decode(seat.state))
+    except (IllegalMove, Stranded):
+        return False
+    return True
+
+
 def room_out(room: rooms.Room, me: accounts.Account | None) -> dict:
     mine = room.seat_of(me.account_id) if me else None
     draft = None
     turns = None
+    if not _replays(room):
+        room.status, room.failure_reason = "failed", STALE_ROOM
     picks = {s.account_id: (s.picks, s.complete) for s in room.seats}
     if room.turns and room.status in ("drafting", "complete"):
         d = rooms.shared_of(load_deck(), room)
@@ -543,8 +581,8 @@ def room_out(room: rooms.Room, me: accounts.Account | None) -> dict:
                 for c in mine_picks:
                     c["rating"] = None
             f = d.formations[i]
-            draft = {"formation": {"code": f.code, "label": f.label, "lines": f.lines},
-                     "picks": mine_picks, "complete": len(d.picks[i]) == 11, "memory": room.memory,
+            draft = {"formation": formation_out(f),
+                     "picks": mine_picks, "xi": eleven_out(f, d.picks[i], room.memory), "complete": len(d.picks[i]) == 11, "memory": room.memory,
                      "state": room.moves_text}
     elif mine is not None and room.status == "drafting":
         draft = session_out(mine.state, _replay(mine.state), room.memory)
@@ -755,6 +793,7 @@ def players_out(t: Tournament) -> list[dict]:
             else:
                 w, d, l = w + (us > them), d + (us == them), l + (us < them)
         out.append({**side_out(side), "formation": side.formation.label, "code": side.formation.code,
+                    "slots": list(side.formation.slots),
                     "reached": t.reached(side), "w": w, "d": d, "l": l, "gf": gf, "ga": ga,
                     "avg": round(sum(c.rating for c in side.xi) / 11),
                     "xi": [card_out(c) for c in side.xi]})
@@ -767,6 +806,8 @@ def _room_tournament(code: str, request: Request) -> tuple[rooms.Room, Tournamen
         me = _account(conn, request)
     if room.status != "complete":
         raise HTTPException(409, "the room's elevens are not all complete yet")
+    if not _replays(room):
+        raise HTTPException(409, STALE_ROOM)
     deck = load_deck()
     humans = rooms.sides(deck, room)
     for side in humans:
@@ -859,7 +900,7 @@ def challenge_out(ch: daily_rules.Challenge, reveal: bool) -> dict:
     opp = club_side(deck.by_key[ch.opponent])
     f = FORMATIONS[ch.formation]
     xi = [card_out(c) for c in opp.xi]
-    return {"day": ch.day, "formation": {"code": f.code, "label": f.label, "lines": f.lines},
+    return {"day": ch.day, "formation": formation_out(f),
             "opponent": {**side_out(opp), "xi": xi if reveal else hide_ratings(xi), "shape": opp.formation.label},
             "ratings_hidden": not reveal,
             "goal": daily_rules.describe(ch.kind, ch.target), "kind": ch.kind, "target": ch.target,

@@ -7,7 +7,7 @@ Aymeric Laporte|82
 Nathan Aké|79
 Kyle Walker|85
 João Cancelo|88
-Oleksandr Zinchenko (footballer)|80|DF
+Oleksandr Zinchenko (footballer)|80
 Benjamin Mendy|76
 Rodri|86
 İlkay Gündoğan|90
@@ -52,7 +52,7 @@ Chancel Mbemba|81
 Diogo Leite (footballer, born 1999)|77
 Zaidu Sanusi|78
 Wilson Manafá|77
-Jesús Manuel Corona|85|MF
+Jesús Manuel Corona|85
 Sérgio Oliveira|83
 Mateus Uribe|82
 Otávio (footballer, born 1995)|84
@@ -79,7 +79,7 @@ Mateo Kovačić|83
 Mason Mount|86
 Kai Havertz|84
 Hakim Ziyech|80
-Christian Pulisic|82|FW
+Christian Pulisic|82
 Callum Hudson-Odoi|78
 Timo Werner|81
 Tammy Abraham|79
@@ -93,18 +93,18 @@ Jérôme Boateng|83
 Niklas Süle|82
 Lucas Hernandez|82
 Benjamin Pavard|82
-Alphonso Davies|85|DF
+Alphonso Davies|85
 Bouna Sarr|73
 Joshua Kimmich|90
 Leon Goretzka|86
 Corentin Tolisso|78
 Marc Roca|74
 Jamal Musiala|78
-Thomas Müller|90|MF
-Leroy Sané|85|FW
-Serge Gnabry|85|FW
-Kingsley Coman|86|FW
-Douglas Costa|76|FW
+Thomas Müller|90
+Leroy Sané|85
+Serge Gnabry|85
+Kingsley Coman|86
+Douglas Costa|76
 Robert Lewandowski|95
 Eric Maxim Choupo-Moting|76
 
@@ -140,7 +140,7 @@ Raphaël Varane|87
 Éder Militão|81
 Nacho (footballer, born 1990)|81
 Dani Carvajal|80
-Lucas Vázquez|80|DF
+Lucas Vázquez|80
 Ferland Mendy|83
 Marcelo (footballer, born 1988)|77
 Luka Modrić|89
@@ -166,7 +166,7 @@ Nat Phillips|74
 Trent Alexander-Arnold|87
 Andy Robertson|86
 Kostas Tsimikas|76
-Fabinho (footballer, born 1993)|86|DF
+Fabinho (footballer, born 1993)|86
 Thiago Alcântara|85
 Jordan Henderson|84
 Georginio Wijnaldum|84

@@ -60,7 +60,7 @@ Clarence Seedorf|86
 Rui Costa|83
 Massimo Ambrosini|78
 Cristian Brocchi|76
-Serginho (footballer, born 1971)|78|MF
+Serginho (footballer, born 1971)|78
 Andriy Shevchenko|94
 Filippo Inzaghi|83
 Jon Dahl Tomasson|81
@@ -80,7 +80,7 @@ Sergio González (footballer, born 1976)|81
 Aldo Duscher|80
 Juan Carlos Valerón|89
 Fran (footballer, born 1969)|80
-Víctor Sánchez (footballer, born 1976)|79|MF
+Víctor Sánchez (footballer, born 1976)|79
 Lionel Scaloni|79
 Albert Luque|83
 Walter Pandiani|81

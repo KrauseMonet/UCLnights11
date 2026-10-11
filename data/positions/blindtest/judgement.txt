@@ -1,0 +1,341 @@
+# 2014-MON
+Danijel Subašić|GK
+Fabinho|RB,DM
+Aymen Abdennour|CB
+Ricardo Carvalho|CB
+Layvin Kurzawa|LB
+Andrea Raggi|CB,RB
+Wallace|RB,CB
+Elderson Echiéjilé|LB
+João Moutinho|CM,AM,DM
+Geoffrey Kondogbia|DM,CM
+Jérémy Toulalan|DM,CB
+Bernardo Silva|RM,AM,RW,LM
+Yannick Carrasco|LM,LW
+Nabil Dirar|RM,RB,RW
+Tiémoué Bakayoko|DM,CM
+Anthony Martial|ST,LW,LM
+Dimitar Berbatov|ST
+Valère Germain|ST,LM
+Lacina Traoré|ST
+
+# 2016-BAY
+Manuel Neuer|GK
+Sven Ulreich|GK
+Mats Hummels|CB
+David Alaba|LB,CB
+Philipp Lahm|RB,DM
+Jérôme Boateng|CB
+Javi Martínez|CB,DM
+Rafinha|RB,LB
+Juan Bernat|LB
+Thiago Alcântara|CM,AM,DM
+Arjen Robben|RW
+Arturo Vidal|CM,DM
+Franck Ribéry|LW
+Xabi Alonso|DM,CM
+Joshua Kimmich|CM,DM,RB,CB
+Douglas Costa|LW,RW
+Renato Sanches|CM,RM
+Robert Lewandowski|ST
+Thomas Müller|AM,ST,RW
+Kingsley Coman|LW,RW
+
+# 2018-AJA
+André Onana|GK
+Matthijs de Ligt|CB
+Nicolás Tagliafico|LB
+Daley Blind|CB,LB,DM
+Noussair Mazraoui|RB
+Joël Veltman|RB,CB
+Lisandro Magallán|CB
+Frenkie de Jong|CM,DM
+Hakim Ziyech|RW,AM
+Donny van de Beek|AM,CM
+Lasse Schöne|DM,CM
+Dušan Tadić|ST,LW,AM
+David Neres|RW,LW
+Kasper Dolberg|ST
+Klaas-Jan Huntelaar|ST
+
+# 2018-JUV
+Wojciech Szczęsny|GK
+Mattia Perin|GK
+Giorgio Chiellini|CB
+João Cancelo|RB,LB,RM
+Leonardo Bonucci|CB
+Alex Sandro|LB,LM
+Daniele Rugani|CB
+Leonardo Spinazzola|LB
+Martín Cáceres|CB,RB,LB
+Mattia De Sciglio|RB,LB
+Miralem Pjanić|DM,CM
+Blaise Matuidi|CM,LM
+Emre Can|CM,DM,CB
+Juan Cuadrado|RB,RW,RM
+Rodrigo Bentancur|CM,DM
+Sami Khedira|CM
+Cristiano Ronaldo|LW,ST
+Mario Mandžukić|ST,LW
+Paulo Dybala|ST,RW,AM
+Douglas Costa|LW,RW
+Federico Bernardeschi|RW,LW,AM
+Moise Kean|ST
+
+# 2019-ATA
+Pierluigi Gollini|GK
+Marco Sportiello|GK
+Robin Gosens|LM
+Rafael Tolói|CB
+Hans Hateboer|RM
+Berat Djimsiti|CB
+José Luis Palomino|CB
+Timothy Castagne|RM,LM
+Mattia Caldara|CB
+Papu Gómez|AM,LW,ST
+Josip Iličić|RW,ST,AM
+Marten de Roon|DM,CM
+Remo Freuler|CM,DM
+Mario Pašalić|AM,CM
+Ruslan Malinovskyi|AM,CM
+Duván Zapata|ST
+Luis Muriel|ST
+
+# 2019-BAR
+Marc-André ter Stegen|GK
+Neto|GK
+Gerard Piqué|CB
+Jordi Alba|LB
+Clément Lenglet|CB
+Nélson Semedo|RB
+Samuel Umtiti|CB
+Junior Firpo|LB
+Ronald Araújo|CB
+Frenkie de Jong|CM,DM
+Sergio Busquets|DM
+Arturo Vidal|CM,AM,DM
+Arthur Melo|CM
+Ivan Rakitić|CM,DM
+Sergi Roberto|RB,CM
+Riqui Puig|CM
+Lionel Messi|RW,ST,AM
+Luis Suárez|ST
+Antoine Griezmann|LW,ST,RW
+Ansu Fati|LW,ST
+Ousmane Dembélé|RW
+
+# 2019-LYO
+Anthony Lopes|GK
+Jason Denayer|CB
+Marcelo|CB
+Léo Dubois|RB,RM
+Joachim Andersen|CB
+Fernando Marçal|LB,LM,CB
+Rafael|RB
+Houssem Aouar|CM,AM,LW
+Bruno Guimarães|CM,DM
+Maxence Caqueret|CM
+Lucas Tousart|DM,CM
+Maxwel Cornet|LM,LW,LB
+Thiago Mendes|DM,CM
+Jeff Reine-Adélaïde|AM,CM,RW
+Memphis Depay|ST,LW
+Moussa Dembélé|ST
+Karl Toko Ekambi|ST,LW,RW
+Bertrand Traoré|RW,ST,LW
+
+# 2022-BEN
+Odysseas Vlachodimos|GK
+Álex Grimaldo|LB
+Nicolás Otamendi|CB
+António Silva|CB
+Alexander Bah|RB
+Gilberto|RB
+Rafa Silva|AM,ST,LW
+Enzo Fernández|CM,DM
+João Mário|RW,AM,LW,CM
+David Neres|RW,LW
+Fredrik Aursnes|CM,LW,DM,LB
+Florentino Luís|DM
+Chiquinho|CM,AM,LW
+João Neves|CM,DM
+Gonçalo Ramos|ST
+Petar Musa|ST
+
+# 2022-CHE
+Kepa Arrizabalaga|GK
+Édouard Mendy|GK
+Reece James|RB,RM
+Thiago Silva|CB
+Ben Chilwell|LB,LM
+Kalidou Koulibaly|CB
+Wesley Fofana|CB
+Benoît Badiashile|CB
+César Azpilicueta|RB,CB,RM
+Marc Cucurella|LB,LM,CB
+Trevoh Chalobah|CB,RB
+Enzo Fernández|CM,DM
+Mateo Kovačić|CM
+N'Golo Kanté|CM,DM
+Mason Mount|AM,CM,LW,RW
+Conor Gallagher|CM,AM
+Kai Havertz|ST,AM
+João Félix|ST,LW
+Raheem Sterling|LW,RW,ST
+Christian Pulisic|RW,LW,RM
+Mykhailo Mudryk|LW
+Pierre-Emerick Aubameyang|ST
+
+# 2022-INT
+André Onana|GK
+Samir Handanović|GK
+Alessandro Bastoni|CB
+Federico Dimarco|LM,CB
+Milan Škriniar|CB
+Francesco Acerbi|CB
+Denzel Dumfries|RM
+Stefan de Vrij|CB
+Matteo Darmian|RM,CB,LM
+Robin Gosens|LM
+Nicolò Barella|CM
+Hakan Çalhanoğlu|DM,CM
+Marcelo Brozović|DM
+Henrikh Mkhitaryan|CM
+Kristjan Asllani|DM
+Lautaro Martínez|ST
+Edin Džeko|ST
+Romelu Lukaku|ST
+Joaquín Correa|ST
+
+# 2022-MCI
+Ederson|GK
+Stefan Ortega|GK
+John Stones|CB,RB,DM
+Rúben Dias|CB
+Manuel Akanji|CB,LB,RB
+Kyle Walker|RB
+Nathan Aké|CB,LB
+Aymeric Laporte|CB
+João Cancelo|RB,LB
+Rico Lewis|RB
+Rodri|DM
+Kevin De Bruyne|AM,CM
+Bernardo Silva|RW,CM,AM
+İlkay Gündoğan|CM,AM
+Jack Grealish|LW
+Phil Foden|LW,RW,AM
+Kalvin Phillips|DM,CM
+Erling Haaland|ST
+Riyad Mahrez|RW
+Julián Alvarez|ST,AM,LW
+
+# 2023-ATM
+Jan Oblak|GK
+José María Giménez|CB
+Mario Hermoso|CB,LB
+Nahuel Molina|RB,RM
+Stefan Savić|CB
+Axel Witsel|CB,DM
+César Azpilicueta|CB,RB,RM
+Reinildo Mandava|LB,CB
+Marcos Llorente|RM,CM,RB,ST
+Rodrigo De Paul|CM,RM
+Koke|CM,DM
+Samuel Lino|LM,LW
+Rodrigo Riquelme|LM,LW
+Saúl|CM,LM,DM
+Pablo Barrios|CM,DM
+Antoine Griezmann|ST,AM
+Álvaro Morata|ST
+Ángel Correa|ST
+Memphis Depay|ST
+
+# 2023-PSG
+Gianluigi Donnarumma|GK
+Arnau Tenas|GK
+Achraf Hakimi|RB
+Marquinhos|CB
+Nuno Mendes|LB
+Lucas Hernandez|CB,LB
+Milan Škriniar|CB
+Danilo Pereira|CB,DM
+Lucas Beraldo|CB,LB
+Vitinha|CM,DM
+Warren Zaïre-Emery|CM,RB
+Fabián Ruiz|CM
+Lee Kang-in|RW,CM,AM,LW
+Manuel Ugarte|DM
+Kylian Mbappé|LW,ST
+Ousmane Dembélé|RW,ST
+Bradley Barcola|LW
+Gonçalo Ramos|ST
+Marco Asensio|RW,ST,AM
+Randal Kolo Muani|ST,LW,RW
+
+# 2024-RMA
+Thibaut Courtois|GK
+Andriy Lunin|GK
+Antonio Rüdiger|CB
+Ferland Mendy|LB
+Éder Militão|CB
+Dani Carvajal|RB
+Fran García|LB
+Raúl Asencio|CB
+Lucas Vázquez|RB
+David Alaba|CB
+Federico Valverde|CM,RB,DM
+Jude Bellingham|AM,CM
+Aurélien Tchouaméni|DM,CB
+Luka Modrić|CM
+Eduardo Camavinga|CM,DM,LB
+Arda Güler|AM,RW,CM
+Dani Ceballos|CM,DM
+Kylian Mbappé|ST,LW
+Vinícius Júnior|LW
+Rodrygo|RW,LW,ST
+Brahim Díaz|RW,AM,LW
+Endrick|ST
+
+# 2025-LIV
+Alisson Becker|GK
+Giorgi Mamardashvili|GK
+Virgil van Dijk|CB
+Ibrahima Konaté|CB
+Jeremie Frimpong|RB,RM
+Milos Kerkez|LB
+Andy Robertson|LB
+Conor Bradley|RB
+Joe Gomez|RB,CB
+Ryan Gravenberch|DM,CM
+Alexis Mac Allister|CM,DM
+Dominik Szoboszlai|CM,RB,AM
+Florian Wirtz|AM,LW
+Curtis Jones|CM
+Wataru Endo|DM,CB
+Mohamed Salah|RW
+Alexander Isak|ST
+Hugo Ekitike|ST,LW
+Cody Gakpo|LW
+Federico Chiesa|RW,LW
+
+# 2025-SCP
+Rui Silva|GK
+João Virgínia|GK
+Gonçalo Inácio|CB
+Ousmane Diomande|CB
+Maximiliano Araújo|LB,LM,LW
+Zeno Debast|CB,DM
+Eduardo Quaresma|CB,RB
+Georgios Vagiannidis|RB
+Matheus Reis|LB,CB
+Iván Fresneda|RB
+Morten Hjulmand|DM
+Pedro Gonçalves|AM,LW,CM
+Hidemasa Morita|CM,DM
+Daniel Bragança|CM,DM
+Giorgi Kochorashvili|CM,DM
+Francisco Trincão|RW,LW,AM
+Luis Suárez|ST
+Geovany Quenda|RW,RM,LW
+Geny Catamo|RW,RM
+Fotis Ioannidis|ST

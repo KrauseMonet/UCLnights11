@@ -33,6 +33,7 @@ from dataclasses import dataclass, field
 from game import match
 from game.deck import Card, ClubSeason, Deck
 from game.formations import FORMATIONS, Formation
+from game.positions import arrange, place
 
 TEAMS = 32
 GROUPS = "ABCDEFGH"
@@ -63,28 +64,29 @@ class Side:
     deep: str = "#4c370b"
     ink: str = "#ffe08e"
 
+    def __post_init__(self) -> None:
+        # Every side plays with each man in a slot of its formation, carrying the slot's
+        # line (game.positions); a drafted eleven arrives as picks and is placed here.
+        if any(c.slot is None for c in self.xi):
+            self.xi = arrange(self.formation.slots, self.xi)
+
     @property
     def strength(self) -> float:
         return (match.attack(self.xi) + match.defence(self.xi)) / 2
 
 
+_BEST: dict[int, tuple[Formation, list[Card]]] = {}
+
+
 def best_xi(cs: ClubSeason) -> tuple[Formation, list[Card]]:
-    """The strongest legal eleven a squad's rated players can field."""
-    best = None
-    for f in FORMATIONS.values():
-        xi = []
-        for pos, n in f.lines.items():
-            line = [c for c in cs.cards if c.pos == pos][:n]   # cards are sorted best-first
-            if len(line) < n:
-                break
-            xi += line
-        else:
-            score = sum(c.rating for c in xi)
-            if best is None or score > best[0]:
-                best = (score, f, xi)
-    if best is None:
-        raise ValueError(f"{cs.title} cannot field an eleven")
-    return best[1], best[2]
+    """The strongest legal eleven a squad's rated players can field, placed in its slots.
+    etl.deck works it out once (over every formation, a maximum-rating assignment of
+    players to slots they hold) and stores it with the squad."""
+    got = _BEST.get(id(cs))
+    if got is None:
+        code, xi = cs.best
+        got = _BEST[id(cs)] = (FORMATIONS[code], [place(cs.cards[i], slot) for i, slot in xi])
+    return got[0], list(got[1])
 
 
 def club_side(cs: ClubSeason) -> Side:

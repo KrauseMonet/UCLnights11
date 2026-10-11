@@ -1,0 +1,164 @@
+# AFC Ajax
+Bogdan Lobonț|GK
+Maarten Stekelenburg|GK
+Cristian Chivu|CB,LB
+Hatem Trabelsi|RB
+Tomáš Galásek|DM
+Maxwell (footballer, born 1981)|LB
+Petri Pasanen|CB,RB
+John O'Brien (soccer)|CM,CB
+Rafael van der Vaart|AM,CM
+Andy van der Meyde|RW
+Wesley Sneijder|CM,AM
+Jari Litmanen|AM,ST
+Steven Pienaar|AM,LW
+Richard Witschge|CM
+Nigel de Jong|DM,CM
+Zlatan Ibrahimović|ST
+Wamberto|LW,ST
+
+# FC Barcelona
+Roberto Bonano|GK
+Víctor Valdés|GK
+Carles Puyol|RB,CB
+Frank de Boer|CB
+Michael Reiziger|RB,CB
+Juan Pablo Sorín|LB,LM
+Philippe Christanval|CB
+Oleguer Presas|CB,RB
+Phillip Cocu|CM,DM
+Xavi (footballer, born 1980)|CM,DM
+Juan Román Riquelme|AM
+Luis Enrique|CM,RW
+Marc Overmars|LW
+Gaizka Mendieta|RW,CM
+Gerard López|CM
+Thiago Motta|DM,CM
+Patrick Kluivert|ST
+Javier Saviola|ST
+Dani García (footballer, born 1974)|ST
+
+# Inter Milan
+Francesco Toldo|GK
+Fabio Cannavaro|CB
+Javier Zanetti|RB,RM
+Iván Córdoba|CB
+Marco Materazzi|CB
+Carlos Gamarra|CB
+Francesco Coco|LB
+Daniele Adani|CB
+Luigi Di Biagio|CM,DM
+Emre Belözoğlu|CM,LM
+Cristiano Zanetti|CM
+Sérgio Conceição|RM
+Matías Almeyda|DM
+Andrés Guglielminpietro|LM
+Stéphane Dalmat|RM,LM
+Christian Vieri|ST
+Hernán Crespo|ST
+Álvaro Recoba|ST,LM
+Obafemi Martins|ST
+Mohamed Kallon|ST
+
+# Juventus FC
+Gianluigi Buffon|GK
+Lilian Thuram|RB,CB
+Gianluca Zambrotta|LM,RM,LB
+Ciro Ferrara|CB
+Paolo Montero|CB
+Igor Tudor|CB,DM
+Mark Iuliano|CB
+Alessandro Birindelli|RB
+Gianluca Pessotto|LB,RB
+Pavel Nedvěd|LM,AM
+Edgar Davids|CM,LM
+Alessio Tacchinardi|CM,DM
+Mauro Camoranesi|RM
+Antonio Conte|CM,RM
+Alessandro Del Piero|ST
+David Trezeguet|ST
+Marco Di Vaio|ST
+Marcelo Zalayeta|ST
+Marcelo Salas|ST
+
+# Manchester United F.C.
+Fabien Barthez|GK
+Rio Ferdinand|CB
+Gary Neville|RB
+Mikaël Silvestre|LB,CB
+Wes Brown|CB,RB
+John O'Shea|LB,CB,RB
+Laurent Blanc|CB
+Phil Neville|CM,LB
+Paul Scholes|AM,CM
+David Beckham|RM
+Roy Keane|CM
+Ryan Giggs|LM
+Juan Sebastián Verón|CM
+Nicky Butt|CM
+Ruud van Nistelrooy|ST
+Ole Gunnar Solskjær|RM,ST
+Diego Forlán|ST
+
+# AC Milan
+Dida (footballer, born 1973)|GK
+Christian Abbiati|GK
+Alessandro Nesta|CB
+Paolo Maldini|CB,LB
+Alessandro Costacurta|CB
+Kakha Kaladze|CB,LB
+Serginho (footballer, born 1971)|LM,LB
+Martin Laursen|CB
+Dario Šimić|RB,CB
+Roque Júnior|CB
+Thomas Helveg|RB
+Andrea Pirlo|DM
+Clarence Seedorf|CM
+Gennaro Gattuso|CM,DM
+Rui Costa|AM
+Massimo Ambrosini|CM,DM
+Andriy Shevchenko|ST
+Filippo Inzaghi|ST
+Rivaldo|AM,ST
+Jon Dahl Tomasson|ST,AM
+
+# Real Madrid CF
+Iker Casillas|GK
+César Sánchez|GK
+Roberto Carlos|LB
+Iván Helguera|CB,DM
+Fernando Hierro|CB
+Míchel Salgado|RB
+Francisco Pavón|CB
+Zinedine Zidane|AM,LM
+Luís Figo|RM
+Claude Makélélé|DM
+Guti|AM,ST
+Steve McManaman|CM,LM
+Esteban Cambiasso|DM,CM
+Santiago Solari|LM
+Flávio Conceição|CM
+Ronaldo (Brazilian footballer)|ST
+Raúl González|ST,AM
+Fernando Morientes|ST
+Javier Portillo (Spanish footballer)|ST
+
+# Valencia CF
+Santiago Cañizares|GK
+Roberto Ayala|CB
+Carlos Marchena|CB,DM
+Mauricio Pellegrino|CB
+Amedeo Carboni|LB
+Fábio Aurélio|LB,LW
+Curro Torres|RB
+Pablo Aimar|AM
+Rubén Baraja|CM,DM
+David Albelda|DM
+Vicente Rodríguez|LW
+Kily González|LW
+Miguel Ángel Angulo|RW,ST
+Francisco Rufete|RW
+John Carew|ST
+Mista (footballer)|ST
+Juan Sánchez (footballer, born 1972)|ST
+Salva Ballesta|ST

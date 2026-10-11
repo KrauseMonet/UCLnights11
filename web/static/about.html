@@ -14,7 +14,7 @@
 <meta property="og:image" content="https://uclnights11.vercel.app/static/brand/og-image.png">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preload" href="/static/fonts/Unbounded.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/static/style.css?v=f33b150845">
+<link rel="stylesheet" href="/static/style.css?v=10f8c0df87">
 </head>
 <body>
 <main class="sheet">
@@ -26,10 +26,11 @@ European Cup between 1994–95 and 2025–26, you take one player from each, and
 plays a tournament against the real sides of history.</p>
 
 <h2>The deck</h2>
-<p>There were 256 quarter-finalists in those 32 seasons. <b>243</b> of them are in the deck, with
-<b>4,654</b> players between them. Twelve of the rest have no squad list that can be read, and the
-<a href="/archive">archive</a> names them rather than leaving a quiet gap. The last, AC Milan 2011–12, has a
-list that can only be half read, so it is left out rather than half rated.</p>
+<p>There were 256 quarter-finalists in those 32 seasons. <b>242</b> of them are in the deck, with
+<b>4,643</b> players between them. Thirteen of the rest have no squad list that can be read, and the
+<a href="/archive">archive</a> names them rather than leaving a quiet gap. One more, Ajax 1995–96, can't
+field a side in any formation the game has, because this game can't yet say its players' roles with enough
+confidence to complete an eleven.</p>
 <p>Each squad is the one its club's season article on Wikipedia lists. Nothing is added from memory:
 if the article doesn't list a player, he isn't in the deck, however sure anyone is that he was there.</p>
 
@@ -38,6 +39,16 @@ if the article doesn't list a player, he isn't in the deck, however sure anyone 
 worked out from statistics, because no open source has the numbers to do that for thirty years of
 European football. Disagree with one? That's half the fun. <a href="/faq#memory">Memory mode</a> hides
 them altogether.</p>
+
+<h2>The positions</h2>
+<p>Every player holds up to four positions for that season, most-played first, and can only stand in a
+formation's place for one of them. From 2013–14 they are measured: every position he started at least
+once for that club that season, in Transfermarkt's match line-ups (as published, under CC0, by the
+<a href="https://github.com/dcaribou/transfermarkt-datasets">transfermarkt-datasets</a> project). Only starts
+count, because a substitute's position isn't recorded. Before 2013–14 no open source records a position
+for every match, so the positions are this game's judgement, like the ratings: the roles he played that
+season, without the one-off cameos a line-up would catch. Tested blind on recent squads, nine in
+ten of the positions written that way were ones the player really started in.</p>
 
 <h2>The matches</h2>
 <p>Every match is simulated from the two elevens. The engine's goal rates are the real home and away
@@ -48,11 +59,12 @@ within a point or two of the real ones.</p>
 <h2>Whose it is</h2>
 <p>An independent, non-commercial fan game. It is not affiliated with or endorsed by UEFA or any club.
 Club crests belong to their clubs and appear here as they would on a fan site. Squad lists come from
-Wikipedia under CC BY-SA; results from openfootball under CC0.</p>
+Wikipedia under CC BY-SA; positions from 2013–14 from Transfermarkt's line-ups via transfermarkt-datasets
+(CC0); results from openfootball under CC0.</p>
 <p>There are no ads and no tracking. The <a href="/privacy">privacy page</a> says exactly what is kept.</p>
 </article>
 </main>
-<script src="/static/common.js?v=3a1e2faed7"></script>
+<script src="/static/common.js?v=72ca8eb4f9"></script>
 <script src="/static/info.js?v=65b69941c8"></script>
 </body>
 </html>

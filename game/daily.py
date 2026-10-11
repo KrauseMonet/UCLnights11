@@ -70,14 +70,15 @@ def draft(deck: Deck, ch: Challenge, moves: list) -> Session:
 
 
 def best_pick_xi(deck: Deck, seed: int, formation: str) -> list[Card]:
-    """The calibration drafter: the best-rated player it can take, every deal."""
+    """The calibration drafter: the best-rated player it can take, every deal. Returns the
+    eleven placed in its slots, as it plays."""
     moves: list = []
     s = replay(deck, seed, formation, moves)
     while not s.complete:
         moves.append(Pick(max((i for i, c in enumerate(s.deal.cards) if why_not(c, s.formation, s.picks) is None),
                               key=lambda i: s.deal.cards[i].rating)))
         s = replay(deck, seed, formation, moves)
-    return s.picks
+    return s.xi
 
 
 def play(league: match.League, match_seed: int, xi: list[Card], opponent: ClubSeason) -> match.Result:

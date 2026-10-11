@@ -90,7 +90,7 @@ def play(deck: Deck, league: match.League, ch: rules.Challenge, moves: list, pur
     you = Side("YOU", "Your XI", "YOU", s.formation, s.picks, you=True)
     opp = club_side(deck.by_key[ch.opponent])
     day = date.fromisoformat(ch.day)
-    r = rules.play(league, seed_for(day, purpose), s.picks, deck.by_key[ch.opponent])
+    r = rules.play(league, seed_for(day, purpose), you.xi, deck.by_key[ch.opponent])
     fx = Fixture(STAGE, you, opp, r, ch.day)
     t = Tournament([you, opp], {}, {})
     t.fixtures = [fx]

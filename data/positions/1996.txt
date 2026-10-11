@@ -1,0 +1,77 @@
+# Atlético Madrid
+José Francisco Molina|GK
+Roberto Solozábal|CB
+Santi Denia|CB
+Toni Muñoz (footballer, born 1968)|LB,LM
+Juanma López (footballer)|RB,CB
+Delfí Geli|RB,LB
+Diego Simeone|CM,DM
+Milinko Pantić|AM,LM
+José Luis Caminero|AM,CM
+Juan Vizcaíno|DM,CM
+Radek Bejbl|DM,CB
+Roberto Fresnedoso|CM,RM
+Kiko (footballer, born 1972)|ST
+Juan Esnáider|ST
+Leonardo Biagini|ST
+
+# Borussia Dortmund
+Stefan Klos|GK
+Matthias Sammer|CB
+Jürgen Kohler|CB
+Stefan Reuter|RM,RB
+Júlio César (footballer, born 1963)|CB
+Wolfgang Feiersinger|CB
+Martin Kree|CB,LB
+Knut Reinhardt|LB,LM
+Andreas Möller|AM
+Paulo Sousa|CM,DM
+Paul Lambert|DM,CM
+Michael Zorc|CM,DM
+Jörg Heinrich|LM,LB
+Lars Ricken|AM,RM
+Steffen Freund|DM
+René Tretschok|CM
+Stéphane Chapuisat|ST
+Karl-Heinz Riedle|ST
+Heiko Herrlich|ST
+
+# Juventus FC
+Angelo Peruzzi|GK
+Ciro Ferrara|CB
+Paolo Montero|CB
+Moreno Torricelli|RB,CB
+Gianluca Pessotto|LB,RB
+Mark Iuliano|CB
+Sergio Porrini|RB,CB
+Dimas (footballer)|LB
+Zinedine Zidane|AM,CM,LM
+Didier Deschamps|DM
+Antonio Conte|CM
+Vladimir Jugović|CM,DM
+Angelo Di Livio|RM,LM
+Attilio Lombardo|RM
+Alessio Tacchinardi|CM,DM
+Alessandro Del Piero|LW,ST
+Christian Vieri|ST
+Alen Bokšić|ST
+Michele Padovano|ST
+Nicola Amoruso|ST
+
+# Manchester United F.C.
+Peter Schmeichel|GK
+Denis Irwin|LB,RB
+Gary Pallister|CB
+Gary Neville|RB,CB
+Ronny Johnsen|CB,DM
+Phil Neville|LB,RB
+Roy Keane|CM
+Ryan Giggs|LM
+David Beckham|RM,CM
+Paul Scholes|ST,CM,AM
+Karel Poborský|RM
+Nicky Butt|CM
+Jordi Cruyff|LM,RM
+Brian McClair|CM
+Ole Gunnar Solskjær|ST
+Andy Cole|ST

@@ -1,17 +1,17 @@
 # AFC Ajax
 André Onana|85
 Matthijs de Ligt|89
-Daley Blind|83|DF
+Daley Blind|83
 Joël Veltman|79
-Noussair Mazraoui|82|DF
+Noussair Mazraoui|82
 Nicolás Tagliafico|84
 Lisandro Magallán|74
 Frenkie de Jong|91
 Donny van de Beek|87
 Lasse Schöne|82
 Hakim Ziyech|88
-Dušan Tadić|90|FW
-David Neres|84|FW
+Dušan Tadić|90
+David Neres|84
 Kasper Dolberg|78
 Klaas-Jan Huntelaar|78
 
@@ -36,7 +36,7 @@ Paulo Dybala|84
 Mario Mandžukić|84
 Douglas Costa|81
 Federico Bernardeschi|80
-Juan Cuadrado|80|MF
+Juan Cuadrado|80
 Moise Kean|76
 
 # Liverpool F.C.
@@ -97,7 +97,7 @@ Victor Wanyama|77
 Mousa Dembélé (Belgian footballer)|82
 Christian Eriksen|88
 Dele Alli|84
-Erik Lamela|79|MF
+Erik Lamela|79
 Lucas Moura|83
 Son Heung-min|88
 Harry Kane|90
@@ -110,7 +110,7 @@ John Stones|83
 Aymeric Laporte|88
 Vincent Kompany|82
 Nicolás Otamendi|80
-Oleksandr Zinchenko (footballer)|78|DF
+Oleksandr Zinchenko (footballer)|78
 Benjamin Mendy|78
 Danilo (footballer, born July 1991)|76
 Fernandinho (footballer, born May 1985)|86
@@ -162,7 +162,7 @@ Sergio Busquets|86
 Ivan Rakitić|86
 Arthur Melo|83
 Arturo Vidal|83
-Philippe Coutinho|82|MF
+Philippe Coutinho|82
 Carles Aleñá|74
 Lionel Messi|99
 Luis Suárez (Uruguayan footballer)|88

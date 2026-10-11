@@ -14,7 +14,7 @@ Jorginho (footballer, born December 1991)|84
 Mateo Kovačić|85
 Ruben Loftus-Cheek|79
 Saúl (footballer, born 1994)|74
-Mason Mount|86|MF
+Mason Mount|86
 Kai Havertz|84
 Hakim Ziyech|80
 Christian Pulisic|80
@@ -30,7 +30,7 @@ David Alaba|86
 Nacho (footballer, born 1990)|80
 Jesús Vallejo|72
 Dani Carvajal|83
-Lucas Vázquez|79|DF
+Lucas Vázquez|79
 Ferland Mendy|83
 Marcelo (footballer, born 1988)|76
 Luka Modrić|91
@@ -47,6 +47,7 @@ Eden Hazard|75
 Gareth Bale|75
 
 # Manchester City F.C.
+Ederson (footballer, born 1993)|88
 Zack Steffen|74
 Rúben Dias|89
 Aymeric Laporte|87
@@ -55,6 +56,9 @@ Nathan Aké|80
 Kyle Walker|85
 João Cancelo|90
 Oleksandr Zinchenko (footballer)|79
+Rodri|88
+İlkay Gündoğan|86
+Fernandinho (footballer, born May 1985)|79
 Kevin De Bruyne|93
 Bernardo Silva|90
 Phil Foden|87
@@ -80,7 +84,7 @@ Geoffrey Kondogbia|82
 Marcos Llorente|85
 Thomas Lemar|79
 Héctor Herrera|76
-Yannick Carrasco|84|MF
+Yannick Carrasco|84
 Antoine Griezmann|84
 João Félix|84
 Luis Suárez (Uruguayan footballer)|84
@@ -102,7 +106,7 @@ Dani Parejo|85
 Francis Coquelin|79
 Giovani Lo Celso|80
 Manu Trigueros|78
-Yéremy Pino|80|FW
+Yéremy Pino|80
 Samuel Chukwueze|80
 Arnaut Danjuma|84
 Gerard Moreno|84
@@ -123,7 +127,7 @@ Leon Goretzka|86
 Marcel Sabitzer|78
 Corentin Tolisso|77
 Jamal Musiala|83
-Thomas Müller|89|MF
+Thomas Müller|89
 Leroy Sané|85
 Kingsley Coman|84
 Serge Gnabry|84
@@ -145,7 +149,7 @@ Adel Taarabt|78
 Soualiho Meïté|76
 Pizzi (Portuguese footballer)|77
 Rafa Silva|83
-Everton Soares|79|FW
+Everton Soares|79
 Darwin Núñez|86
 Roman Yaremchuk|79
 Haris Seferovic|77
@@ -164,7 +168,7 @@ Kostas Tsimikas|78
 Fabinho (footballer, born 1993)|87
 Thiago Alcântara|87
 Jordan Henderson|84
-Naby Keïta|80|MF
+Naby Keïta|80
 James Milner|79
 Curtis Jones (footballer, born 2001)|77
 Mohamed Salah|93

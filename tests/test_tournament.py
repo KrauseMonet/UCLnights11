@@ -73,8 +73,11 @@ def test_best_xi_fills_a_formation_from_rated_players_only():
     deck = load_deck()
     for cs in deck.club_seasons:
         f, xi = best_xi(cs)
-        assert Counter(c.pos for c in xi) == Counter(f.lines)
-        assert all(c in cs.cards for c in xi)
+        assert sorted(c.slot for c in xi) == sorted(f.slots)
+        assert all(c.slot in c.positions for c in xi)
+        assert Counter(c.pos for c in xi) == Counter(f.lines)          # each carries his slot's line
+        ids = {c.id for c in cs.cards}
+        assert all(c.id in ids for c in xi) and len({c.id for c in xi}) == 11
 
 
 def test_scorers_are_counted_per_side_not_per_person(cup):

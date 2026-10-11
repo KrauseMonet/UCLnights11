@@ -1,0 +1,93 @@
+# AFC Ajax
+Edwin van der Sar|GK
+Frank de Boer|CB,LB
+Danny Blind|CB
+Michael Reiziger|RB,CB
+Winston Bogarde|LB,CB
+Márcio Santos|CB
+Edgar Davids|CM,LM
+Finidi George|RW
+Marc Overmars|LW
+Ronald de Boer|AM,RW,CM
+Kiki Musampa|LW,RW
+Peter Hoekstra (footballer)|LW,RW
+Jari Litmanen|AM,ST
+Patrick Kluivert|ST
+Nwankwo Kanu|ST
+
+# Borussia Dortmund
+Stefan Klos|GK
+Matthias Sammer|CB,DM
+Jürgen Kohler|CB
+Stefan Reuter|RM,RB,CB
+Júlio César (footballer, born 1963)|CB
+Jörg Heinrich|LM,LB
+Martin Kree|CB,LB
+Andreas Möller|AM,CM
+Michael Zorc|CM,DM
+Patrik Berger|LM,AM
+Steffen Freund|DM,CM
+Lars Ricken|AM,ST
+Knut Reinhardt|LB,LM
+René Tretschok|CM,DM
+Stéphane Chapuisat|ST
+Karl-Heinz Riedle|ST
+Heiko Herrlich|ST
+
+# Juventus FC
+Angelo Peruzzi|GK
+Ciro Ferrara|CB
+Moreno Torricelli|RB,CB
+Pietro Vierchowod|CB
+Gianluca Pessotto|LB,RB,LM
+Massimo Carrera|CB
+Sergio Porrini|CB,RB
+Didier Deschamps|DM,CM
+Paulo Sousa|CM,DM
+Antonio Conte|CM,RM
+Vladimir Jugović|CM,AM
+Angelo Di Livio|RM,RW,LM
+Attilio Lombardo|RW,RM
+Giancarlo Marocchi|CM,DM
+Alessandro Del Piero|LW,ST
+Gianluca Vialli|ST
+Fabrizio Ravanelli|ST,RW,LW
+Michele Padovano|ST
+
+# Panathinaikos F.C.
+Józef Wandzik|GK
+Antonios Nikopolidis|GK
+Stratos Apostolakis|RB,LB
+Marinos Ouzounidis|CB
+Giannis Kalitzakis|CB
+Thanasis Kolitsidakis|CB
+Giorgos Kapouranis|LB
+Juan José Borrelli|AM
+Georgios Donis|RM,RW
+Georgios Georgiadis (footballer, born 1972)|RM,AM
+Nikos Nioplias|CM,DM
+Spyros Marangos|CM,LM
+Angelos Basinas|CM,DM
+Krzysztof Warzycha|ST
+Alexis Alexoudis|ST
+Louis Christodoulou|LM,ST
+
+# Real Madrid CF
+Francisco Buyo|GK
+Santiago Cañizares|GK
+Fernando Hierro|CB,DM
+Manolo Sanchís|CB
+Rafael Alkorta|CB
+Quique Sánchez Flores|RB
+Chendo|RB
+Mikel Lasa|LB
+Michael Laudrup|AM,ST
+Fernando Redondo|DM
+Luis Enrique|RM,CM
+Míchel (footballer, born 1963)|RM,CM
+José Amavisca|LM
+Luis Milla (footballer, born 1966)|CM,DM
+Iván Zamorano|ST
+Raúl González|ST,AM
+Juan Esnáider|ST
+Freddy Rincón|CM,AM

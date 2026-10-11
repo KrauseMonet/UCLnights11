@@ -1,0 +1,153 @@
+# FC Bayern Munich
+Oliver Kahn|GK
+Lothar Matthäus|CB
+Bixente Lizarazu|LB
+Markus Babbel|RB,CB
+Samuel Kuffour|CB
+Thomas Linke|CB
+Michael Tarnat|LB,LM
+Thomas Helmer|CB
+Stefan Effenberg|CM,AM
+Mario Basler|RM
+Jens Jeremies|DM
+Mehmet Scholl|AM,LM
+Thorsten Fink|DM,CM
+Hasan Salihamidžić|RM,LM
+Thomas Strunz|RM,RB
+Giovane Élber|ST
+Carsten Jancker|ST
+Alexander Zickler|ST,LM
+Ali Daei|ST
+
+# FC Dynamo Kyiv
+Oleksandr Shovkovskyi|GK
+Kakha Kaladze|CB,LB
+Oleh Luzhnyi|RB
+Oleksandr Holovko|CB
+Vladyslav Vashchuk|CB,LB
+Serhiy Fedorov|CB
+Alyaksandr Khatskevich|LM,CM
+Vitaliy Kosovskyi|RM
+Andriy Husin|CM,DM
+Valyantsin Byalkevich|AM,CM
+Dmytro Mykhaylenko|CM
+Andriy Shevchenko|ST
+Serhiy Rebrov|ST
+Aleksei Gerasimenko|ST
+
+# Inter Milan
+Gianluca Pagliuca|GK
+Javier Zanetti|RB,RM
+Giuseppe Bergomi|CB
+Taribo West|CB
+Francesco Colonnese|CB,LB
+Fabio Galante|CB
+Salvatore Fresi|CB
+Youri Djorkaeff|AM,ST
+Diego Simeone|CM
+Aron Winter|CM,RM
+Francesco Moriero|RM
+Zé Elias|DM
+Paulo Sousa|CM
+Benoît Cauet|CM,LM
+Ronaldo (Brazilian footballer)|ST
+Roberto Baggio|ST,AM
+Iván Zamorano|ST
+Nicola Ventola|ST
+Nwankwo Kanu|ST
+
+# Juventus FC
+Angelo Peruzzi|GK
+Ciro Ferrara|CB
+Paolo Montero|CB
+Mark Iuliano|CB
+Gianluca Pessotto|LB,RB
+Igor Tudor|CB
+Alessandro Birindelli|RB
+Zoran Mirković|RB,LB
+Zinedine Zidane|AM
+Edgar Davids|CM
+Didier Deschamps|DM
+Antonio Conte|CM,RM
+Angelo Di Livio|RM,LM
+Alessio Tacchinardi|CM,DM
+Jocelyn Blanchard|CM
+Alessandro Del Piero|ST
+Filippo Inzaghi|ST
+Thierry Henry|LW,ST,LM
+Daniel Fonseca|ST
+Juan Esnáider|ST
+
+# 1. FC Kaiserslautern
+Andreas Reinke|GK
+Harry Koch (German footballer)|CB
+Hany Ramzy|CB
+Michael Schjønberg|CB
+Axel Roos|LB
+Samir Kamouna|CB
+Ciriaco Sforza|CM,DM
+Michael Ballack|CM
+Ratinho (footballer, born 1971)|RM
+Marian Hristov|AM,CM
+Martin Wagner (footballer, born 1968)|LM,LB
+Andreas Buck|RM
+Olaf Marschall|ST
+Uwe Rösler|ST
+Jürgen Rische|ST
+
+# Manchester United F.C.
+Peter Schmeichel|GK
+Jaap Stam|CB
+Gary Neville|RB
+Denis Irwin|LB
+Ronny Johnsen|CB,DM
+Henning Berg|CB
+Phil Neville|LB,RB
+Wes Brown|CB,RB
+David Beckham|RM,CM
+Roy Keane|CM
+Ryan Giggs|LM
+Paul Scholes|CM,AM
+Nicky Butt|CM
+Jesper Blomqvist|LM
+Dwight Yorke|ST
+Andy Cole|ST
+Ole Gunnar Solskjær|ST
+Teddy Sheringham|ST
+
+# Olympiacos F.C.
+Dimitrios Eleftheropoulos|GK
+Grigoris Georgatos|LB,LM
+Kyriakos Karataidis|CB
+Georgios Amanatidis|CB,RB
+Georgios Anatolakis|CB
+Paraskevas Antzas|CB
+Predrag Đorđević|LM,AM
+Stelios Giannakopoulos|RM,AM
+Andreas Niniadis|RM
+Vassilis Karapialis|CM
+Ilias Poursanidis|RB,CM
+Siniša Gogić|ST
+Luciano de Souza|ST
+Alexis Alexandris|ST
+Ilija Ivić|ST
+
+# Real Madrid CF
+Bodo Illgner|GK
+Roberto Carlos|LB
+Fernando Hierro|CB
+Christian Panucci|RB
+Manolo Sanchís|CB
+Iván Campo|CB
+Robert Jarni|LB,LM
+Aitor Karanka|CB
+Fernando Redondo|DM
+Clarence Seedorf|CM,RM
+Christian Karembeu|RM,CM
+Guti|AM,CM
+Jaime Sánchez (footballer, born 1973)|CM
+Raúl González|ST
+Davor Šuker|ST
+Fernando Morientes|ST
+Predrag Mijatović|ST
+Sávio (footballer, born 1974)|LM,LW

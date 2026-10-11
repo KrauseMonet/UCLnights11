@@ -1,0 +1,8 @@
+// Declared fallbacks in a measured season: rated players with no Transfermarkt starts
+// for the club that season (etl.positions). The build refuses a declared line for anyone
+// who has measured starts.
+# FC Bayern Munich
+Sven Ulreich|GK
+
+# FC Porto
+Luis Díaz|LW,LM

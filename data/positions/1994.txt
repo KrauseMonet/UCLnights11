@@ -1,0 +1,110 @@
+# AFC Ajax
+Edwin van der Sar|GK
+Frank de Boer|CB,LB
+Danny Blind|CB
+Michael Reiziger|RB,CB
+Winston Bogarde|LB,CB
+Sonny Silooy|CB,LB,RB
+Frank Rijkaard|DM,CB
+Clarence Seedorf|CM,RM
+Edgar Davids|CM,LM
+Ronald de Boer|AM,CM,RW,ST
+Kiki Musampa|LW
+Jari Litmanen|AM,ST
+Marc Overmars|LW
+Finidi George|RW
+Patrick Kluivert|ST
+Nwankwo Kanu|ST
+Peter van Vossen|ST,LW,RW
+
+# FC Barcelona
+Carles Busquets|GK
+Ronald Koeman|CB
+Albert Ferrer|RB
+Miguel Ángel Nadal|CB,DM
+Abelardo Fernández|CB,LB
+Sergi Barjuán|LB
+Pep Guardiola|DM,CM
+Gheorghe Hagi|AM,RW
+Guillermo Amor|CM,RM,DM
+José Mari Bakero|AM,CM,ST
+Eusebio (Spanish footballer)|CM,RM
+Iván Iglesias|RW,LW
+Hristo Stoichkov|LW,ST
+Romário|ST
+Txiki Begiristain|LW,LM
+Igor Korneev|RW,AM
+
+# FC Bayern Munich
+Oliver Kahn|GK
+Thomas Helmer|CB
+Jorginho (footballer, born 1964)|RB,RM
+Markus Babbel|CB,RB
+Oliver Kreuzer|CB
+Samuel Kuffour|CB
+Lothar Matthäus|CB,DM
+Mehmet Scholl|AM,LM,CM
+Christian Ziege|LB,LM
+Alain Sutter|LM,CM
+Christian Nerlinger|CM,DM
+Dietmar Hamann|CM,DM
+Marcel Witeczek|RM,RB
+Markus Schupp|CM,DM
+Jean-Pierre Papin|ST
+Emil Kostadinov|ST,RW
+Alexander Zickler|ST,LW,LM
+
+# S.L. Benfica
+Michel Preud'homme|GK
+Carlos Mozer|CB
+Hélder (footballer, born 1971)|CB
+Abel Xavier|RB,CB
+Dimas (footballer)|LB
+Paulo Madeira|CB
+William (footballer, born 1967)|CB
+João Pinto|AM,ST,RW
+Paulo Bento|DM,CM
+Isaías (footballer, born 1963)|AM,RM,LM
+Vítor Paneira|RM,CM
+José Tavares (footballer)|CM,DM
+Claudio Caniggia|ST,RW
+Edílson (footballer, born 1971)|ST
+César Brito|ST
+
+# AC Milan
+Sebastiano Rossi|GK
+Paolo Maldini|LB,CB
+Franco Baresi|CB
+Alessandro Costacurta|CB
+Mauro Tassotti|RB
+Christian Panucci|RB,LB
+Filippo Galli|CB
+Marcel Desailly|DM,CB
+Demetrio Albertini|CM,DM
+Roberto Donadoni|RM,LM
+Zvonimir Boban|CM,AM,LM
+Gianluigi Lentini|LM,RM
+Stefano Eranio|RM,RB,CM
+Dejan Savićević|AM,ST
+Ruud Gullit|ST,AM
+Marco Simone|ST
+Daniele Massaro|ST
+Paolo Di Canio|RM,ST
+
+# Paris Saint-Germain FC
+Bernard Lama|GK
+Ricardo Gomes|CB
+Alain Roche (footballer)|CB
+Patrick Colleter|LB
+José Cobos (footballer)|CB
+Antoine Kombouaré|CB
+Francis Llacer|RB,DM
+Raí|AM,CM
+Paul Le Guen|DM
+Valdo (footballer, born 1964)|CM,AM,LM
+Vincent Guérin|CM,DM
+Daniel Bravo|LM,RM
+George Weah|ST
+David Ginola|LW,LM
+Patrick Mboma|ST
+Pascal Nouma|ST

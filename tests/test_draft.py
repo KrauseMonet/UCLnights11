@@ -22,10 +22,39 @@ def draft_to_the_end(seed, code="433"):
 
 
 @pytest.mark.parametrize("code", list(FORMATIONS))
-def test_every_formation_completes_with_its_own_line_counts(code):
+def test_every_formation_completes_with_every_man_in_a_slot_he_holds(code):
     s, _ = draft_to_the_end(11, code)
-    counts = {p: sum(1 for c in s.picks if c.pos == p) for p in ("GK", "DF", "MF", "FW")}
-    assert counts == FORMATIONS[code].lines
+    xi, f = s.xi, FORMATIONS[code]
+    assert sorted(c.slot for c in xi) == sorted(f.slots)
+    assert all(c.slot in c.positions for c in xi)
+    assert {ln: sum(1 for c in xi if c.pos == ln) for ln in f.lines} == f.lines   # slot lines
+
+
+def test_a_pick_moves_an_earlier_one_rather_than_being_refused():
+    """Matching, not first come first served: a right-back/midfielder taken first is moved
+    into midfield when a pure right-back arrives, instead of the right-back being refused."""
+    from dataclasses import replace
+    deck = load_deck()
+    s = replay(deck, 1, "433", [])
+    base = next(c for cs in deck.club_seasons for c in cs.cards)
+    kimmich = replace(base, id="K", positions=("RB", "DM"))
+    back = replace(base, id="B", positions=("RB",))
+    assert why_not(back, s.formation, [kimmich]) is None
+    from game.positions import arrange
+    placed = {c.id: c.slot for c in arrange(s.formation.slots, [kimmich, back])}
+    assert placed == {"K": "DM", "B": "RB"}
+    # ...and once both RB and DM are taken, a third man who plays only those is refused.
+    third = replace(base, id="T", positions=("DM", "RB"))
+    assert why_not(third, s.formation, [kimmich, back]) == "no DM/RB place left"
+
+
+def test_a_position_the_formation_lacks_is_refused_by_name():
+    from dataclasses import replace
+    deck = load_deck()
+    s = replay(deck, 1, "442", [])
+    base = next(c for cs in deck.club_seasons for c in cs.cards)
+    winger = replace(base, id="W", positions=("LW", "RW"))
+    assert why_not(winger, s.formation, []) == "no LW/RW in a 4-4-2"
 
 
 def test_replay_is_deterministic():
@@ -68,7 +97,8 @@ def test_an_untakeable_pick_is_refused():
             # Deal two, find any goalkeeper offered after the first was taken.
             moves = [Pick(gks[0])]
             while True:
-                gk_now = [i for i, c in enumerate(s2.deal.cards) if c.pos == "GK"]
+                taken = {c.id for c in s2.picks}   # the same man again is a different refusal
+                gk_now = [i for i, c in enumerate(s2.deal.cards) if c.pos == "GK" and c.id not in taken]
                 if gk_now:
                     with pytest.raises(IllegalMove, match="goalkeeper taken"):
                         replay(deck, seed, "433", moves + [Pick(gk_now[0])])
@@ -95,14 +125,18 @@ def _tiny_deck():
     guarantee must redraw past it. On the real deck that almost never happens by
     chance, which is why this is built rather than drafted.
     """
-    def p(i, pos):
-        return {"id": f"Q{i}", "name": f"P{i}", "title": f"P{i}", "pos": pos, "nation": None, "rating": 80}
-    a = [p(0, "GK")] + [p(i, "DF") for i in range(1, 5)] + [p(i, "MF") for i in range(5, 8)] \
-        + [p(i, "FW") for i in range(8, 11)]
-    b = [p(i, "GK") for i in range(20, 25)]
+    from game.formations import FORMATIONS
+    from game.positions import LINE
+
+    def p(i, slot):
+        return {"id": f"Q{i}", "name": f"P{i}", "title": f"P{i}", "pos": LINE[slot], "positions": [slot],
+                "source": "declared", "nation": None, "rating": 80}
+    a = [p(i, slot) for i, slot in enumerate(FORMATIONS["433"].slots)]
+    b = [p(i, "GK") for i in range(20, 31)]
     cs = lambda key, players: {"key": key, "season": 2000, "label": "2000–01", "club": key,
                                "name": key, "short": key, "primary": "#000", "secondary": "#fff",
                                "crest": key, "team": "#000", "deep": "#000", "ink": "#fff",
+                               "best": {"formation": "433", "xi": [[q["id"], q["positions"][0]] for q in players[:11]]},
                                "players": players}
     return build_deck({"club_seasons": [cs("A", a), cs("B", b)]})
 

@@ -17,7 +17,7 @@ Fabián Ruiz|84
 Warren Zaïre-Emery|80
 Senny Mayulu|76
 Lee Kang-in|79
-Ousmane Dembélé|92|FW
+Ousmane Dembélé|92
 Khvicha Kvaratskhelia|89
 Désiré Doué|86
 Bradley Barcola|83
@@ -35,7 +35,7 @@ Jeremie Frimpong|80
 Conor Bradley|78
 Ryan Gravenberch|87
 Alexis Mac Allister|86
-Dominik Szoboszlai|86|MF
+Dominik Szoboszlai|86
 Florian Wirtz|86
 Curtis Jones (footballer, born 2001)|79
 Wataru Endo|74
@@ -77,7 +77,7 @@ Kim Min-jae (footballer)|80
 Hiroki Itō (footballer, born 1999)|78
 Alphonso Davies|80
 Josip Stanišić|81
-Konrad Laimer|82|DF
+Konrad Laimer|82
 Sacha Boey|74
 Joshua Kimmich|90
 Aleksandar Pavlović (footballer)|85
@@ -134,7 +134,7 @@ Marcos Llorente|83
 Thiago Almada|80
 Giuliano Simeone|82
 Nico González (footballer, born 1998)|79
-Antoine Griezmann|83|FW
+Antoine Griezmann|83
 Julián Alvarez|89
 Alexander Sørloth|82
 Ademola Lookman|83
@@ -148,7 +148,7 @@ Zeno Debast|80
 Eduardo Quaresma|78
 Iván Fresneda|76
 Georgios Vagiannidis|77
-Maximiliano Araújo|80|DF
+Maximiliano Araújo|80
 Matheus Reis|77
 Morten Hjulmand|85
 Hidemasa Morita|80

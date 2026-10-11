@@ -12,7 +12,7 @@ Declan Rice|89
 Martin Ødegaard|89
 Thomas Partey|80
 Jorginho (footballer, born December 1991)|80
-Kai Havertz|84|FW
+Kai Havertz|84
 Bukayo Saka|89
 Gabriel Martinelli|83
 Leandro Trossard|83
@@ -29,12 +29,12 @@ Eric Dier|80
 Alphonso Davies|82
 Noussair Mazraoui|78
 Raphaël Guerreiro|80
-Joshua Kimmich|87|DF
+Joshua Kimmich|87
 Aleksandar Pavlović (footballer)|79
 Leon Goretzka|82
 Konrad Laimer|80
 Jamal Musiala|89
-Thomas Müller|80|MF
+Thomas Müller|80
 Leroy Sané|86
 Serge Gnabry|80
 Kingsley Coman|82
@@ -54,8 +54,8 @@ Rodrigo De Paul|84
 Koke (footballer, born 1992)|83
 Marcos Llorente|84
 Saúl (footballer, born 1994)|79
-Samuel Lino|81|MF
-Rodrigo Riquelme (footballer, born 2000)|79|MF
+Samuel Lino|81
+Rodrigo Riquelme (footballer, born 2000)|79
 Pablo Barrios (footballer)|78
 Antoine Griezmann|90
 Álvaro Morata|84
@@ -77,10 +77,10 @@ Felix Nmecha|78
 Salih Özcan|76
 Julian Brandt|84
 Marco Reus|80
-Jadon Sancho|82|FW
+Jadon Sancho|82
 Karim Adeyemi|80
 Donyell Malen|81
-Jamie Gittens|74|FW
+Jamie Gittens|74
 Niclas Füllkrug|83
 Sébastien Haller|76
 
@@ -123,7 +123,7 @@ Bernardo Silva|87
 Mateo Kovačić|80
 Matheus Nunes|77
 Phil Foden|92
-Jack Grealish|78|MF
+Jack Grealish|78
 Jérémy Doku|81
 Erling Haaland|92
 Julián Alvarez|85
@@ -155,7 +155,7 @@ Marc-André ter Stegen|86
 Iñaki Peña|77
 Ronald Araújo|85
 Jules Koundé|85
-Andreas Christensen|83|MF
+Andreas Christensen|83
 Iñigo Martínez|82
 João Cancelo|83
 Alejandro Balde|79

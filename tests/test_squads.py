@@ -102,3 +102,32 @@ def test_a_redirect_to_the_club_article_is_not_a_season():
     assert is_season_article("1996–97 AFC Ajax season", "1996–97")
     assert not is_season_article("AFC Ajax", "1996–97")
     assert not is_season_article("1997–98 AFC Ajax season", "1996–97")
+
+
+def test_a_sortname_with_an_empty_part_stays_whole_in_a_statistics_table():
+    # Manchester City 2021-22's statistics table: splitting cells on every "||" cut these
+    # templates in two and hid Rodri, Fernandinho, Ederson and Gündoğan (C36).
+    text = """==Statistics==
+===Overall===
+{| class="wikitable"
+|-
+!No.!!Pos.!!Name
+|-
+|16||{{flagicon|ESP}} {{sortname||Rodri|Rodri (footballer, born 1996)}}||MF|| 33 || 7
+|-
+|8||{{flagicon|GER}} {{sortname|İlkay|Gündoğan||Gundogan, Ilkay}}||MF|| 22 || 8
+|-
+|17||{{flagicon|BEL}} {{sortname|Kevin|De Bruyne}}||MF|| 30 || 15
+|}"""
+    got = links(text)
+    assert set(got) == {"Rodri (footballer, born 1996)", "İlkay Gündoğan", "Kevin De Bruyne"}
+    assert got["Rodri (footballer, born 1996)"].position == "MF"
+
+
+def test_fb_siassists_and_efs_player4_rows_are_read():
+    text = """==First-team squad==
+{{fb siassists player|bg=y|p={{sortname||Fernandinho|Fernandinho (footballer, born May 1985)}}|nb=BRA|n=25|pos=MF|cap=y}}
+{{Efs player4|no=4|nat=ESP|pos=DF|name=[[Sergio Ramos]]}}"""
+    got = links(text)
+    assert got["Fernandinho (footballer, born May 1985)"].nation == "BRA"
+    assert got["Sergio Ramos"].position == "DF"

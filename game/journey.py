@@ -144,7 +144,7 @@ class Journey:
     side: Side
     reached: str
     matches: list[MatchLine]
-    players: list[PlayerTotals]      # the eleven, back to front
+    players: list[PlayerTotals]      # the eleven, back to front, then substitutes who played
     goals_for: int
     goals_against: int
     possession: float | None         # mean share over the matches
@@ -189,6 +189,8 @@ def journey(t: Tournament, side: Side, totals: dict | None = None) -> Journey:
     ga = sum(m.fixture.result.away_goals if m.side_index == 0 else m.fixture.result.home_goals for m in lines)
     players = sorted((totals[(id(side), c.id)] for c in side.xi if (id(side), c.id) in totals),
                      key=lambda p: (LINE_ORDER[p.card.pos], -p.card.rating))
+    # Engine 2's substitutes, in bench order, if they came on at all (C40).
+    players += [totals[(id(side), c.id)] for c in side.bench if (id(side), c.id) in totals]
     return Journey(
         side=side, reached=t.reached(side), matches=lines, players=players,
         goals_for=gf, goals_against=ga,

@@ -19,18 +19,25 @@ function setSession(s, fresh = true) {
 }
 
 function render(fresh) {
+  // After the eleven, a bench draft (C40) takes three more for the bench; an eleven-pick
+  // draft from an older link has bench_size 0 and looks as it always did.
+  const forBench = S.picks.length >= 11;
   $("formname").textContent = S.formation.label;
   $("pickno").textContent = S.picks.length + 1;
-  $("bar").style.width = `${(S.picks.length / 11) * 100}%`;
+  $("picktotal").textContent = S.total;
+  $("bar").style.width = `${(S.picks.length / S.total) * 100}%`;
   $("memtag").hidden = !S.memory;
   lineChips($("lines"), S.formation, S.xi);
   renderDeal($("deal"), S.deal, {
     rerollsLeft: S.rerolls_left, fresh,
+    heading: forBench ? `For your bench · ${S.picks.length - 10} of ${S.bench_size}` : undefined,
+    takeLabel: forBench ? "Bench" : undefined,
     onTake: (i) => move("pick", { index: i }), onReroll: () => move("reroll"),
   });
-  renderPitch($("pitch"), S.formation.slots, S.xi, S.picks.length ? S.picks[S.picks.length - 1].id : null);
-  $("xisub").textContent = `${S.picks.length} / 11`;
-  xiFoot($("xifoot"), S);
+  renderPitch($("pitch"), S.formation.slots, S.xi, S.picks.length && !forBench ? S.picks[S.picks.length - 1].id : null);
+  renderBench($("bench"), S.bench, S.bench_size);
+  $("xisub").textContent = S.bench_size ? `${S.xi.length} / 11 · bench ${S.bench.length} / ${S.bench_size}` : `${S.picks.length} / 11`;
+  xiFoot($("xifoot"), { ...S, picks: S.picks.slice(0, 11) });
 }
 
 async function move(kind, body) {

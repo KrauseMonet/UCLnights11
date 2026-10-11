@@ -15,13 +15,14 @@ def test_meta_describes_the_deck():
 
 def test_a_draft_runs_to_a_tournament():
     s = client.post("/api/draft", json={"formation": "442", "seed": 99}).json()
-    assert s["state"] == "99-442"
+    assert s["state"] == "b99-442" and s["total"] == 14       # every new draft has a bench (C40)
     while not s["complete"]:
         i = next(i for i, c in enumerate(s["deal"]["cards"]) if c["takeable"])
         s = client.post(f"/api/draft/{s['state']}/pick", json={"index": i}).json()
-    assert len(s["picks"]) == 11
+    assert len(s["picks"]) == 14 and len(s["xi"]) == 11 and len(s["bench"]) == 3
     t = client.get(f"/api/tournament/{s['state']}").json()
     assert t["you"]["formation"] == "4-4-2"
+    assert [c["id"] for c in t["you"]["bench"]] == [c["id"] for c in s["bench"]]
     assert len(t["your_matches"]) >= 6
     assert t["reached"] in {"Group stage", "Round of 16", "Quarter-finals", "Semi-finals",
                             "Runners-up", "Champions"}
@@ -153,3 +154,85 @@ def test_your_matches_carry_both_elevens_in_their_formations():
         assert mine["formation"] == "5-3-2"
         assert {c["name"] for c in mine["xi"]} == {c["name"] for c in t["you"]["xi"]}
     assert all("lineups" not in leg for r in t["knockout"] for tie in r["ties"] for leg in tie["legs"])
+
+
+# -- the bench (C40) --------------------------------------------------------
+
+def _finish(state, picks=None):
+    s = client.get(f"/api/draft/{state}").json()
+    while not s["complete"] and (picks is None or len(s["picks"]) < picks):
+        i = next(c["i"] for c in s["deal"]["cards"] if c["takeable"])
+        s = client.post(f"/api/draft/{s['state']}/pick", json={"index": i}).json()
+    return s
+
+
+def test_an_eleven_pick_link_still_drafts_eleven_and_plays_engine_1():
+    from game.deck import load_deck
+    from game.draft import decode, replay
+    from game.tournament import Side, play_tournament
+    from web.app import league
+    s = _finish("31-433")
+    assert s["state"].startswith("31-433-") and s["total"] == 11 and len(s["picks"]) == 11 and not s["bench"]
+    t = client.get(f"/api/tournament/{s['state']}").json()
+    seed, f, moves = decode(s["state"])
+    d = replay(load_deck(), seed, f, moves)
+    one = play_tournament(load_deck(), league(), seed, Side("YOU", "Your XI", "YOU", d.formation, d.picks, you=True))
+    mine = [x for x in one.fixtures if x.home.you or x.away.you]
+    assert [(m["hg"], m["ag"]) for m in t["your_matches"]] == [(x.result.home_goals, x.result.away_goals) for x in mine]
+    assert all(m["subs"] == [] for m in t["your_matches"])
+
+
+def test_the_bench_is_picked_after_the_eleven_and_holds_no_keeper():
+    s = _finish("b31-433", picks=11)
+    assert not s["complete"] and len(s["xi"]) == 11 and s["deal"] is not None
+    cards = s["deal"]["cards"]
+    for c in cards:
+        if c["positions"] == ["GK"]:
+            assert not c["takeable"] and c["reason"] == "keepers stay on"
+    s = _finish(s["state"])
+    assert s["complete"] and len(s["bench"]) == 3 and all("GK" != c["positions"][0] or len(c["positions"]) > 1 for c in s["bench"])
+    assert client.post(f"/api/draft/{s['state']}/pick", json={"index": 0}).status_code == 400
+
+
+def test_a_bench_draft_plays_engine_2_and_the_journey_counts_its_substitutes():
+    s = _finish("b31-433")
+    t = client.get(f"/api/tournament/{s['state']}").json()
+    bench = {c["name"] for c in s["bench"]}
+    names = {p["name"] for p in t["journey"]["players"]}
+    assert len(t["journey"]["players"]) >= 11
+    assert names - {c["name"] for c in s["xi"]} <= bench
+    assert names & bench, "a bench as good as this one comes on somewhere in a tournament"
+    assert {p["name"] for p in t["journey"]["players"] if p["sub"]} == names & bench
+
+
+def test_your_best_rated_substitute_comes_on_first():
+    # The bench is picked in any order; the automatic plan brings it on best first, as a
+    # club does. Seed 31's bench is picked worst first.
+    s = _finish("b31-433")
+    assert [c["rating"] for c in s["bench"]] != sorted((c["rating"] for c in s["bench"]), reverse=True)
+    rating = {c["name"]: c["rating"] for c in s["bench"]}
+    t = client.get(f"/api/tournament/{s['state']}").json()
+    came_on = 0
+    for m in t["your_matches"]:
+        mine = [x for x in m["subs"] if x[1] == (0 if m["home"]["you"] else 1)]
+        ratings = [rating[x[3]] for x in sorted(mine)]
+        assert ratings == sorted(ratings, reverse=True)
+        came_on += len(mine)
+    assert came_on >= 6
+
+
+def test_memory_hides_the_bench_s_ratings_too():
+    s = client.get("/api/draft/b31-433?memory=1").json()
+    while len(s["picks"]) < 12:
+        i = next(c["i"] for c in s["deal"]["cards"] if c["takeable"])
+        s = client.post(f"/api/draft/{s['state']}/pick?memory=1", json={"index": i}).json()
+    assert len(s["bench"]) == 1 and s["bench"][0]["rating"] is None
+
+
+def test_a_bench_state_is_not_an_eleven_for_rooms_or_the_daily():
+    import pytest
+    from game.draft import IllegalMove, decode, decode_state, encode
+    assert decode_state("b5-433-1.2") == (5, "433", decode("5-433-1.2")[2], True)
+    assert encode(5, "433", decode("5-433-1.2")[2], bench=True) == "b5-433-1.2"
+    with pytest.raises(IllegalMove):
+        decode("b5-433-1.2")

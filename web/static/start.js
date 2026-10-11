@@ -63,7 +63,7 @@ function renderMemory() {
 }
 
 function summary() {
-  $("summary").textContent = `${BY[FORMATION].label} · ratings ${MEMORY ? "hidden" : "shown"} · two rerolls`;
+  $("summary").textContent = `${BY[FORMATION].label} · ratings ${MEMORY ? "hidden" : "shown"} · a bench of three · two rerolls`;
 }
 
 $("start").onclick = async (e) => {

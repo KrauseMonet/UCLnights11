@@ -14,7 +14,7 @@ from game.deck import Card, load_deck
 from game.formations import FORMATIONS
 from game.journey import player_totals
 from game.positions import arrange, fits
-from game.tournament import Side, best_xi, club_bench, league_of, play_room, play_tournament
+from game.tournament import Side, auto_plan, best_xi, club_bench, league_of, play_room, play_tournament
 
 LEAGUE = match.League(attack=80.0, defence=80.0)
 SLOTS = FORMATIONS["433"].slots
@@ -316,3 +316,9 @@ def test_engine_1_is_what_every_link_replays():
                              [(g.minute, g.scorer.id) for g in r.goals],
                              [[s.possession, [(p.shots, p.passes) for p in s.players]] for s in r.stats]])
     assert hashlib.sha256(json.dumps(rows).encode()).hexdigest() == ENGINE1_PINNED
+
+
+def test_the_automatic_plan_brings_the_best_rated_on_first():
+    b = [card("MF", 80, 1), card("FW", 92, 2), card("DF", 86, 3)]
+    assert [(x.on, x.minute) for x in auto_plan(b)] == [(1, 60), (2, 70), (0, 80)]
+    assert auto_plan([]) == ()

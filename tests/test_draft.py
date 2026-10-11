@@ -3,8 +3,8 @@
 import pytest
 
 from game.deck import build_deck, load_deck
-from game.draft import (IllegalMove, Pick, Reroll, REROLLS_ALLOWED, decode, encode, replay,
-                        why_not)
+from game.draft import (BENCH, IllegalMove, Pick, Reroll, REROLLS_ALLOWED, decode, decode_state, encode,
+                        replay, why_not)
 from game.formations import FORMATIONS
 
 
@@ -118,7 +118,7 @@ def test_rerolls_are_capped():
         replay(deck, 9, "433", moves + [Reroll()])
 
 
-def _tiny_deck():
+def _tiny_deck(extra=()):
     """Squad A can fill a whole 4-3-3; squad B is goalkeepers only.
 
     Once a goalkeeper is picked, B offers nothing takeable, so the deal-time
@@ -132,6 +132,7 @@ def _tiny_deck():
         return {"id": f"Q{i}", "name": f"P{i}", "title": f"P{i}", "pos": LINE[slot], "positions": [slot],
                 "source": "declared", "nation": None, "rating": 80}
     a = [p(i, slot) for i, slot in enumerate(FORMATIONS["433"].slots)]
+    a += [p(40 + i, slot) for i, slot in enumerate(extra)]
     b = [p(i, "GK") for i in range(20, 31)]
     cs = lambda key, players: {"key": key, "season": 2000, "label": "2000–01", "club": key,
                                "name": key, "short": key, "primary": "#000", "secondary": "#fff",
@@ -166,3 +167,70 @@ def test_malformed_states_are_refused(bad):
 def test_unknown_formation_is_refused():
     with pytest.raises(IllegalMove, match="formation"):
         replay(load_deck(), 1, "4411", [])
+
+
+# -- the bench (C40) ------------------------------------------------------------
+
+def bench_draft(seed, code="433", deck=None):
+    deck, moves = deck or load_deck(), []
+    s = replay(deck, seed, code, moves, bench=True)
+    while not s.complete:
+        moves.append(Pick(first_takeable(s)))
+        s = replay(deck, seed, code, moves, bench=True)
+    return s, moves
+
+
+def test_a_bench_draft_is_eleven_then_three_and_the_eleven_is_the_first_eleven():
+    s, moves = bench_draft(42)
+    assert len(s.picks) == 11 + BENCH and s.complete and s.deal is None
+    assert [c.id for c in s.bench] == [c.id for c in s.picks[11:]]
+    assert sorted(c.id for c in s.xi) == sorted(c.id for c in s.picks[:11])
+    # The same seed and moves without a bench stop at eleven, with the same eleven.
+    plain = replay(load_deck(), 42, "433", moves[:11])
+    assert plain.complete and [c.id for c in plain.picks] == [c.id for c in s.picks[:11]]
+    with pytest.raises(IllegalMove, match="already complete"):
+        replay(load_deck(), 42, "433", moves[:11] + [Pick(0)])
+
+
+def test_a_bench_pick_refuses_a_keeper_a_man_already_taken_and_a_place_the_formation_lacks():
+    s, _ = bench_draft(42, "442")
+    f, eleven, deck = s.formation, s.picks[:11], load_deck()
+    cards = [c for cs in deck.club_seasons for c in cs.cards]
+    keeper = next(c for c in cards if c.positions == ("GK",))
+    winger = next(c for c in cards if set(c.positions) <= {"LW", "RW"})
+    fits = next(c for c in cards if c.positions[0] == "CM" and c.id not in {x.id for x in eleven})
+    assert why_not(keeper, f, eleven) == "keepers stay on"
+    assert why_not(winger, f, eleven) == f"no {'/'.join(winger.positions)} in a 4-4-2"
+    assert why_not(eleven[3], f, eleven) == "already in your eleven"
+    assert why_not(fits, f, eleven) is None
+    assert why_not(fits, f, eleven + [fits]) == "already on your bench"
+    # Any man the eleven's formation could use is fine, even with his line full: he comes
+    # on for whoever stands there.
+    assert why_not(fits, f, eleven) is None and sum(x.slot == "CM" for x in s.xi) == 2
+
+
+def test_a_bench_deal_with_nothing_takeable_is_redrawn():
+    # Squad B is goalkeepers only, which no bench takes. The eleven fills from A, so every
+    # bench deal must be A, and getting there must have needed redraws.
+    deck = _tiny_deck(extra=("CM", "ST", "CB", "RW"))
+    redrawn = 0
+    for seed in range(30):
+        s, moves = bench_draft(seed, deck=deck)
+        assert s.dealt[-BENCH:] == ["A"] * BENCH
+        before = replay(deck, seed, "433", moves[:11], bench=True).redraws
+        redrawn += s.redraws - before
+    assert redrawn > 0
+
+
+def test_a_bench_state_round_trips_and_its_cap_counts_the_bench():
+    moves = [Pick(3), Reroll(), Pick(0)]
+    assert decode_state(encode(123, "4231", moves, bench=True)) == (123, "4231", moves, True)
+    assert decode_state(encode(123, "4231", moves)) == (123, "4231", moves, False)
+    long = ".".join(["1"] * (11 + BENCH + REROLLS_ALLOWED))
+    assert decode_state(f"b1-433-{long}")[3]
+    with pytest.raises(IllegalMove):
+        decode_state(f"b1-433-{long}.1")
+    with pytest.raises(IllegalMove):
+        decode(f"1-433-{long}")
+    with pytest.raises(IllegalMove, match="bench"):
+        decode("b1-433")

@@ -115,12 +115,21 @@ def club_bench(cs: ClubSeason) -> list[Card]:
     return list(got)
 
 
+def auto_plan(bench: list[Card]) -> tuple[match.Sub, ...]:
+    """The automatic plan for a bench: match.AUTO_PLAN's minutes, the best-rated man first,
+    as a club brings its bench on. A drafted bench is in the order it was picked, which
+    says nothing about who should come on when (C40)."""
+    order = sorted(range(len(bench)), key=lambda i: (-bench[i].rating, i))
+    return tuple(match.Sub(i, sub.minute, sub.when, sub.off) for i, sub in zip(order, match.AUTO_PLAN))
+
+
 def club_side(cs: ClubSeason) -> Side:
     f, xi = best_xi(cs)
+    bench = club_bench(cs)
     return Side(cs.key, cs.title, cs.short, f, xi, club=cs.club, season=cs.season,
                 label=cs.label, club_name=cs.name, crest=cs.crest,
                 team=cs.team, deep=cs.deep, ink=cs.ink,
-                bench=club_bench(cs), plan=match.AUTO_PLAN)
+                bench=bench, plan=auto_plan(bench))
 
 
 def teamsheet(side: Side) -> match.Teamsheet:

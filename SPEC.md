@@ -162,6 +162,18 @@ generated (`etl.deck`) and committed; `etl.deck --check` fails if it is stale.
   a deal by name, because the deck lists a squad best first and the order alone would
   give the ratings away. Every dealt card carries `i`, its index in the deal, which is
   what a pick names whatever the order shown. The tournament shows the ratings.
+- **The bench (C40).** Every new solo draft takes **three more picks after the eleven**,
+  for the bench, and its tournament is played by engine 2 (§6), where they come on. A
+  bench man must hold a position the formation has, so he can always come on for whoever
+  stands there, and is **never a goalkeeper** (the engine never changes the keeper). One
+  person once and the deal-time guarantee hold for the bench too; the two rerolls are
+  for the whole draft. Until a plan can be chosen, the bench comes on by the automatic
+  plan, **the best-rated man first** at 60', then 70', then 80', each only if the change
+  helps, as a club's does. A bench draft's state starts with `b`
+  (`bSEED-FORMATION-moves`); **a plain state is an eleven-pick draft, played by engine 1,
+  and every link to one opens and plays exactly as it did.** Rooms and the daily stay
+  eleven-pick drafts for now, and the plain decoder refuses a `b` state so neither can
+  mistake one for an eleven.
 
 ## 6. The match engine
 
@@ -231,8 +243,8 @@ Every tournament is played by one engine, chosen when it is played. **Engine 1 i
 everything above and does not change**: every shared link, saved result and room
 replays its tournament from scratch, so a new rule there would rewrite results people
 have already watched; a pinned hash of six tournaments guards it. Engine 2 is opt-in
-(`play_tournament(..., engine=2)`, `game --validate --engine 2`); nothing on the site
-uses it yet.
+(`play_tournament(..., engine=2)`, `game --validate --engine 2`); a solo draft with a
+bench plays it (§5, C40), rooms and the daily do not yet.
 
 - **A match is played in five-minute blocks.** In each, a side's expected goals are
   engine 1's formula over the eleven ON THE PITCH, with each outfield man's rating moved by

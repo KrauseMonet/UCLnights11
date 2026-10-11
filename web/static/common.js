@@ -308,7 +308,7 @@ function renderDeal(el, d, opts) {
         <div class="who"><b>${esc(c.name)}</b><small>${altPositions(c)}${esc(c.nation || "")}</small></div>
         ${c.rating == null ? "" : rate(c.rating)}
         ${opts.readOnly ? (c.takeable ? "" : `<span class="why">${esc(c.reason)}</span>`)
-          : c.takeable ? `<button class="take" data-i="${i}" aria-label="Take ${esc(c.name)}">Take</button>`
+          : c.takeable ? `<button class="take" data-i="${i}" aria-label="${opts.takeLabel || "Take"} ${esc(c.name)}">${opts.takeLabel || "Take"}</button>`
                      : `<span class="why">${esc(c.reason)}</span>`}
       </div>`).join("")).join("");
   el.style.cssText = teamStyle(d);
@@ -351,6 +351,19 @@ function lineChips(el, formation, xi) {
 function xiFoot(el, d) {
   const avg = d.memory ? "?" : d.picks.length ? Math.round(d.picks.reduce((a, c) => a + c.rating, 0) / d.picks.length) : "–";
   el.innerHTML = `<div><b>${avg}</b>${d.memory ? "Memory" : "Average"}</div><div><b>${new Set(d.picks.map((c) => c.club)).size}</b>Clubs</div><div><b>${d.rerolls_left}</b>Rerolls left</div>`;
+}
+
+/* The bench under a pitch (C40): `size` places, filled in the order they were picked. A
+   substitute holds any of his positions the formation has, so his chips are all shown. */
+function renderBench(el, bench, size) {
+  el.hidden = !size;
+  if (!size) return;
+  el.innerHTML = `<div class="label">Bench</div>` + Array.from({ length: size }, (_, k) => {
+    const c = bench[k];
+    if (!c) return `<div class="sub-card"><span class="sub-empty">Sub ${k + 1}</span></div>`;
+    return `<div class="sub-card filled">${crest(c.crest, 28, c.club)}
+      <div class="who"><b>${esc(c.name)}</b><small>${(c.positions || [c.pos]).map(posChip).join("")}${c.rating == null ? "" : ` ${c.rating}`}</small></div></div>`;
+  }).join("");
 }
 
 /* Where each position stands on the pitch, attacking upwards: [top %, left %] for one man;

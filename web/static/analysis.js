@@ -2,14 +2,15 @@
 /* The tournament analysis (C28): /analysis#STATE for a solo tournament,
    /analysis?room=CODE for a room's. Every chart is inline SVG built here, with no
    library, as on the cricket site (its A104). Colours were run through the dataviz
-   validator against the panel colour: gold #c08a1e and blue #4a86d8 for two series,
+   validator against the panel colour (#11131f since the redesign; re-run then, all
+   checks still pass): gold #c08a1e and blue #4a86d8 for two series,
    with a neutral grey as the midpoint (a draw) or the field's average. Every chart
    carries its numbers as labels or a table, so nothing is told by colour alone. */
 
 const AN_ROOM = new URLSearchParams(location.search).get("room");
 shell(AN_ROOM ? "friends" : "draft");
 const AN_STATE = location.hash.slice(1);
-const AC = { you: "#c08a1e", other: "#4a86d8", mid: "#56637f", grid: "rgba(255,255,255,.08)", ink2: "#aebedb", ink3: "#6c7fa3" };
+const AC = { you: "#c08a1e", other: "#4a86d8", mid: "#56637f", grid: "rgba(255,255,255,.08)", ink2: "#aab1c6", ink3: "#7c839c" };
 let AN = null, YOU = null, SCOPE = "all";
 
 const fmt1 = (v) => v == null ? "–" : v.toFixed(1);       // a rate: always one decimal, so 3.0 sits under 3.3
@@ -56,8 +57,8 @@ function honoursHtml() {
   return section("01", "Honours", "", `<div class="an-honours">
     ${honour("Golden boot", top("goals"), top("goals") && plural(top("goals").value, "goal"), AC.you)}
     ${honour("Most assists", top("assists"), top("assists") && plural(top("assists").value, "assist"), AC.other)}
-    ${honour("Player of the tournament", top("mark"), top("mark") && `${top("mark").value.toFixed(2)} average mark`, "#c77dff")}
-    ${honour("Golden glove", top("clean_sheets"), top("clean_sheets") && plural(top("clean_sheets").value, "clean sheet"), "#3ddc97")}
+    ${honour("Player of the tournament", top("mark"), top("mark") && `${top("mark").value.toFixed(2)} average mark`, "#a998ff")}
+    ${honour("Golden glove", top("clean_sheets"), top("clean_sheets") && plural(top("clean_sheets").value, "clean sheet"), "#5ad692")}
     ${matchBrief("Biggest win", AN.biggest_win)}
     ${matchBrief("Most goals in a match", AN.most_goals)}</div>`);
 }

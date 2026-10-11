@@ -6,14 +6,15 @@
    a picture can't be read aloud. */
 
 const JW = 1080, JPAD = 56;
-const J_FONTS = ['400 80px "Anton"', '700 30px "Archivo"', '600 20px "JetBrains Mono"', '800 30px "Archivo"'];
-const J_C = { bg: "#050b1c", panel: "#0c1a36", panel2: "#112446", line: "rgba(255,255,255,.10)", ink: "#f3f6fb",
-  ink2: "#aebedb", ink3: "#6c7fa3", gold: "#f5b83d", gold2: "#ffd873", mint: "#3ddc97", red: "#ff6a4d",
-  pos: { GK: "#f5b83d", DF: "#5aa9ff", MF: "#3ddc97", FW: "#ff7a59" } };
+const J_D = '"Unbounded"', J_S = '"Instrument Sans"';
+const J_FONTS = [`800 80px ${J_D}`, `700 30px ${J_D}`, `600 20px ${J_S}`, `700 30px ${J_S}`];
+const J_C = { bg: "#07080f", panel: "#11131f", panel2: "#171a29", line: "rgba(190,205,255,.12)", ink: "#eef1f8",
+  ink2: "#aab1c6", ink3: "#7c839c", gold: "#f2c25a", gold2: "#ffe08e", ice: "#7cc4ff", win: "#5ad692", loss: "#ff6f6f",
+  draw: "#5d6480", star: "#a998ff", pos: { GK: "#ffb35c", DF: "#6cb8ff", MF: "#a998ff", FW: "#ff7499" } };
 
 function markColour(m) {
   if (m != null) m = Math.round(m * 10) / 10;            // the colour of the mark as shown, not of 5.95
-  return m == null ? J_C.ink3 : m >= 8 ? J_C.gold : m >= 7 ? J_C.mint : m >= 6 ? J_C.ink : J_C.red;
+  return m == null ? J_C.ink3 : m >= 8 ? J_C.gold : m >= 7 ? J_C.win : m >= 6 ? J_C.ink : J_C.loss;
 }
 
 /* What a player is remembered for, by his line. */
@@ -27,9 +28,8 @@ function roleLine(p) {
 }
 
 function endingLine(j) {
-  if (j.reached === "Champions") return "CHAMPIONS";
-  if (j.reached === "Runners-up") return "RUNNERS-UP";
-  return `OUT IN THE ${j.reached.toUpperCase()}`;
+  if (j.reached === "Champions" || j.reached === "Runners-up") return j.reached;
+  return `Out in the ${j.reached.toLowerCase()}`;
 }
 
 function loadImage(url) {
@@ -57,7 +57,7 @@ function medallion(ctx, x, y, r, img, fill, text) {
     const s = r * 1.44, k = Math.min(s / img.width, s / img.height);
     ctx.drawImage(img, x - (img.width * k) / 2, y - (img.height * k) / 2, img.width * k, img.height * k);
   } else if (text) {
-    ctx.fillStyle = "#1a1204"; ctx.font = `400 ${Math.round(r)}px "Anton"`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillStyle = "#1d1504"; ctx.font = `800 ${Math.round(r * 0.8)}px ${J_D}`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
     ctx.fillText(text, x, y + r * 0.04); ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
   }
 }
@@ -74,6 +74,7 @@ async function drawJourneyCard(canvas, j, side, tag) {
   const crests = await Promise.all(j.players.map((p) => loadImage(p.crest)));
   const awardImgs = await Promise.all(["top_scorer", "top_assists", "star"].map((k) => loadImage(j.awards[k]?.crest)));
   const sideImg = await loadImage(side.crest);
+  const logoImg = await loadImage(SITE_LOGO);
 
   const ROW = 92, headH = 330, recordH = 190, tilesH = 210, awardsH = 230, xiH = 90 + ROW * j.players.length, footH = 110;
   const H = headH + recordH + tilesH + awardsH + xiH + footH;
@@ -83,56 +84,62 @@ async function drawJourneyCard(canvas, j, side, tag) {
   ctx.scale(dpr, dpr);
   ctx.fillStyle = J_C.bg; ctx.fillRect(0, 0, JW, H);
 
-  // ---- header, in the side's colours
-  const hg = ctx.createLinearGradient(0, 0, JW, headH);
+  // ---- header, in the side's colours, the centre circle drawn round the crest
+  const cx0 = JW - JPAD - 90, cy0 = 150;
+  const hg = ctx.createLinearGradient(0, 0, JW * 0.6, headH);
   hg.addColorStop(0, side.deep); hg.addColorStop(1, J_C.bg);
   ctx.fillStyle = hg; ctx.fillRect(0, 0, JW, headH);
   ctx.save(); ctx.beginPath(); ctx.rect(0, 0, JW, headH); ctx.clip();
-  ctx.strokeStyle = "rgba(255,255,255,.035)"; ctx.lineWidth = 2;
-  for (let x = -headH; x < JW + headH; x += 16) { ctx.beginPath(); ctx.moveTo(x, headH); ctx.lineTo(x + headH * 0.47, 0); ctx.stroke(); }
-  const glow = ctx.createRadialGradient(0, headH * 1.2, 10, 0, headH * 1.2, 520);
-  glow.addColorStop(0, side.team + "aa"); glow.addColorStop(1, "transparent");
+  const glow = ctx.createRadialGradient(cx0, cy0, 10, cx0, cy0, 560);
+  glow.addColorStop(0, side.team + "99"); glow.addColorStop(1, "transparent");
   ctx.fillStyle = glow; ctx.fillRect(0, 0, JW, headH);
+  ctx.lineWidth = 2;
+  [[128, ".14"], [220, ".08"], [330, ".05"]].forEach(([r, a]) => {
+    ctx.strokeStyle = `rgba(255,255,255,${a})`; ctx.beginPath(); ctx.arc(cx0, cy0, r, 0, Math.PI * 2); ctx.stroke();
+  });
   ctx.restore();
-  ctx.fillStyle = side.team; ctx.fillRect(0, 0, JW, 8);
+  const bar = ctx.createLinearGradient(0, 0, JW, 0);
+  bar.addColorStop(0, side.team); bar.addColorStop(1, side.team + "00");
+  ctx.fillStyle = bar; ctx.fillRect(0, 0, JW, 6);
 
-  medallion(ctx, JW - JPAD - 90, 150, 90, sideImg, sideImg ? null : side.team,
+  medallion(ctx, cx0, cy0, 90, sideImg, sideImg ? null : side.team,
             sideImg ? null : side.human ? side.name[0].toUpperCase() : "✦");
-  ctx.fillStyle = J_C.gold; ctx.font = '600 20px "JetBrains Mono"';
+  ctx.fillStyle = side.ink || J_C.ice; ctx.font = `650 19px ${J_S}`;
   ctx.fillText(`${tag} · TOURNAMENT JOURNEY`.split("").join(String.fromCharCode(8202)), JPAD, 76);
-  ctx.fillStyle = "#fff"; fitFont(ctx, side.name.toUpperCase(), 400, 96, '"Anton"', JW - JPAD * 2 - 220);
-  ctx.fillText(side.name.toUpperCase(), JPAD, 178);
-  ctx.fillStyle = J_C.ink2; ctx.font = '700 26px "Archivo"';
-  ctx.fillText(`${side.formation} · average rating ${side.avg}`, JPAD, 222);
+  ctx.fillStyle = "#fff"; fitFont(ctx, side.name, 800, 72, J_D, JW - JPAD * 2 - 240);
+  ctx.fillText(side.name, JPAD, 168);
+  ctx.fillStyle = J_C.ink2; ctx.font = `600 25px ${J_S}`;
+  ctx.fillText(`${side.formation} · average rating ${side.avg}`, JPAD, 214);
   const champ = j.reached === "Champions";
-  ctx.font = '400 54px "Anton"';
-  if (champ) { ctx.shadowColor = "rgba(245,184,61,.7)"; ctx.shadowBlur = 30; }
+  const ending = (champ ? "🏆 " : "") + endingLine(j);
+  if (champ) { ctx.shadowColor = "rgba(242,194,90,.7)"; ctx.shadowBlur = 30; }
   ctx.fillStyle = champ ? J_C.gold2 : j.reached === "Runners-up" ? J_C.ink : J_C.ink2;
-  ctx.fillText((champ ? "🏆 " : "") + endingLine(j), JPAD, 296);
+  fitFont(ctx, ending, 800, 40, J_D, JW - JPAD * 2 - 240);
+  ctx.fillText(ending, JPAD, 292);
   ctx.shadowBlur = 0;
 
   // ---- record and form
   let y = headH + 30;
   const [w, d, l] = j.record;
-  ctx.fillStyle = J_C.ink; ctx.font = '400 92px "Anton"';
+  ctx.fillStyle = J_C.ink; ctx.font = `800 80px ${J_D}`;
   const rec = `${w}-${d}-${l}`;
-  ctx.fillText(rec, JPAD, y + 92);
+  ctx.fillText(rec, JPAD, y + 88);
   const recW = ctx.measureText(rec).width;
-  ctx.fillStyle = J_C.ink3; ctx.font = '600 18px "JetBrains Mono"';
-  ctx.fillText("WON · DRAWN · LOST", JPAD, y + 130);
+  ctx.fillStyle = J_C.ink3; ctx.font = `650 17px ${J_S}`;
+  ctx.fillText("WON · DRAWN · LOST", JPAD, y + 128);
   const fx = JPAD + Math.max(recW, 230) + 50;
   ctx.fillText(`FORM · GOALS ${j.goals_for}–${j.goals_against}`, fx, y + 30);
   j.matches.forEach((m, i) => {
     const cx = fx + 22 + i * 54, cy = y + 80;
     ctx.beginPath(); ctx.arc(cx, cy, 19, 0, Math.PI * 2);
-    ctx.fillStyle = m.outcome === "w" ? J_C.mint : m.outcome === "l" ? J_C.red : "#4b5a78"; ctx.fill();
-    if (m.knockout) { ctx.lineWidth = 4; ctx.strokeStyle = J_C.gold; ctx.beginPath(); ctx.arc(cx, cy, 25, 0, Math.PI * 2); ctx.stroke(); }
-    ctx.fillStyle = "#08132b"; ctx.font = '800 18px "Archivo"'; ctx.textAlign = "center";
+    ctx.fillStyle = m.outcome === "w" ? J_C.win : m.outcome === "l" ? J_C.loss : J_C.draw; ctx.fill();
+    if (m.knockout) { ctx.lineWidth = 3; ctx.strokeStyle = J_C.ice; ctx.beginPath(); ctx.arc(cx, cy, 25, 0, Math.PI * 2); ctx.stroke(); }
+    ctx.fillStyle = "#07080f"; ctx.font = `800 15px ${J_D}`; ctx.textAlign = "center";
     ctx.fillText(m.outcome.toUpperCase(), cx, cy + 6); ctx.textAlign = "left";
   });
   if (j.matches.some((m) => m.knockout)) {
-    ctx.fillStyle = J_C.ink3; ctx.font = '600 16px "JetBrains Mono"';
-    ctx.fillText("GOLD RING = KNOCKOUT", fx, y + 140);
+    ctx.fillStyle = J_C.ink3; ctx.font = `650 15px ${J_S}`;
+    ctx.fillText("BLUE RING = KNOCKOUT", fx, y + 140);
   }
 
   // ---- stat tiles
@@ -145,63 +152,68 @@ async function drawJourneyCard(canvas, j, side, tag) {
   const tw = (JW - JPAD * 2 - 20 * 2) / 3;
   tiles.forEach(([v, label], i) => {
     const tx = JPAD + (i % 3) * (tw + 20), ty = y + Math.floor(i / 3) * 96;
-    roundRect(ctx, tx, ty, tw, 80, 16, J_C.panel, J_C.line);
-    ctx.fillStyle = J_C.ink; ctx.font = '400 40px "Anton"'; ctx.fillText(String(v), tx + 22, ty + 52);
-    ctx.fillStyle = J_C.ink3; ctx.font = '600 15px "JetBrains Mono"';
-    ctx.textAlign = "right"; ctx.fillText(label, tx + tw - 20, ty + 50); ctx.textAlign = "left";
+    roundRect(ctx, tx, ty, tw, 80, 18, J_C.panel, J_C.line);
+    // Value over label: Unbounded is wide, and side by side "131/55" ran into its label.
+    ctx.fillStyle = J_C.ink; fitFont(ctx, String(v), 700, 28, J_D, tw - 44); ctx.fillText(String(v), tx + 22, ty + 42);
+    ctx.fillStyle = J_C.ink3; ctx.font = `650 13px ${J_S}`; ctx.fillText(label, tx + 22, ty + 66);
   });
 
   // ---- awards
   y += tilesH;
   const awards = [["TOP SCORER", j.awards.top_scorer, (a) => `${a.n} goal${a.n === 1 ? "" : "s"}`, J_C.gold],
-    ["MOST ASSISTS", j.awards.top_assists, (a) => `${a.n} assist${a.n === 1 ? "" : "s"}`, J_C.mint],
-    ["PLAYER OF THE TOURNAMENT", j.awards.star, (a) => `${a.n.toFixed(2)} average mark`, "#c77dff"]];
+    ["MOST ASSISTS", j.awards.top_assists, (a) => `${a.n} assist${a.n === 1 ? "" : "s"}`, J_C.win],
+    ["PLAYER OF THE TOURNAMENT", j.awards.star, (a) => `${a.n.toFixed(2)} average mark`, J_C.star]];
   const aw = (JW - JPAD * 2 - 40) / 3;
   awards.forEach(([title, a, val, colour], i) => {
     const ax = JPAD + i * (aw + 20), ay = y;
-    roundRect(ctx, ax, ay, aw, 200, 18, J_C.panel2, colour + "88");
-    ctx.save(); ctx.beginPath(); ctx.roundRect(ax, ay, aw, 200, 18); ctx.clip();
+    roundRect(ctx, ax, ay, aw, 200, 20, J_C.panel2, J_C.line);
+    ctx.save(); ctx.beginPath(); ctx.roundRect(ax, ay, aw, 200, 20); ctx.clip();
+    ctx.fillStyle = colour; ctx.fillRect(ax, ay, aw, 4);
     if (awardImgs[i]) { ctx.globalAlpha = 0.08; const s = 190; ctx.drawImage(awardImgs[i], ax + aw - s * 0.75, ay + 20, s, s); ctx.globalAlpha = 1; }
     ctx.restore();
-    ctx.fillStyle = colour; ctx.font = '600 15px "JetBrains Mono"'; ctx.fillText(title, ax + 22, ay + 40);
-    if (!a) { ctx.fillStyle = J_C.ink3; ctx.font = '700 26px "Archivo"'; ctx.fillText("Nobody", ax + 22, ay + 110); return; }
-    ctx.fillStyle = J_C.ink; fitFont(ctx, a.name, 800, 30, '"Archivo"', aw - 44); ctx.fillText(a.name, ax + 22, ay + 100);
-    ctx.fillStyle = J_C.ink3; ctx.font = '600 16px "JetBrains Mono"'; ctx.fillText(`${a.short} ${a.season.slice(2)}`, ax + 22, ay + 130);
-    ctx.fillStyle = colour; ctx.font = '400 32px "Anton"'; ctx.fillText(val(a), ax + 22, ay + 178);
+    ctx.fillStyle = colour; ctx.font = `650 14px ${J_S}`; ctx.fillText(title, ax + 22, ay + 42);
+    if (!a) { ctx.fillStyle = J_C.ink3; ctx.font = `700 26px ${J_S}`; ctx.fillText("Nobody", ax + 22, ay + 110); return; }
+    ctx.fillStyle = J_C.ink; fitFont(ctx, a.name, 700, 30, J_S, aw - 44); ctx.fillText(a.name, ax + 22, ay + 100);
+    ctx.fillStyle = J_C.ink3; ctx.font = `600 16px ${J_S}`; ctx.fillText(`${a.short} ${a.season.slice(2)}`, ax + 22, ay + 130);
+    ctx.fillStyle = colour; fitFont(ctx, val(a), 700, 24, J_D, aw - 44); ctx.fillText(val(a), ax + 22, ay + 176);
   });
 
   // ---- the eleven
   y += awardsH;
-  ctx.fillStyle = J_C.gold; ctx.font = '600 18px "JetBrains Mono"'; ctx.fillText("THE ELEVEN", JPAD, y + 30);
+  ctx.fillStyle = J_C.gold; ctx.font = `650 17px ${J_S}`; ctx.fillText("THE ELEVEN", JPAD, y + 30);
   ctx.fillStyle = J_C.ink3; ctx.textAlign = "right"; ctx.fillText("AVERAGE MARK /10", JW - JPAD, y + 30); ctx.textAlign = "left";
   y += 56;
   j.players.forEach((p, i) => {
     const ry = y + i * ROW;
-    if (i % 2 === 0) roundRect(ctx, JPAD - 14, ry - 6, JW - JPAD * 2 + 28, ROW - 6, 14, "rgba(255,255,255,.025)");
+    if (i % 2 === 0) roundRect(ctx, JPAD - 14, ry - 6, JW - JPAD * 2 + 28, ROW - 6, 16, "rgba(255,255,255,.025)");
     medallion(ctx, JPAD + 30, ry + ROW / 2 - 4, 30, crests[i]);
-    const nx = JPAD + 80;
-    roundRect(ctx, nx, ry + 14, 46, 26, 6, J_C.pos[p.pos]);
-    ctx.fillStyle = "#08132b"; ctx.font = '700 15px "JetBrains Mono"'; ctx.textAlign = "center"; ctx.fillText(p.pos, nx + 23, ry + 33); ctx.textAlign = "left";
-    ctx.fillStyle = J_C.ink; fitFont(ctx, p.name, 800, 28, '"Archivo"', 470); ctx.fillText(p.name, nx + 58, ry + 37);
-    ctx.fillStyle = J_C.ink3; ctx.font = '600 16px "JetBrains Mono"';
+    const nx = JPAD + 80, pc = J_C.pos[p.pos];
+    roundRect(ctx, nx, ry + 14, 46, 26, 7, pc + "26", pc + "66");
+    ctx.fillStyle = pc; ctx.font = `700 14px ${J_S}`; ctx.textAlign = "center"; ctx.fillText(p.pos, nx + 23, ry + 32); ctx.textAlign = "left";
+    ctx.fillStyle = J_C.ink; fitFont(ctx, p.name, 700, 28, J_S, 470); ctx.fillText(p.name, nx + 58, ry + 37);
+    ctx.fillStyle = J_C.ink3; ctx.font = `600 16px ${J_S}`;
     ctx.fillText(`${p.short} ${p.season.slice(2)} · ${p.rating}`, nx + 58, ry + 66);
     const parts = [`${p.apps} apps`];
     if (p.goals) parts.push(`${p.goals} G`);
     if (p.assists) parts.push(`${p.assists} A`);
     const fxp = JPAD + 640;
-    ctx.fillStyle = J_C.ink; ctx.font = '700 22px "Archivo"'; ctx.fillText(parts.join(" · "), fxp, ry + 37);
-    ctx.fillStyle = J_C.ink2; ctx.font = '600 16px "JetBrains Mono"'; ctx.fillText(roleLine(p), fxp, ry + 66);
-    ctx.fillStyle = markColour(p.mark); ctx.font = '400 40px "Anton"'; ctx.textAlign = "right";
-    ctx.fillText(p.mark == null ? "–" : p.mark.toFixed(1), JW - JPAD, ry + 56); ctx.textAlign = "left";
+    ctx.fillStyle = J_C.ink; ctx.font = `700 22px ${J_S}`; ctx.fillText(parts.join(" · "), fxp, ry + 37);
+    ctx.fillStyle = J_C.ink2; ctx.font = `600 16px ${J_S}`; ctx.fillText(roleLine(p), fxp, ry + 66);
+    ctx.fillStyle = markColour(p.mark); ctx.font = `800 32px ${J_D}`; ctx.textAlign = "right";
+    ctx.fillText(p.mark == null ? "–" : p.mark.toFixed(1), JW - JPAD, ry + 54); ctx.textAlign = "left";
   });
 
-  // ---- footer and rim
+  // ---- footer: the logo itself
   y = H - footH;
   ctx.fillStyle = J_C.line; ctx.fillRect(JPAD, y + 10, JW - JPAD * 2, 2);
-  ctx.fillStyle = J_C.ink; ctx.font = '400 40px "Anton"'; ctx.fillText("UCLNIGHTS11", JPAD, y + 72);
-  ctx.fillStyle = J_C.ink3; ctx.font = '600 16px "JetBrains Mono"'; ctx.textAlign = "right";
+  if (logoImg) {
+    const lh = 44, lw = (logoImg.width / logoImg.height) * lh;
+    ctx.drawImage(logoImg, JPAD, y + 40, lw, lh);
+  } else {
+    ctx.fillStyle = J_C.ink; ctx.font = `800 32px ${J_D}`; ctx.fillText(SITE_NAME, JPAD, y + 72);
+  }
+  ctx.fillStyle = J_C.ink3; ctx.font = `600 16px ${J_S}`; ctx.textAlign = "right";
   ctx.fillText("MARKS ARE THIS GAME'S OWN · uclnights11.vercel.app", JW - JPAD, y + 68); ctx.textAlign = "left";
-  ctx.strokeStyle = side.team; ctx.lineWidth = 8; ctx.strokeRect(4, 4, JW - 8, H - 8);
 }
 
 /* The overlay that shows the card, with Download and (on a phone) Share. */

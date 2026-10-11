@@ -12,7 +12,7 @@
       Other static files (crests, brand, fonts) are shown from the cache and refreshed
       behind it, since their URLs don't change when they do. */
 
-const VERSION = "uclnights11-v1";
+const VERSION = "uclnights11-v2";
 const SHELL = `${VERSION}-shell`;
 const ASSETS = `${VERSION}-assets`;
 const PAGES = `${VERSION}-pages`;

@@ -8,44 +8,51 @@
 <link rel="icon" type="image/png" sizes="32x32" href="/static/brand/favicon-32.png">
 <link rel="apple-touch-icon" href="/static/brand/apple-touch-icon.png">
 <link rel="manifest" href="/static/manifest.webmanifest">
-<meta name="theme-color" content="#050b1c">
+<meta name="theme-color" content="#07080f">
 <meta property="og:site_name" content="UCLnights11">
 <meta property="og:type" content="website">
 <meta property="og:image" content="https://uclnights11.vercel.app/static/brand/og-image.png">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="preload" href="/static/fonts/Anton.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/static/style.css?v=8cc49d1cd5">
+<link rel="preload" href="/static/fonts/Unbounded.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/static/style.css?v=f33b150845">
 </head>
 <body>
 <main class="sheet">
   <section class="home-hero">
     <div>
-      <div class="kicker">1994–95 → 2025–26 · every quarter-finalist</div>
+      <div class="kicker">Every quarter-finalist · 1994–95 to 2025–26</div>
       <h1 class="home-title">Build the XI Europe never <em>saw</em>.</h1>
       <p class="home-lede">Barcelona 2010–11 gives up Messi. Milan 2004–05 gives up Kaká. Manchester United
         1998–99 gives up Keane. Take <b>one player from each squad you're dealt</b>, then take your eleven
         through a 32-team tournament against the real sides of history.</p>
-      <div class="home-cta">
-        <button class="btn primary" id="start">Start a draft</button>
-        <a class="btn ghost" href="/daily">Today's challenge</a>
-        <a class="btn ghost" href="/friends">Play with friends</a>
-        <a class="btn ghost" href="/archive">Browse every squad</a>
-      </div>
-      <div class="home-form">
-        <span class="label">Formation</span>
-        <div class="chips" id="formations" role="radiogroup" aria-label="Formation"></div>
-      </div>
-      <div class="home-form">
-        <span class="label">Ratings</span>
-        <div class="chips" id="memory" role="radiogroup" aria-label="Ratings while you draft"></div>
+      <div class="kickoff">
+        <div class="kickoff-row">
+          <span class="label">Formation</span>
+          <div class="chips" id="formations" role="radiogroup" aria-label="Formation"></div>
+        </div>
+        <div class="kickoff-row">
+          <span class="label">Ratings</span>
+          <div class="chips" id="memory" role="radiogroup" aria-label="Ratings while you draft"></div>
+        </div>
         <span class="hint">Memory hides every rating until the tournament.</span>
+        <div class="home-cta">
+          <button class="btn primary" id="start">Start a draft</button>
+          <a class="btn ghost" href="/daily">Today's challenge</a>
+        </div>
       </div>
+      <nav class="home-links" aria-label="More ways to play">
+        <a href="/friends">Play with friends</a><a href="/archive">Browse every squad</a></nav>
     </div>
-    <div class="home-fan" id="fan" aria-label="Three of the squads in the deck"></div>
+    <div class="deck-stage" id="deckstage">
+      <div class="deck" id="deck" role="button" tabindex="0" aria-label="Three of the squads in the deck: deal the next one"></div>
+      <div class="deck-hint"><span class="deck-dots" id="deckdots" aria-hidden="true"></span></div>
+    </div>
   </section>
 
-  <div class="crest-marquee" aria-hidden="true"><div class="crest-track" id="marquee"></div></div>
-  <div class="home-stats" id="stats"></div>
+  <section class="home-band" aria-label="The deck in numbers">
+    <div class="home-stats" id="stats"></div>
+    <div class="crest-wall" id="crestwall" aria-hidden="true"></div>
+  </section>
 
   <h2 class="h2">How it plays</h2>
   <p class="sub">Eleven deals, eleven picks, one tournament.</p>
@@ -65,7 +72,7 @@
   <p class="sub" id="latest-sub">Every quarter-finalist is in the deck. <a href="/archive">See all of them</a>.</p>
   <div class="latest" id="latest"></div>
 </main>
-<script src="/static/common.js?v=2a0aad8bd6"></script>
-<script src="/static/home.js?v=ed0e4840f6"></script>
+<script src="/static/common.js?v=3a1e2faed7"></script>
+<script src="/static/home.js?v=7278568adc"></script>
 </body>
 </html>

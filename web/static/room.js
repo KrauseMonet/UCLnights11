@@ -245,7 +245,7 @@ function renderDrafting() {
   const fresh = shown !== null || !$("deal");
   if (!$("deal")) {
     $("view").innerHTML = `<div class="draft-top"><h2 class="h2 tight" id="formname"></h2>
-        <div class="progress"><span class="label">Pick <b id="pickno" style="color:var(--gold)">1</b> of 11${R.memory ? ` · <span class="memtag">Memory</span>` : ""}</span>
+        <div class="progress"><span class="label">Pick <b id="pickno">1</b> of 11${R.memory ? ` · <span class="memtag">Memory</span>` : ""}</span>
         <div class="bar"><i id="bar" style="width:0"></i></div></div>
         <div class="linechips" id="lines" aria-label="Places filled in each line"></div></div>
       <div class="draft-grid">
@@ -285,7 +285,7 @@ function renderTurns() {
   if (!$("tdeal")) {
     $("view").innerHTML = `<div class="turnbar" id="turnbar"></div>
       <div class="draft-top">${d ? `<h2 class="h2 tight" id="formname"></h2>` : ""}
-        <div class="progress"><span class="label">Round <b id="roundno" style="color:var(--gold)">1</b> of 11${R.memory ? ` · <span class="memtag">Memory</span>` : ""}</span>
+        <div class="progress"><span class="label">Round <b id="roundno">1</b> of 11${R.memory ? ` · <span class="memtag">Memory</span>` : ""}</span>
           <div class="bar"><i id="bar" style="width:0"></i></div></div>
         ${d ? `<div class="linechips" id="lines" aria-label="Places filled in each line"></div>` : ""}</div>
       <div class="draft-grid">

@@ -45,8 +45,8 @@ LOBBY_TTL_DAYS = 3
 MY_ROOMS = 12
 
 # A human eleven's colours, by seat: eight hues far enough apart to tell at a glance.
-SEAT_COLOURS = ["#f5b83d", "#3ddc97", "#5aa9ff", "#ff7a59", "#c77dff", "#ff5c8a",
-                "#2ec4d6", "#a3d65c"]
+SEAT_COLOURS = ["#7cc4ff", "#ff7499", "#5ad692", "#ffb35c", "#a998ff", "#2ec4d6",
+                "#f2c25a", "#ff7a4d"]
 
 
 class RoomError(ValueError):

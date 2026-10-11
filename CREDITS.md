@@ -91,4 +91,5 @@ a club that asks for its crest to be removed will have it removed.
 
 ## Fonts
 
-Anton, Archivo and JetBrains Mono, all under the SIL Open Font License.
+Unbounded and Instrument Sans, both under the SIL Open Font License, from the
+Fontsource packages (Latin and Latin Extended subsets).

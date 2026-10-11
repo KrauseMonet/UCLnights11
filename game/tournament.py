@@ -59,9 +59,9 @@ class Side:
     label: str | None = None       # "2004–05"
     club_name: str | None = None   # "Milan"
     crest: str | None = None       # a crest key (game.crests), None for your own XI
-    team: str = "#f5b83d"
-    deep: str = "#3a2a08"
-    ink: str = "#ffd873"
+    team: str = "#f2c25a"          # your own eleven: the logo's gold "11"
+    deep: str = "#4c370b"
+    ink: str = "#ffe08e"
 
     @property
     def strength(self) -> float:

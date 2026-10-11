@@ -21,7 +21,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "assets" / "brand" / "logo-source.webp"
 OUT = ROOT / "web" / "static" / "brand"
-BG = (5, 11, 28)            # the site's --bg, behind icons and the preview image
+BG = (7, 8, 15)             # the site's --bg, behind icons and the preview image
 FILES = ["logo.webp", "emblem.webp", "favicon-32.png", "apple-touch-icon.png",
          "icon-192.png", "icon-512.png", "og-image.png"]
 
@@ -85,6 +85,27 @@ def on_square(img, size, fill=0.78, radius=None):
     return canvas
 
 
+def preview_backdrop(w, h):
+    """The site's look behind the preview logo: a cold glow from above, the centre circle
+    and the halfway line, as on the home page."""
+    import numpy as np
+    from PIL import Image, ImageDraw
+
+    y, x = np.mgrid[0:h, 0:w].astype(float)
+    glow = np.exp(-(((x - w / 2) / (w * 0.55)) ** 2 + ((y + h * 0.15) / (h * 0.7)) ** 2))
+    bg = np.array(BG, float)
+    ice = np.array((70, 120, 255), float)
+    rgb = bg + (ice - bg) * (glow * 0.16)[..., None]
+    im = Image.fromarray(np.clip(rgb, 0, 255).astype("uint8"), "RGB").convert("RGBA")
+    lines = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    d = ImageDraw.Draw(lines)
+    r = int(h * 0.42)
+    d.ellipse((w // 2 - r, h // 2 - r, w // 2 + r, h // 2 + r), outline=(196, 229, 255, 30), width=3)
+    d.line((0, h // 2, w, h // 2), fill=(196, 229, 255, 22), width=3)
+    im.alpha_composite(lines)
+    return im
+
+
 def build() -> None:
     from PIL import Image
 
@@ -101,7 +122,7 @@ def build() -> None:
     on_square(emblem, 180).save(OUT / "apple-touch-icon.png")
     on_square(emblem, 192, radius=40).save(OUT / "icon-192.png")
     on_square(emblem, 512, radius=108).save(OUT / "icon-512.png")
-    og = Image.new("RGBA", (1200, 630), BG + (255,))
+    og = preview_backdrop(1200, 630)
     big = logo.copy()
     big.thumbnail((1000, 400), Image.LANCZOS)
     og.alpha_composite(big, ((1200 - big.width) // 2, (630 - big.height) // 2))

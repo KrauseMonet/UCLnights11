@@ -75,7 +75,7 @@ async function startDraft() {
 function renderDraft(fresh) {
   if (S.complete) return renderReady();
   $("dlbody").innerHTML = `<div class="draft-top"><h2 class="h2 tight">${esc(S.formation.label)}</h2>
-      <div class="progress"><span class="label">Pick <b style="color:var(--gold)">${S.picks.length + 1}</b> of 11 · no rerolls · <span class="memtag">ratings hidden</span></span>
+      <div class="progress"><span class="label">Pick <b>${S.picks.length + 1}</b> of 11 · no rerolls · <span class="memtag">ratings hidden</span></span>
         <div class="bar"><i style="width:${(S.picks.length / 11) * 100}%"></i></div></div>
       <div class="linechips" id="lines"></div></div>
     <div class="draft-grid">

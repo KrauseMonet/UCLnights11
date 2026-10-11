@@ -111,7 +111,7 @@ function championBlock() {
   $("match").innerHTML = `<div class="champ-block band" style="${teamStyle(c)}">
       <div class="trophy">🏆</div>${sideCrest(c, 104)}
       <div class="label" style="color:var(--team-ink)">Champions</div>
-      <div class="fan-year" style="font-size:40px;text-align:center">${c.you ? "Your XI" : esc(c.name).replace(/ (\d{4}–\d{2})$/, ' <span class="nowrap">$1</span>')}</div></div>`;
+      <div class="champ-name">${c.you ? "Your XI" : esc(c.name).replace(/ (\d{4}–\d{2})$/, ' <span class="nowrap">$1</span>')}</div></div>`;
 }
 
 function reveal(n) {

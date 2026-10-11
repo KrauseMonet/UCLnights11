@@ -29,11 +29,12 @@ function shell(active) {
   document.body.prepend(nav);
   const foot = document.createElement("footer");
   foot.className = "foot";
-  foot.innerHTML = `<p>Squads from Wikipedia (CC BY-SA). Club crests belong to their clubs and appear here on a
+  foot.innerHTML = `<div class="foot-in"><div class="foot-brand"><img src="${SITE_EMBLEM}" alt="" width="40" height="40">
+    <div><p>Squads from Wikipedia (CC BY-SA). Club crests belong to their clubs and appear here on a
     non-commercial fan site. Ratings are this game's own judgement. Real results for the match engine come from
-    openfootball (CC0).</p><p>An independent fan game, not affiliated with UEFA or any club.</p>
+    openfootball (CC0).</p><p>An independent fan game, not affiliated with UEFA or any club.</p></div></div>
     <nav class="foot-links" aria-label="About the site"><a href="/about">About</a><a href="/faq">FAQ</a>
-      <a href="/privacy">Privacy</a><a href="/terms">Terms</a></nav>`;
+      <a href="/privacy">Privacy</a><a href="/terms">Terms</a></nav></div>`;
   document.body.append(foot);
   const t = document.createElement("div");
   t.className = "toast"; t.id = "toast"; t.setAttribute("role", "status");
@@ -305,7 +306,7 @@ function renderDeal(el, d, opts) {
       <div class="deal-club">${esc(d.name)}</div>
       ${opts.onReroll ? `<div class="deal-actions">
         <button class="btn small" data-reroll ${opts.rerollsLeft ? "" : "disabled"}>Another squad</button>
-        <span class="label" style="color:rgba(255,255,255,.65)">${opts.rerollsLeft} left</span>
+        <span class="label">${opts.rerollsLeft} left</span>
       </div>` : ""}
     </div>
     <div>${rows}</div>`;

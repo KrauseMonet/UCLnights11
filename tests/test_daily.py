@@ -80,16 +80,15 @@ def player():
     return c
 
 
-def drafted(c, best=True):
-    """An eleven for today's draft: the best player each deal, or the first takeable."""
+def drafted(c):
+    """An eleven for today's draft: the first player each deal offers (the draft is
+    blind, so there is no rating to choose by)."""
     moves = []
     while True:
         s = c.get("/api/daily/draft", params={"moves": ".".join(map(str, moves))}).json()
         if s["complete"]:
             return ".".join(map(str, moves))
-        cards = [x for x in s["deal"]["cards"] if x["takeable"]]
-        pick = max(cards, key=lambda x: x["rating"]) if best else cards[0]
-        moves.append(pick["i"])
+        moves.append(next(x["i"] for x in s["deal"]["cards"] if x["takeable"]))
 
 
 def test_the_seeds_are_secret_and_differ_by_purpose(monkeypatch):
@@ -215,3 +214,37 @@ def test_the_board_orders_planted_results_whatever_order_they_came_in():
     assert got == [(True, 3, 6.9), (True, 3, 6.1), (True, 1, 6.5), (False, 1, 6.0)]
     mine = people[0].get("/api/daily", params={"day": day.isoformat()}).json()["board"]["mine"]
     assert mine["rank"] == 4
+
+
+# -- drafted blind (C33) -----------------------------------------------------------
+
+def test_the_daily_draft_shows_no_ratings_and_lists_each_line_by_name():
+    c = player()
+    moves = []
+    for _ in range(4):
+        s = c.get("/api/daily/draft", params={"moves": ".".join(map(str, moves))}).json()
+        cards = s["deal"]["cards"]
+        assert all(x["rating"] is None for x in cards + s["picks"])
+        for pos in ("GK", "DF", "MF", "FW"):
+            names = [x["name"] for x in cards if x["pos"] == pos]
+            assert names == sorted(names)
+        moves.append(next(x["i"] for x in cards if x["takeable"]))
+
+
+def test_the_opponent_s_ratings_show_only_after_the_ranked_match():
+    c = player()
+    before = c.get("/api/daily").json()["challenge"]
+    assert before["ratings_hidden"] and all(x["rating"] is None for x in before["opponent"]["xi"])
+    out = c.post("/api/daily/submit", json={"moves": drafted(c)}).json()
+    assert all(isinstance(x["rating"], int) for x in out["opponent"]["xi"])
+    assert all(isinstance(p["rating"], int) for p in out["journey"]["players"])
+    after = c.get("/api/daily").json()["challenge"]
+    assert not after["ratings_hidden"] and all(isinstance(x["rating"], int) for x in after["opponent"]["xi"])
+
+
+def test_practice_doesn_t_reveal_ratings_either():
+    # Or practising would tell you your eleven's ratings before the ranked attempt.
+    c, anon = player(), TestClient(app)
+    out = anon.post("/api/daily/practice", json={"moves": drafted(c)}).json()
+    assert all(p["rating"] is None for p in out["journey"]["players"])
+    assert all(x["rating"] is None for x in out["opponent"]["xi"])

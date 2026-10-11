@@ -33,17 +33,17 @@ function heroHtml() {
       <div class="dl-opp"><span class="label">The opponent · ${esc(o.shape)}</span><b>${esc(o.name)}</b>
         <small>Ninety minutes on neutral ground. No extra time, no penalties.</small></div>
       <div class="dl-goal"><span class="label">Your goal</span><b>${esc(c.goal)}</b>
-        <small>Draft a ${esc(c.formation.label)} from today's eleven squads. No rerolls.</small></div>
+        <small>Draft a ${esc(c.formation.label)} from today's eleven squads. No rerolls, and no ratings: pick on what you remember.</small></div>
     </div>
     <p class="sub dl-meta">${D.board.entries} played today${D.board.entries ? ` · ${D.board.met} met the goal` : ""} ·
-      a drafter who takes the best player every deal reaches it ${c.success_rate}% of the time.
+      a drafter who could see every rating and took the best player each deal reaches it ${c.success_rate}% of the time.
       ${D.streak ? `· Your streak: <b>${D.streak.current}</b> ${D.streak.current === 1 ? "day" : "days"}` : ""}</p>`;
 }
 
 function opponentHtml() {
   const o = D.challenge.opponent;
   return `<section class="panel"><div class="panel-h"><span class="label">${esc(o.name)}'s eleven</span><span class="label">${esc(o.shape)}</span></div>
-    <ol class="dl-xi">${o.xi.map((c) => `<li><span class="pos ${c.pos}">${c.pos}</span><b>${esc(c.name)}</b>${rate(c.rating)}</li>`).join("")}</ol></section>`;
+    <ol class="dl-xi">${o.xi.map((c) => `<li><span class="pos ${c.pos}">${c.pos}</span><b>${esc(c.name)}</b>${c.rating == null ? "" : rate(c.rating)}</li>`).join("")}</ol></section>`;
 }
 
 function boardHtml(b) {
@@ -75,7 +75,7 @@ async function startDraft() {
 function renderDraft(fresh) {
   if (S.complete) return renderReady();
   $("dlbody").innerHTML = `<div class="draft-top"><h2 class="h2 tight">${esc(S.formation.label)}</h2>
-      <div class="progress"><span class="label">Pick <b style="color:var(--gold)">${S.picks.length + 1}</b> of 11 · no rerolls</span>
+      <div class="progress"><span class="label">Pick <b style="color:var(--gold)">${S.picks.length + 1}</b> of 11 · no rerolls · <span class="memtag">ratings hidden</span></span>
         <div class="bar"><i style="width:${(S.picks.length / 11) * 100}%"></i></div></div>
       <div class="linechips" id="lines"></div></div>
     <div class="draft-grid">
@@ -134,7 +134,7 @@ async function play() {
   $("dlbody").innerHTML = `<div id="match"></div><div class="cup-actions" id="dlact"><button class="btn ghost" id="fast">Skip to full time</button></div><div id="after"></div>`;
   const finish = playMatch($("match"), out.fixture, DAILY_LOOK, () => {
     $("dlact").innerHTML = "";
-    if (out.ranked) { D.mine = out; D.board = out.board; D.streak = out.streak; }
+    if (out.ranked) { D.mine = out; D.board = out.board; D.streak = out.streak; D.challenge.opponent = out.opponent; }
     $("after").innerHTML = afterHtml(out);
     wireAfter(out);
   });
@@ -202,7 +202,7 @@ function intro() {
   $("dlbody").innerHTML = `<div class="cup-grid">
     <div class="cup-stack"><section class="panel gate"><div><h2>${MOVES.length ? "Carry on drafting" : "Draft today's eleven"}</h2>
       <p>Eleven squads, dealt the same to everyone. Take one player from each into your ${esc(D.challenge.formation.label)}. No rerolls,
-        so every squad counts. ${ME ? "Then one ranked match." : "Signed out, the match is practice; sign in first to be ranked."}</p></div>
+        and <b>every rating is hidden</b>, the opponent's too, until you've played. ${ME ? "Then one ranked match." : "Signed out, the match is practice; sign in first to be ranked."}</p></div>
       <div class="gate-cta"><button class="btn primary" id="start">${MOVES.length ? `Continue (${MOVES.length} of 11)` : "Start the draft"}</button>
         ${ME ? "" : `<button class="btn ghost" id="sign">Sign in</button>`}</div></section>
       ${boardHtml(D.board)}</div>

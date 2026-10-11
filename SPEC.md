@@ -207,7 +207,10 @@ validator prints what they produce with no "real" column.
   tournaments, titles, finals, best finish, how far you get, career goals/assists/most
   picked/average mark (6+ apps), and the daily's played, met and streak.
 - **The daily challenge** (C32), one a day by UTC date, made when first asked for and
-  stored. The same eleven squads for everyone, in the day's formation, no rerolls. One
+  stored. The same eleven squads for everyone, in the day's formation, no rerolls,
+  **drafted blind** (C33): no ratings anywhere (the deal, your picks, the opponent's
+  eleven, a practice result) until the viewer's ranked match is played or the day ends;
+  each line listed by name, as in Memory mode. One
   ninety-minute match on neutral ground against a real side's best eleven (no extra
   time, no penalties) with a goal: win, win by 2+, win without conceding, or score 3+.
   **Each day's goal is measured**: the drafter who takes the best player every deal must

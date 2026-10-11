@@ -845,20 +845,36 @@ class DailyIn(BaseModel):
     moves: str = ""
 
 
-def challenge_out(ch: daily_rules.Challenge) -> dict:
+def hide_ratings(cards: list[dict]) -> list[dict]:
+    for c in cards:
+        c["rating"] = None
+    return cards
+
+
+def challenge_out(ch: daily_rules.Challenge, reveal: bool) -> dict:
+    """The day. The daily is always drafted blind (C33): the opponent's ratings, like
+    every dealt player's, stay hidden until the viewer has played the ranked match, or
+    the day is over."""
     deck = load_deck()
     opp = club_side(deck.by_key[ch.opponent])
     f = FORMATIONS[ch.formation]
+    xi = [card_out(c) for c in opp.xi]
     return {"day": ch.day, "formation": {"code": f.code, "label": f.label, "lines": f.lines},
-            "opponent": {**side_out(opp), "xi": [card_out(c) for c in opp.xi], "shape": opp.formation.label},
+            "opponent": {**side_out(opp), "xi": xi if reveal else hide_ratings(xi), "shape": opp.formation.label},
+            "ratings_hidden": not reveal,
             "goal": daily_rules.describe(ch.kind, ch.target), "kind": ch.kind, "target": ch.target,
             "success_rate": pct(ch.success_rate)}
 
 
 def daily_result_out(ch, fx, j, met: bool, ranked: bool) -> dict:
+    """A practice result shows no ratings: otherwise practising would tell you your
+    eleven's ratings, and you could draft again knowing them before the ranked match."""
     r = fx.result
-    return {"met": met, "ranked": ranked, "fixture": fixture_out(fx, timeline=True), "journey": journey_out(j),
-            "gf": r.home_goals, "ga": r.away_goals}
+    journey = journey_out(j)
+    if not ranked:
+        hide_ratings(journey["players"])
+    return {"met": met, "ranked": ranked, "fixture": fixture_out(fx, timeline=True), "journey": journey,
+            "gf": r.home_goals, "ga": r.away_goals, "opponent": challenge_out(ch, ranked)["opponent"]}
 
 
 @app.get("/api/daily")
@@ -881,7 +897,8 @@ def daily_today(request: Request, day: str | None = None) -> dict:
                             "gf": row[2], "ga": row[3]}
         board = daily.board(conn, d, me)
         streak = results.streaks(daily.days_played(conn, me.account_id), daily.today()) if me else None
-    return {"challenge": challenge_out(ch), "today": d == daily.today(), "signed_in": me is not None,
+    return {"challenge": challenge_out(ch, reveal=mine is not None or d != daily.today()),
+            "today": d == daily.today(), "signed_in": me is not None,
             "mine": mine, "board": board, "streak": None if streak is None else {"current": streak[0], "best": streak[1]}}
 
 
@@ -894,7 +911,8 @@ def daily_draft(request: Request, moves: str = "", day: str | None = None) -> di
         s = daily_rules.draft(load_deck(), ch, daily.moves_of(ch, moves))
     except IllegalMove as e:
         raise HTTPException(400, str(e)) from None
-    return {**session_out(moves, s), "rerolls_left": 0}
+    # Always blind (C33): no ratings, and each line listed by name, not best first.
+    return {**session_out(moves, s, memory=True), "rerolls_left": 0}
 
 
 @app.post("/api/daily/submit")

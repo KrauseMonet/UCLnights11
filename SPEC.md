@@ -167,9 +167,23 @@ generated (`etl.deck`) and committed; `etl.deck --check` fails if it is stale.
   bench man must hold a position the formation has, so he can always come on for whoever
   stands there, and is **never a goalkeeper** (the engine never changes the keeper). One
   person once and the deal-time guarantee hold for the bench too; the two rerolls are
-  for the whole draft. Until a plan can be chosen, the bench comes on by the automatic
-  plan, **the best-rated man first** at 60', then 70', then 80', each only if the change
-  helps, as a club's does. A bench draft's state starts with `b`
+  for the whole draft.
+- **The plan (C41).** A finished bench draft stops on "Your changes" before kick-off: for
+  each substitute, the minute he may come on from (45' to 85', or not used), on what
+  score (any, behind, level, ahead, unless ahead, unless behind; in a second leg the
+  aggregate), and for whom: a starter he could come on for (the formation still filled;
+  never the keeper), or the best change, which replaces whoever it helps most to replace
+  and only if it helps. One plan for every match. Each substitute once, each starter
+  named once. Left alone, the **automatic plan** applies: the best-rated man first at
+  60', then 70', then 80', each the best change, as a club's. The plan is part of the
+  state, `-p` and a line per change (`p0b60o9.1a70.2a80`: substitute 0 from 60' if behind
+  for the man in slot 9; `p` alone, no changes); with no plan part the automatic one
+  applies, so a link from before plans plays as it did. A new plan is a new link and a
+  new tournament, and the tournament page offers to change it only before your first
+  match is watched.
+- **On the match card** a change shows in the feed with its minute; the man coming on
+  takes the disc of the man going off, and anyone moved to make room slides to his new
+  place. A bench draft's state starts with `b`
   (`bSEED-FORMATION-moves`); **a plain state is an eleven-pick draft, played by engine 1,
   and every link to one opens and plays exactly as it did.** Rooms and the daily stay
   eleven-pick drafts for now, and the plain decoder refuses a `b` state so neither can

@@ -144,12 +144,14 @@ class Shot:
 
 @dataclass(frozen=True)
 class Substitution:
-    """Engine 2: ``on`` replaced ``off`` after ``minute`` minutes."""
+    """Engine 2: ``on`` replaced ``off`` after ``minute`` minutes. ``xi`` is the eleven
+    after the change, placed and in slot order: everyone may have moved to make room."""
 
     minute: int
     side: int               # 0 = home, 1 = away
     off: Card
     on: Card
+    xi: tuple[Card, ...] = ()
 
 
 @dataclass
@@ -598,7 +600,7 @@ class _Side:
             self.entered[on.id] = minute
             self.left[off.id] = minute
             self.canon.setdefault(on.id, next(c for c in xi if c.id == on.id))
-            made.append((self.canon[off.id], self.canon[on.id]))
+            made.append((self.canon[off.id], self.canon[on.id], self.xi))
         return made
 
     def credit(self, g: Goal) -> Goal:
@@ -640,8 +642,8 @@ def play_v2(
             hi = min(lo + BLOCK, end)
             for s, me in enumerate(sides):
                 diff = (score[s] + level_on[s]) - (score[1 - s] + level_on[1 - s])
-                for off, on in me.change(lo, diff):
-                    r.subs.append(Substitution(lo, s, off, on))
+                for off, on, xi in me.change(lo, diff):
+                    r.subs.append(Substitution(lo, s, off, on, xi))
             mid = (lo + hi) / 2
             fh, fa = sides[0].fit(mid), sides[1].fit(mid)
             lh = bh * math.exp(K * ((fh[0] - league.attack) - (fa[1] - league.defence)))

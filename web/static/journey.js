@@ -192,7 +192,7 @@ async function drawJourneyCard(canvas, j, side, tag) {
     ctx.fillStyle = pc; ctx.font = `700 14px ${J_S}`; ctx.textAlign = "center"; ctx.fillText(p.pos, nx + 23, ry + 32); ctx.textAlign = "left";
     ctx.fillStyle = J_C.ink; fitFont(ctx, p.name, 700, 28, J_S, 470); ctx.fillText(p.name, nx + 58, ry + 37);
     ctx.fillStyle = J_C.ink3; ctx.font = `600 16px ${J_S}`;
-    ctx.fillText(`${p.short} ${p.season.slice(2)} · ${p.rating}`, nx + 58, ry + 66);
+    ctx.fillText(`${p.short} ${p.season.slice(2)} · ${p.rating}${p.sub ? " · sub" : ""}`, nx + 58, ry + 66);
     const parts = [`${p.apps} apps`];
     if (p.goals) parts.push(`${p.goals} G`);
     if (p.assists) parts.push(`${p.assists} A`);
@@ -255,7 +255,7 @@ function playersPanel(j) {
     <div class="table-scroll"><table class="players-table"><thead><tr><th>Player</th><th title="Average match mark">Mark</th><th title="Appearances">Apps</th><th title="Goals">G</th><th title="Assists">A</th>
       <th title="Shots (on target)">Shots</th><th title="Pass accuracy">Pass</th></tr></thead><tbody>
     ${j.players.map((p) => `<tr><td><div class="t">${crest(p.crest, 22, p.club)}<span class="pos ${p.pos}">${p.pos}</span>
-        <div><b>${esc(p.name)}</b><small>${esc(roleLine(p))}</small></div></div></td>
+        <div><b>${esc(p.name)}</b><small>${esc(roleLine(p))}${p.sub ? " · sub" : ""}</small></div></div></td>
       <td><b class="mark" style="color:${markColour(p.mark)}">${p.mark == null ? "–" : p.mark.toFixed(1)}</b></td><td>${p.apps}</td><td>${p.goals || ""}</td><td>${p.assists || ""}</td><td>${p.shots}<small>${p.on_target}</small></td>
       <td>${p.accuracy == null ? "–" : `${p.accuracy}%`}</td></tr>`).join("")}
     </tbody></table></div></section>`;

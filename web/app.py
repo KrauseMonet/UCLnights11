@@ -25,12 +25,12 @@ from pydantic import BaseModel
 
 from game import analysis as analyses, daily as daily_rules, journey as journeys, match
 from game.deck import Card, ClubSeason, load_deck
-from game.draft import IllegalMove, Pick, Reroll, Session, decode, encode, replay, why_not
+from game.draft import IllegalMove, Pick, Reroll, Session, decode, decode_state, encode, replay, why_not
 from game.formations import DEFAULT, FORMATIONS
 from game.positions import arrange
 from game.shared_draft import Stranded
-from game.tournament import (CUP_STAGES, Fixture, Side, Tournament, club_side, leaders, league_of,
-                             play_room, play_tournament)
+from game.tournament import (CUP_STAGES, Fixture, Side, Tournament, auto_plan, club_side, leaders,
+                             league_of, play_room, play_tournament)
 from web import accounts, admin, auth, daily, db, failures, results, rooms
 from web.env import load_dotenv
 
@@ -131,13 +131,15 @@ def session_out(state: str, s: Session, memory: bool = False) -> dict:
             cards.sort(key=lambda c: (LINE_ORDER.index(c["pos"]), c["name"]))
         deal = club_season_out(s.deal, cards)
     picks = [card_out(c) for c in s.picks]
+    bench = picks[11:]
     if memory:
         for c in [*picks, *(deal["cards"] if deal else [])]:
             c["rating"] = None
     return {
         "state": state, "seed": s.seed, "memory": memory,
         "formation": formation_out(s.formation),
-        "picks": picks, "xi": eleven_out(s.formation, s.picks, memory),
+        "picks": picks, "xi": eleven_out(s.formation, s.picks[:11], memory),
+        "bench": bench, "bench_size": s.bench_size, "total": s.total,
         "deal": deal, "rerolls_left": s.rerolls_left, "complete": s.complete,
     }
 
@@ -167,6 +169,8 @@ def fixture_out(f: Fixture, timeline: bool = False) -> dict:
     if timeline:
         out["shots"] = [[x.minute, x.side, int(x.on_target), int(x.goal)] for x in r.shots]
         out["lineups"] = [lineup_out(f.home), lineup_out(f.away)]
+        # Engine 2's changes (C39), [minute, side, off, on]; none in engine 1.
+        out["subs"] = [[x.minute, x.side, x.off.name, x.on.name] for x in r.subs]
     return out
 
 
@@ -237,7 +241,8 @@ def journey_out(j: journeys.Journey) -> dict:
         "on_target": j.on_target, "passes": j.passes, "completed": j.completed,
         "accuracy": pct(j.completed / j.passes) if j.passes else None,
         "clean_sheets": j.clean_sheets, "matches": matches,
-        "players": [player_totals_out(p) for p in j.players],
+        "players": [{**player_totals_out(p), "sub": any(c.id == p.card.id for c in j.side.bench)}
+                    for p in j.players],
         "awards": {"top_scorer": award(scorer, scorer.goals if scorer else 0),
                    "top_assists": award(maker, maker.assists if maker else 0),
                    "star": award(star, star.mark if star else 0)},
@@ -321,7 +326,8 @@ def tournament_out(t: Tournament) -> dict:
     return {
         "you": None if you is None else {
             **side_out(you), "formation": you.formation.label, "code": you.formation.code,
-            "slots": list(you.formation.slots), "xi": [card_out(c) for c in you.xi]},
+            "slots": list(you.formation.slots), "xi": [card_out(c) for c in you.xi],
+            "bench": [card_out(c) for c in you.bench]},
         "your_matches": [fixture_out(f, timeline=True) for f in t.fixtures if you in (f.home, f.away)],
         "groups": groups, "knockout": knockout,
         "champion": side_out(t.champion), "reached": t.reached(you) if you else None,
@@ -334,16 +340,17 @@ def tournament_out(t: Tournament) -> dict:
 # -- routes -----------------------------------------------------------------
 
 def _decode(state: str):
+    """A solo draft's (seed, formation, moves, bench): either kind of state."""
     try:
-        return decode(state)
+        return decode_state(state)
     except IllegalMove as e:
         raise HTTPException(400, str(e)) from None
 
 
 def _replay(state: str) -> Session:
-    seed, formation, moves = _decode(state)
+    seed, formation, moves, bench = _decode(state)
     try:
-        return replay(load_deck(), seed, formation, moves)
+        return replay(load_deck(), seed, formation, moves, bench)
     except IllegalMove as e:
         raise HTTPException(400, str(e)) from None
 
@@ -419,11 +426,12 @@ class StartIn(BaseModel):
 
 
 # Memory mode is how a solo draft is shown, not part of it: the state string is the same
-# either way, so `?memory=1` rides alongside it on every call.
+# either way, so `?memory=1` rides alongside it on every call. Every new solo draft has a
+# bench (C40); a link to an eleven-pick draft still opens and plays as it always did.
 @app.post("/api/draft")
 def start(body: StartIn, memory: bool = False) -> dict:
     seed = body.seed if body.seed is not None else random.SystemRandom().randrange(1, 10**9)
-    state = encode(seed, body.formation, [])
+    state = encode(seed, body.formation, [], bench=True)
     return session_out(state, _replay(state), memory)
 
 
@@ -438,24 +446,27 @@ class PickIn(BaseModel):
 
 @app.post("/api/draft/{state}/pick")
 def pick(state: str, body: PickIn, memory: bool = False) -> dict:
-    seed, formation, moves = _decode(state)
-    new = encode(seed, formation, moves + [Pick(body.index)])
+    seed, formation, moves, bench = _decode(state)
+    new = encode(seed, formation, moves + [Pick(body.index)], bench)
     return session_out(new, _replay(new), memory)
 
 
 @app.post("/api/draft/{state}/reroll")
 def reroll(state: str, memory: bool = False) -> dict:
-    seed, formation, moves = _decode(state)
-    new = encode(seed, formation, moves + [Reroll()])
+    seed, formation, moves, bench = _decode(state)
+    new = encode(seed, formation, moves + [Reroll()], bench)
     return session_out(new, _replay(new), memory)
 
 
 def _solo_tournament(state: str) -> Tournament:
+    """A bench draft plays engine 2 with its bench on the automatic plan (C40); an
+    eleven-pick draft plays engine 1, as every link to one always has."""
     s = _replay(state)
     if not s.complete:
-        raise HTTPException(409, "the eleven is not complete yet")
-    you = Side("YOU", "Your XI", "YOU", s.formation, s.picks, you=True)
-    return play_tournament(load_deck(), league(), s.seed, you)
+        raise HTTPException(409, "the squad is not complete yet" if s.bench_size else "the eleven is not complete yet")
+    you = Side("YOU", "Your XI", "YOU", s.formation, s.picks[:11], you=True,
+               bench=s.bench, plan=auto_plan(s.bench))
+    return play_tournament(load_deck(), league(), s.seed, you, engine=2 if s.bench_size else 1)
 
 
 @app.get("/api/tournament/{state}")

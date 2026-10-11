@@ -353,6 +353,17 @@ button{font:inherit;cursor:pointer}
 .xi-foot div{font:650 10.5px var(--sans);font-stretch:85%;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3)}
 .xi-foot div + div{border-left:1px solid var(--line);padding-left:16px}
 .xi-foot b{display:block;font:700 26px/1 var(--display);color:var(--ink);letter-spacing:-.02em;margin-bottom:6px}
+/* The bench under a pitch (C40): three places, dashed until filled. */
+.bench-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:4px 20px 18px}
+.bench-row > .label{grid-column:1/-1}
+.sub-card{display:flex;align-items:center;gap:9px;min-width:0;min-height:58px;padding:8px 10px;border:1px dashed var(--line-strong);border-radius:var(--r-sm)}
+.sub-card.filled{border-style:solid;border-color:var(--line);background:var(--panel-2)}
+.sub-card .who{min-width:0}
+.sub-card b{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-weight:650;font-size:13.5px;line-height:1.25;overflow-wrap:anywhere}
+.sub-card small{display:flex;flex-wrap:wrap;align-items:center;gap:3px;color:var(--ink-3);font-size:12px;margin-top:3px}
+.sub-card small .pos{font-size:10px;padding:1px 5px}
+.sub-empty{font:600 10.5px var(--sans);font-stretch:85%;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin:auto}
+@media (max-width:480px){.sub-card .crest{display:none}.sub-card{padding:8px}}
 
 /* --- the tournament --- */
 .cup-hero{text-align:center;padding:52px 0 22px}

@@ -196,7 +196,7 @@ function renderBody() {
   }
   const right = [];
   if (CUP.you) right.push(`<section class="panel"><div class="panel-h"><span class="label">Your XI</span><span class="label">${esc(CUP.you.formation)}</span></div>
-    <div class="pitch" id="cuppitch"></div></section>`);
+    <div class="pitch" id="cuppitch"></div><div class="bench-row" id="cupbench" hidden></div></section>`);
   const others = (CUP.players || []).filter((p) => !p.you);
   if (done && others.length) right.push(`<section class="panel"><div class="panel-h"><span class="label">Their elevens</span>
     <select id="whose" aria-label="Whose eleven">${others.map((p, i) => `<option value="${i}">${esc(p.name)} · ${esc(p.formation)}</option>`).join("")}</select></div>
@@ -208,7 +208,10 @@ function renderBody() {
   }
   $("left").innerHTML = left.join("");
   $("right").innerHTML = right.join("");
-  if (CUP.you) renderPitch($("cuppitch"), CUP.you.slots, CUP.you.xi, null);
+  if (CUP.you) {
+    renderPitch($("cuppitch"), CUP.you.slots, CUP.you.xi, null);
+    renderBench($("cupbench"), CUP.you.bench || [], (CUP.you.bench || []).length);
+  }
   if ($("whose")) {
     const show = () => { const p = others[+$("whose").value]; renderPitch($("theirpitch"), p.slots, p.xi, null); };
     $("whose").onchange = show;

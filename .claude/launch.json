@@ -4,14 +4,40 @@
     {
       "name": "campeones",
       "runtimeExecutable": "uv",
-      "runtimeArgs": ["run", "uvicorn", "web.app:app", "--port", "8030"],
+      "runtimeArgs": [
+        "run",
+        "uvicorn",
+        "web.app:app",
+        "--port",
+        "8030"
+      ],
       "port": 8030
     },
     {
       "name": "campeones-db",
       "runtimeExecutable": "uv",
-      "runtimeArgs": ["run", "python", "-m", "tools.devserver", "--port", "8031"],
+      "runtimeArgs": [
+        "run",
+        "python",
+        "-m",
+        "tools.devserver",
+        "--port",
+        "8031"
+      ],
       "port": 8031
+    },
+    {
+      "name": "campeones-db-2",
+      "runtimeExecutable": "uv",
+      "runtimeArgs": [
+        "run",
+        "python",
+        "-m",
+        "tools.devserver",
+        "--port",
+        "8032"
+      ],
+      "port": 8032
     }
   ]
 }

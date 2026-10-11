@@ -14,6 +14,11 @@ What is stored is who sits where and each seat's draft state string; a draft is
 replayed by game.draft.replay exactly as a solo one is, so a move the deal did not
 offer is refused by the same code. Every write locks the room row first, so two
 seats finishing at once cannot both miss that the room is complete.
+
+A BENCH ROOM (C42) drafts three more each and plays engine 2. After its picks each seat
+chooses a substitution plan and says it is ready; the room completes only when every
+seat is, because the tournament is replayed on every read and a plan changed after it
+opened would change what everyone had seen. Rooms made before benches have none.
 """
 
 from __future__ import annotations
@@ -26,9 +31,10 @@ from dataclasses import dataclass
 from game.colours import palette
 from game.deck import Deck
 from game import shared_draft as shared
-from game.draft import IllegalMove, Move, Pick, Session, decode, encode, replay, why_not
+from game.draft import (BENCH, Change, IllegalMove, Move, Pick, Session, check_plan, decode_plan, decode_state,
+                        encode, encode_plan, replay, why_not)
 from game.formations import DEFAULT, FORMATIONS
-from game.tournament import ROOM_SIZES, Side
+from game.tournament import ROOM_SIZES, Side, auto_plan
 from web.accounts import Account
 
 STYLES = ("turns", "own")
@@ -72,18 +78,28 @@ class Seat:
     seat: int
     formation: str
     state: str | None
+    plan: str | None = None         # a bench room's: encode_plan once the seat is ready
+
+    @property
+    def bench(self) -> bool:
+        return bool(self.state) and self.state.startswith("b")
 
     @property
     def moves(self) -> list[Move]:
-        return decode(self.state)[2] if self.state else []
+        return decode_state(self.state)[2] if self.state else []
 
     @property
     def picks(self) -> int:
         return sum(isinstance(m, Pick) for m in self.moves)
 
     @property
+    def total(self) -> int:
+        return 11 + (BENCH if self.bench else 0)
+
+    @property
     def complete(self) -> bool:
-        return self.picks == 11
+        """An own-pace seat is done: every pick made, and in a bench room its plan in."""
+        return self.picks == self.total and (not self.bench or self.plan is not None)
 
 
 @dataclass
@@ -100,6 +116,7 @@ class Room:
     moves_text: str
     turn_started_at: float | None
     failure_reason: str | None
+    bench: bool
     seats: list[Seat]
 
     def seat_of(self, account_id: int | None) -> Seat | None:
@@ -113,8 +130,14 @@ class Room:
     def turns(self) -> bool:
         return self.style == "turns"
 
+    @property
+    def picks_each(self) -> int:
+        return 11 + (BENCH if self.bench else 0)
+
     def clock_expired(self, now: float) -> bool:
+        # Once every pick is made a bench room waits for plans, and no clock runs on those.
         return (self.turns and self.status == "drafting" and self.turn_started_at is not None
+                and len(self.moves) < self.picks_each * len(self.seats)
                 and now - self.turn_started_at > self.timer_seconds + CLOCK_GRACE_S)
 
 
@@ -124,17 +147,37 @@ def seat_palette(seat: int) -> dict[str, str]:
 
 
 def human_side(seat: Seat, session: Session) -> Side:
-    """A seat's finished draft as a tournament side, in its seat's colours."""
+    """A seat's finished draft as a tournament side, in its seat's colours: its eleven,
+    and in a bench room its bench and plan."""
     f = session.formation
-    return Side(f"P{seat.seat}", seat.username, seat.username[:3].upper(), f, session.picks,
+    subs = session.subs()
+    return Side(f"P{seat.seat}", seat.username, seat.username[:3].upper(), f, session.picks[:11],
                 owner=seat.account_id, club_name=seat.username, label=f.label,
+                bench=session.bench, plan=auto_plan(session.bench) if subs is None else subs,
                 **seat_palette(seat.seat))
+
+
+def seat_session(deck: Deck, room: Room, seat: Seat, d: shared.SharedDraft | None = None) -> Session:
+    """A seat's draft as a Session, with its plan: replayed from its state when it drafts
+    at its own pace, or cut from the room's shared draft when the room takes turns."""
+    plan = decode_plan(seat.plan) if seat.plan else None
+    if room.turns:
+        d = d if d is not None else shared_of(deck, room)
+        i = next(k for k, x in enumerate(room.seats) if x.account_id == seat.account_id)
+        s = Session(room.seed, d.formations[i], picks=list(d.picks[i]),
+                    bench_size=BENCH if room.bench else 0)
+        if plan is not None:
+            check_plan(s, plan)
+            s.plan = plan
+        return s
+    seed, formation, moves, bench, _ = decode_state(seat.state)
+    return replay(deck, seed, formation, moves, bench, plan)
 
 
 # -- reading ----------------------------------------------------------------
 
 ROOM_COLUMNS = ("code, size, seed, host_id, status, version, memory, style, timer_seconds,"
-                " moves, turn_started_at, failure_reason")
+                " moves, turn_started_at, failure_reason, bench")
 
 
 def load_room(conn, code: str, lock: bool = False) -> Room:
@@ -149,7 +192,7 @@ def load_room(conn, code: str, lock: bool = False) -> Room:
     if row is None:
         raise NotFound("no room with that code")
     seats = [Seat(*r) for r in conn.execute(
-        "select s.account_id, a.username, s.seat, s.formation, s.state"
+        "select s.account_id, a.username, s.seat, s.formation, s.state, s.plan"
         "  from room_seats s join accounts a using (account_id)"
         " where s.room_code = %s order by s.seat", (code,))]
     return Room(*row, seats=seats)
@@ -188,7 +231,7 @@ def _check_style(style: str, timer: int) -> None:
 
 def create_room(conn, account: Account, size: int, formation: str = DEFAULT,
                 memory: bool = False, style: str = "turns",
-                timer: int = shared.DEFAULT_TIMER) -> str:
+                timer: int = shared.DEFAULT_TIMER, bench: bool = True) -> str:
     if size not in ROOM_SIZES:
         raise RoomError(f"a room holds {', '.join(map(str, ROOM_SIZES))} sides")
     _check_formation(formation)
@@ -199,10 +242,10 @@ def create_room(conn, account: Account, size: int, formation: str = DEFAULT,
     seed = random.SystemRandom().randrange(1, 2**31 - 1)
     for _ in range(20):
         code = "".join(secrets.choice(CODE_ALPHABET) for _ in range(CODE_LENGTH))
-        row = conn.execute("insert into rooms (code, size, seed, host_id, memory, style, timer_seconds)"
-                           " values (%s, %s, %s, %s, %s, %s, %s)"
+        row = conn.execute("insert into rooms (code, size, seed, host_id, memory, style, timer_seconds, bench)"
+                           " values (%s, %s, %s, %s, %s, %s, %s, %s)"
                            " on conflict (code) do nothing returning code",
-                           (code, size, seed, account.account_id, memory, style, timer)).fetchone()
+                           (code, size, seed, account.account_id, memory, style, timer, bench)).fetchone()
         if row:
             conn.execute("insert into room_seats (room_code, account_id, seat, formation)"
                          " values (%s, %s, 0, %s)", (code, account.account_id, formation))
@@ -283,6 +326,18 @@ def set_memory(conn, account: Account, code: str, memory: bool) -> None:
     _touch(conn, room)
 
 
+def set_bench(conn, account: Account, code: str, bench: bool) -> None:
+    """Whether the room drafts a bench (C42): the host's call, in the lobby. Without one,
+    a turn of eleven rounds rather than fourteen, and engine 1."""
+    room = load_room(conn, code, lock=True)
+    if room.host_id != account.account_id:
+        raise Forbidden("only the host can choose whether the room drafts a bench")
+    if room.status != "lobby":
+        raise Conflict("the bench is settled once the draft starts")
+    conn.execute("update rooms set bench = %s where code = %s", (bench, room.code))
+    _touch(conn, room)
+
+
 def set_style(conn, account: Account, code: str, style: str, timer: int) -> None:
     """How the room drafts, and how long a turn lasts: the host's call, in the lobby."""
     room = load_room(conn, code, lock=True)
@@ -307,7 +362,7 @@ def start_room(conn, account: Account, code: str) -> None:
         return
     for s in room.seats:
         conn.execute("update room_seats set state = %s where room_code = %s and account_id = %s",
-                     (encode(room.seed, s.formation, []), room.code, s.account_id))
+                     (encode(room.seed, s.formation, [], bench=room.bench), room.code, s.account_id))
     _touch(conn, room, "drafting")
 
 
@@ -316,6 +371,7 @@ def _save_state(conn, room: Room, seat: Seat, state: str) -> None:
                  (state, room.code, seat.account_id))
     seat.state = state
     _touch(conn, room, "complete" if all(s.complete for s in room.seats) else None)
+
 
 
 def make_move(conn, deck: Deck, account: Account, code: str, move: Move, expect: int) -> None:
@@ -336,24 +392,65 @@ def _own_pace_move(conn, deck: Deck, account: Account, code: str, move: Move, ex
         raise Forbidden("you are not in this room")
     if room.status != "drafting" or seat.complete:
         raise Conflict("there is nothing to draft")
-    seed, formation, moves = decode(seat.state)
+    seed, formation, moves, bench, _ = decode_state(seat.state)
     if len(moves) != expect:
         raise Conflict("your draft moved on in another window; reloaded")
     moves = moves + [move]
-    replay(deck, seed, formation, moves)              # raises IllegalMove
-    _save_state(conn, room, seat, encode(seed, formation, moves))
+    replay(deck, seed, formation, moves, bench)       # raises IllegalMove
+    _save_state(conn, room, seat, encode(seed, formation, moves, bench))
 
 
 def autopick(deck: Deck, state: str) -> str:
     """Finish a draft by taking the best-rated player each deal offers."""
-    seed, formation, moves = decode(state)
-    s = replay(deck, seed, formation, moves)
+    seed, formation, moves, bench, _ = decode_state(state)
+    s = replay(deck, seed, formation, moves, bench)
     while not s.complete:
         best = max((i for i, c in enumerate(s.deal.cards) if why_not(c, s.formation, s.picks) is None),
                    key=lambda i: s.deal.cards[i].rating)
         moves.append(Pick(best))
-        s = replay(deck, seed, formation, moves)
-    return encode(seed, formation, moves)
+        s = replay(deck, seed, formation, moves, bench)
+    return encode(seed, formation, moves, bench)
+
+
+def _auto_text(session: Session) -> str:
+    """The automatic plan written out, for a seat that never said it was ready."""
+    return encode_plan(tuple(Change(x.on, x.minute, x.when) for x in auto_plan(session.bench)))
+
+
+def set_plan(conn, deck: Deck, account: Account, code: str, plan: tuple[Change, ...] | None) -> None:
+    """A seat's substitution plan, which also says it is ready (C42); None is the automatic
+    plan. Allowed once the seat's picks are all made and until the room completes, so a
+    plan can be changed while friends are still drafting but never once the tournament is
+    open."""
+    room = load_room(conn, code, lock=True)
+    seat = room.seat_of(account.account_id)
+    if seat is None:
+        raise Forbidden("you are not in this room")
+    if not room.bench:
+        raise RoomError("this room drafts no bench")
+    if room.status != "drafting":
+        raise Conflict("plans are settled once the tournament opens")
+    s = seat_session(deck, room, replace_plan(seat, None))
+    if len(s.picks) < s.total:
+        raise Conflict("finish your picks first")
+    text = _auto_text(s) if plan is None else encode_plan(plan)
+    check_plan(s, decode_plan(text))                  # raises IllegalMove
+    conn.execute("update room_seats set plan = %s where room_code = %s and account_id = %s",
+                 (text, room.code, seat.account_id))
+    seat.plan = text
+    _touch(conn, room, "complete" if _all_in(deck, room) else None)
+
+
+def replace_plan(seat: Seat, plan: str | None) -> Seat:
+    return Seat(seat.account_id, seat.username, seat.seat, seat.formation, seat.state, plan)
+
+
+def _all_in(deck: Deck, room: Room, d: shared.SharedDraft | None = None) -> bool:
+    """Every pick made, and in a bench room every plan in."""
+    if room.turns:
+        d = d if d is not None else shared_of(deck, room)
+        return d.complete and (not room.bench or all(s.plan is not None for s in room.seats))
+    return all(s.complete for s in room.seats)
 
 
 def seat_removed(conn, code: str) -> None:
@@ -393,27 +490,40 @@ def finish_drafts(conn, deck: Deck, account: Account, code: str) -> None:
         except shared.Stranded as e:
             _fail(conn, room, str(e))
             return
+        room.moves_text = shared.encode_moves(moves)
+        _plan_the_rest(conn, deck, room, d)
         _save_moves(conn, room, moves, "complete")
         return
     for seat in room.seats:
-        if not seat.complete:
+        if seat.picks < seat.total:
+            seat.state = autopick(deck, seat.state)
             conn.execute("update room_seats set state = %s where room_code = %s and account_id = %s",
-                         (autopick(deck, seat.state), room.code, seat.account_id))
+                         (seat.state, room.code, seat.account_id))
+    _plan_the_rest(conn, deck, room)
     _touch(conn, room, "complete")
+
+
+def _plan_the_rest(conn, deck: Deck, room: Room, d: shared.SharedDraft | None = None) -> None:
+    """The host's finish, in a bench room: anyone not yet ready gets the automatic plan."""
+    if not room.bench:
+        return
+    for seat in room.seats:
+        if seat.plan is None:
+            seat.plan = _auto_text(seat_session(deck, room, seat, d))
+            conn.execute("update room_seats set plan = %s where room_code = %s and account_id = %s",
+                         (seat.plan, room.code, seat.account_id))
 
 
 def sides(deck: Deck, room: Room) -> list[Side]:
     """Every seat's eleven as a side, in seat order. The room must be complete."""
-    if room.turns:
-        d = shared_of(deck, room)
-        return [Side(f"P{seat.seat}", seat.username, seat.username[:3].upper(), f, picks,
-                     owner=seat.account_id, club_name=seat.username, label=f.label, **seat_palette(seat.seat))
-                for seat, f, picks in zip(room.seats, d.formations, d.picks)]
-    out = []
-    for seat in room.seats:
-        seed, formation, moves = decode(seat.state)
-        out.append(human_side(seat, replay(deck, seed, formation, moves)))
-    return out
+    d = shared_of(deck, room) if room.turns else None
+    return [human_side(seat, seat_session(deck, room, seat, d)) for seat in room.seats]
+
+
+def engine(room: Room) -> int:
+    """A bench room plays engine 2 (C39); a room without one, engine 1, as every room
+    made before benches did."""
+    return 2 if room.bench else 1
 
 
 
@@ -422,7 +532,7 @@ def sides(deck: Deck, room: Room) -> list[Side]:
 def shared_of(deck: Deck, room: Room, moves: list[int] | None = None) -> shared.SharedDraft:
     """The room's draft, replayed: seats in the order they sat down, host first."""
     return shared.replay_shared(deck, room.seed, [s.formation for s in room.seats],
-                                room.moves if moves is None else moves)
+                                room.moves if moves is None else moves, room.bench)
 
 
 def _save_moves(conn, room: Room, moves: list[int], status: str | None = None) -> None:
@@ -452,7 +562,7 @@ def resolve(conn, deck: Deck, room: Room) -> bool:
     except shared.Stranded as e:
         _fail(conn, room, str(e))
         return True
-    _save_moves(conn, room, moves, "complete" if d.complete else None)
+    _save_moves(conn, room, moves, "complete" if _all_in(deck, room, d) else None)
     return True
 
 
@@ -489,4 +599,4 @@ def make_turn_pick(conn, deck: Deck, account: Account, code: str, index: int, ex
     except shared.Stranded as e:
         _fail(conn, room, str(e))
         return
-    _save_moves(conn, room, moves, "complete" if d.complete else None)
+    _save_moves(conn, room, moves, "complete" if _all_in(deck, room, d) else None)

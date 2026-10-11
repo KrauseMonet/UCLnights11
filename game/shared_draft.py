@@ -15,6 +15,8 @@ turn it is, what was dealt and who holds whom are never stored, only derived.
 - **No rerolls.** Every move is an index into the deal, so a move's turn is its place in
   the list; another kind of move would shift the snake for everyone.
 - **Eleven rounds**: every seat makes exactly eleven picks, so nobody finishes early.
+  A bench room (C42) plays fourteen, the last three for the bench (game.draft.why_not
+  turns a pick after the eleven into a bench pick), exclusive across the room as well.
 - **Stranded**: if no squad in the deck holds anyone a seat can still take, the draft
   cannot go on. With 243 squads and at most 32 seats this needs a deck far thinner
   than this one; it is reported rather than worked round.
@@ -26,7 +28,7 @@ import random
 from dataclasses import dataclass, field
 
 from game.deck import Card, ClubSeason, Deck
-from game.draft import REDRAW_CAP, IllegalMove, why_not
+from game.draft import BENCH, REDRAW_CAP, IllegalMove, why_not
 from game.formations import FORMATIONS, Formation
 
 PICKS_EACH = 11
@@ -54,6 +56,7 @@ class SharedDraft:
     deal: ClubSeason | None = None
     redraws: int = 0
     log: list[tuple[int, Card]] = field(default_factory=list)   # (seat, card), in order
+    picks_each: int = PICKS_EACH                                 # PICKS_EACH + BENCH with a bench
 
     @property
     def seats(self) -> int:
@@ -61,7 +64,7 @@ class SharedDraft:
 
     @property
     def total(self) -> int:
-        return PICKS_EACH * self.seats
+        return self.picks_each * self.seats
 
     @property
     def complete(self) -> bool:
@@ -73,7 +76,7 @@ class SharedDraft:
 
     @property
     def round(self) -> int:
-        return min(len(self.moves) // self.seats + 1, PICKS_EACH)
+        return min(len(self.moves) // self.seats + 1, self.picks_each)
 
     def reason(self, card: Card, seat: int) -> str | None:
         """None if `seat` can take `card` now, else why not."""
@@ -95,7 +98,8 @@ def _deal(rng: random.Random, deck: Deck, d: SharedDraft) -> ClubSeason:
     raise Stranded(f"no squad holds anyone seat {seat + 1} can still take")
 
 
-def replay_shared(deck: Deck, seed: int, formations: list[str], moves: list[int]) -> SharedDraft:
+def replay_shared(deck: Deck, seed: int, formations: list[str], moves: list[int],
+                  bench: bool = False) -> SharedDraft:
     """Replay a room's draft from scratch. Raises IllegalMove on a move the deal did not
     offer, and Stranded if the deck runs dry for a seat."""
     if not formations:
@@ -104,10 +108,11 @@ def replay_shared(deck: Deck, seed: int, formations: list[str], moves: list[int]
         forms = [FORMATIONS[f] for f in formations]
     except KeyError as e:
         raise IllegalMove(f"unknown formation {e.args[0]!r}") from None
-    if len(moves) > PICKS_EACH * len(forms):
+    each = PICKS_EACH + (BENCH if bench else 0)
+    if len(moves) > each * len(forms):
         raise IllegalMove("too many moves")
     rng = random.Random(f"{seed}:shared")
-    d = SharedDraft(seed, forms, [[] for _ in forms])
+    d = SharedDraft(seed, forms, [[] for _ in forms], picks_each=each)
     d.deal = _deal(rng, deck, d)
     for index in moves:
         seat = d.active

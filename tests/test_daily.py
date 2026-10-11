@@ -32,8 +32,8 @@ def test_a_challenge_is_measured_into_the_band_and_is_the_same_every_time():
     assert a == b
     lo, hi = rules.SUCCESS_BAND
     assert lo <= a.success_rate <= hi
-    xi = rules.best_pick_xi(deck, a.seed, a.formation)
-    assert rules.success_rate(league, xi, deck.by_key[a.opponent], a.kind, a.target, a.seed) == pytest.approx(a.success_rate, abs=0.001)
+    you = rules.side_of(rules.best_pick_draft(deck, a.seed, a.formation))
+    assert rules.success_rate(league, you, deck.by_key[a.opponent], a.kind, a.target, a.seed) == pytest.approx(a.success_rate, abs=0.001)
 
 
 def test_the_daily_draft_has_no_rerolls():
@@ -105,7 +105,7 @@ def test_one_ranked_attempt_a_day_and_it_is_saved():
     r = c.post("/api/daily/submit", json={"moves": moves})
     assert r.status_code == 200, r.text
     out = r.json()
-    assert out["ranked"] and out["fixture"]["shots"] and len(out["journey"]["players"]) == 11
+    assert out["ranked"] and out["fixture"]["shots"] and len(out["journey"]["players"]) >= 11   # and substitutes (C42)
     assert out["board"]["mine"]["rank"] >= 1 and out["streak"]["current"] == 1
     assert c.post("/api/daily/submit", json={"moves": moves}).status_code == 409
     again = c.get("/api/daily").json()
@@ -251,3 +251,65 @@ def test_practice_doesn_t_reveal_ratings_either():
     out = anon.post("/api/daily/practice", json={"moves": drafted(c)}).json()
     assert all(p["rating"] is None for p in out["journey"]["players"])
     assert all(x["rating"] is None for x in out["opponent"]["xi"])
+
+
+# -- benches (C42) -----------------------------------------------------------------
+
+def test_a_bench_day_is_measured_into_the_band_with_engine_2_and_is_the_same_every_time():
+    deck = load_deck()
+    league = league_of(deck)
+    a = rules.make_challenge(deck, league, "2026-11-01", 31337, bench=True)
+    assert a == rules.make_challenge(deck, league, "2026-11-01", 31337, bench=True)
+    assert a.bench and a.engine == 2
+    lo, hi = rules.SUCCESS_BAND
+    assert lo <= a.success_rate <= hi
+    s = rules.best_pick_draft(deck, a.seed, a.formation, bench=True)
+    assert len(s.picks) == 14
+    you = rules.side_of(s)
+    assert rules.success_rate(league, you, deck.by_key[a.opponent], a.kind, a.target, a.seed,
+                              engine=2) == pytest.approx(a.success_rate, abs=0.001)
+
+
+def test_a_day_without_a_bench_plays_engine_1_and_takes_no_plan():
+    deck = load_deck()
+    league = league_of(deck)
+    a = rules.make_challenge(deck, league, "2026-01-01", 424242)
+    assert not a.bench and a.engine == 1
+    assert len(rules.draft(deck, a, []).picks) == 0 and rules.draft(deck, a, []).total == 11
+    from game.draft import Change, IllegalMove
+    with pytest.raises(IllegalMove, match="no bench"):
+        daily.plan_of(a, (Change(0, 60, "any"),))
+
+
+def test_today_has_a_bench_and_the_ranked_match_plays_and_stores_its_plan():
+    c = player()
+    ch = c.get("/api/daily").json()["challenge"]
+    assert ch["bench"] and ch["squads"] == 14
+    moves = drafted(c)
+    s = c.get("/api/daily/draft", params={"moves": moves}).json()
+    assert len(s["picks"]) == 14 and all(b["rating"] is None and b["can_replace"] for b in s["bench"])
+    assert s["plan"] is None, "blind: the automatic plan's order would rank the substitutes"
+    slot = s["bench"][1]["can_replace"][0]
+    starter, sub = s["xi"][slot]["name"], s["bench"][1]["name"]
+    plan = [{"on": 1, "minute": 45, "when": "any", "off": slot}]
+    assert c.post("/api/daily/practice", json={"moves": moves, "changes": [{**plan[0], "off": 0}]}).status_code == 400
+    out = c.post("/api/daily/submit", json={"moves": moves, "changes": plan}).json()
+    mine = [x for x in out["fixture"]["subs"] if x["side"] == 0]
+    assert [(x["minute"], x["off"], x["on"]) for x in mine] == [(45, starter, sub)]
+    with db.connection() as conn:
+        (stored,) = conn.execute("select plan from daily_results where day = %s and account_id = %s",
+                                 (daily.today(), c.account_id)).fetchone()
+    assert stored == f"p1a45o{slot}"
+    again = c.get("/api/daily").json()["mine"]
+    assert again["fixture"]["subs"] == out["fixture"]["subs"] and (again["gf"], again["ga"]) == (out["gf"], out["ga"])
+
+
+def test_the_automatic_plan_is_stored_written_out():
+    c = player()
+    out = c.post("/api/daily/submit", json={"moves": drafted(c)}).json()
+    with db.connection() as conn:
+        (stored,) = conn.execute("select plan from daily_results where day = %s and account_id = %s",
+                                 (daily.today(), c.account_id)).fetchone()
+    import re
+    assert re.fullmatch(r"p\da60\.\da70\.\da80", stored)
+    assert c.get("/api/daily").json()["mine"]["fixture"]["subs"] == out["fixture"]["subs"]

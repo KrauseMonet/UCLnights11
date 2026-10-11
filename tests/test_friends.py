@@ -1,5 +1,7 @@
 """Accounts and rooms end to end, through the API, against a real Postgres."""
 
+import re
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -57,7 +59,7 @@ def expect(draft):
 def test_signed_out_is_no_account_and_cannot_make_a_room():
     c = TestClient(app)
     assert c.get("/api/auth/me").json() == {"account": None}
-    assert c.post("/api/rooms", json={"size": 4, "style": "own"}).status_code == 401
+    assert c.post("/api/rooms", json={"bench": False, "size": 4, "style": "own"}).status_code == 401
 
 
 def test_register_sign_out_and_sign_in_again():
@@ -89,14 +91,14 @@ def test_a_forged_cookie_is_signed_out():
     c = TestClient(app)
     c.cookies.set(auth.COOKIE_NAME, "1.9999999999.deadbeef")
     assert c.get("/api/auth/me").json() == {"account": None}
-    assert c.post("/api/rooms", json={"size": 2, "style": "own"}).status_code == 401
+    assert c.post("/api/rooms", json={"bench": False, "size": 2, "style": "own"}).status_code == 401
 
 
 # -- rooms ------------------------------------------------------------------
 
 def test_a_lobby_fills_and_refuses_once_full():
     host, guest, late = player(), player(), player()
-    room = host.post("/api/rooms", json={"size": 2, "style": "own"}).json()
+    room = host.post("/api/rooms", json={"bench": False, "size": 2, "style": "own"}).json()
     assert room["status"] == "lobby" and room["fillers"] == 1 and room["is_host"]
     code = room["code"]
     joined = guest.post(f"/api/rooms/{code.lower()}/join").json()   # codes are not case-sensitive
@@ -111,13 +113,13 @@ def test_an_unknown_code_is_a_404():
 
 def test_a_bad_size_or_formation_is_refused():
     c = player()
-    assert c.post("/api/rooms", json={"size": 6, "style": "own"}).status_code == 400
-    assert c.post("/api/rooms", json={"size": 4, "formation": "4141"}).status_code == 400
+    assert c.post("/api/rooms", json={"bench": False, "size": 6, "style": "own"}).status_code == 400
+    assert c.post("/api/rooms", json={"bench": False, "size": 4, "formation": "4141"}).status_code == 400
 
 
 def test_only_the_host_starts_and_the_draft_then_locks_the_room():
     host, guest, late = player(), player(), player()
-    code = host.post("/api/rooms", json={"size": 8, "style": "own"}).json()["code"]
+    code = host.post("/api/rooms", json={"bench": False, "size": 8, "style": "own"}).json()["code"]
     guest.post(f"/api/rooms/{code}/join")
     assert guest.post(f"/api/rooms/{code}/formation", json={"formation": "352"}).status_code == 200
     assert guest.post(f"/api/rooms/{code}/start").status_code == 403
@@ -132,7 +134,7 @@ def test_only_the_host_starts_and_the_draft_then_locks_the_room():
 
 def test_every_seat_is_dealt_the_same_first_squad():
     host, guest = player(), player()
-    code = host.post("/api/rooms", json={"size": 4, "style": "own"}).json()["code"]
+    code = host.post("/api/rooms", json={"bench": False, "size": 4, "style": "own"}).json()["code"]
     guest.post(f"/api/rooms/{code}/join")
     host.post(f"/api/rooms/{code}/start")
     a = host.get(f"/api/rooms/{code}").json()["draft"]
@@ -142,7 +144,7 @@ def test_every_seat_is_dealt_the_same_first_squad():
 
 def test_a_room_completes_only_when_the_last_eleven_is_full():
     host, guest = player(), player()
-    code = host.post("/api/rooms", json={"size": 4, "style": "own"}).json()["code"]
+    code = host.post("/api/rooms", json={"bench": False, "size": 4, "style": "own"}).json()["code"]
     guest.post(f"/api/rooms/{code}/join")
     host.post(f"/api/rooms/{code}/start")
     assert host.get(f"/api/rooms/{code}/tournament").status_code == 409
@@ -156,7 +158,7 @@ def test_a_room_completes_only_when_the_last_eleven_is_full():
 
 def test_a_stale_or_illegal_move_is_refused_and_changes_nothing():
     host = player()
-    code = host.post("/api/rooms", json={"size": 2, "style": "own"}).json()["code"]
+    code = host.post("/api/rooms", json={"bench": False, "size": 2, "style": "own"}).json()["code"]
     host.post(f"/api/rooms/{code}/start")
     d = host.get(f"/api/rooms/{code}").json()["draft"]
     i = next(i for i, x in enumerate(d["deal"]["cards"]) if x["takeable"])
@@ -171,7 +173,7 @@ def test_a_stale_or_illegal_move_is_refused_and_changes_nothing():
 
 def test_someone_outside_the_room_cannot_draft_in_it():
     host, stranger = player(), player()
-    code = host.post("/api/rooms", json={"size": 2, "style": "own"}).json()["code"]
+    code = host.post("/api/rooms", json={"bench": False, "size": 2, "style": "own"}).json()["code"]
     host.post(f"/api/rooms/{code}/start")
     assert stranger.post(f"/api/rooms/{code}/pick", json={"index": 0, "expect": 0}).status_code == 403
     assert stranger.get(f"/api/rooms/{code}").json()["draft"] is None
@@ -179,7 +181,7 @@ def test_someone_outside_the_room_cannot_draft_in_it():
 
 def test_the_host_can_finish_a_wandering_friends_draft():
     host, guest = player(), player()
-    code = host.post("/api/rooms", json={"size": 4, "style": "own"}).json()["code"]
+    code = host.post("/api/rooms", json={"bench": False, "size": 4, "style": "own"}).json()["code"]
     guest.post(f"/api/rooms/{code}/join")
     host.post(f"/api/rooms/{code}/start")
     draft_to_the_end(guest, code, stop_after=4)
@@ -190,7 +192,7 @@ def test_the_host_can_finish_a_wandering_friends_draft():
 
 def test_the_room_tournament_has_every_friend_and_real_sides_for_the_rest():
     host, guest, stranger = player("host_t"), player("guest_t"), player()
-    code = host.post("/api/rooms", json={"size": 8, "style": "own"}).json()["code"]
+    code = host.post("/api/rooms", json={"bench": False, "size": 8, "style": "own"}).json()["code"]
     guest.post(f"/api/rooms/{code}/join")
     host.post(f"/api/rooms/{code}/start")
     draft_to_the_end(host, code)
@@ -222,7 +224,7 @@ def test_the_room_tournament_has_every_friend_and_real_sides_for_the_rest():
 
 def test_a_thirty_two_room_plays_groups():
     host = player()
-    code = host.post("/api/rooms", json={"size": 32, "style": "own"}).json()["code"]
+    code = host.post("/api/rooms", json={"bench": False, "size": 32, "style": "own"}).json()["code"]
     host.post(f"/api/rooms/{code}/start")
     host.post(f"/api/rooms/{code}/finish")
     t = host.get(f"/api/rooms/{code}/tournament").json()
@@ -232,7 +234,7 @@ def test_a_thirty_two_room_plays_groups():
 
 def test_the_host_leaving_a_lobby_passes_the_room_on():
     host, guest = player(), player()
-    code = host.post("/api/rooms", json={"size": 4, "style": "own"}).json()["code"]
+    code = host.post("/api/rooms", json={"bench": False, "size": 4, "style": "own"}).json()["code"]
     guest.post(f"/api/rooms/{code}/join")
     assert host.post(f"/api/rooms/{code}/leave").status_code == 200
     room = guest.get(f"/api/rooms/{code}").json()
@@ -243,7 +245,7 @@ def test_the_host_leaving_a_lobby_passes_the_room_on():
 
 def test_the_host_can_remove_a_player_from_the_lobby():
     host, guest = player(), player()
-    code = host.post("/api/rooms", json={"size": 4, "style": "own"}).json()["code"]
+    code = host.post("/api/rooms", json={"bench": False, "size": 4, "style": "own"}).json()["code"]
     gid = next(s["id"] for s in guest.post(f"/api/rooms/{code}/join").json()["seats"] if s["you"])
     assert guest.post(f"/api/rooms/{code}/kick", json={"account_id": gid}).status_code == 403
     room = host.post(f"/api/rooms/{code}/kick", json={"account_id": gid}).json()
@@ -252,7 +254,7 @@ def test_the_host_can_remove_a_player_from_the_lobby():
 
 def test_my_rooms_lists_the_rooms_i_sit_in():
     host, guest = player(), player()
-    code = host.post("/api/rooms", json={"size": 16, "style": "own"}).json()["code"]
+    code = host.post("/api/rooms", json={"bench": False, "size": 16, "style": "own"}).json()["code"]
     guest.post(f"/api/rooms/{code}/join")
     mine = guest.get("/api/rooms").json()["rooms"]
     assert mine[0]["code"] == code and mine[0]["players"] == 2 and not mine[0]["host"]
@@ -266,7 +268,7 @@ def ratings_in(draft):
 
 def test_a_memory_room_sends_no_ratings_while_drafting_and_shows_them_after():
     host, guest = player(), player()
-    code = host.post("/api/rooms", json={"size": 4, "memory": True, "style": "own"}).json()["code"]
+    code = host.post("/api/rooms", json={"bench": False, "size": 4, "memory": True, "style": "own"}).json()["code"]
     guest.post(f"/api/rooms/{code}/join")
     room = host.post(f"/api/rooms/{code}/start").json()
     assert room["memory"]
@@ -281,14 +283,14 @@ def test_a_memory_room_sends_no_ratings_while_drafting_and_shows_them_after():
 
 def test_an_ordinary_room_still_shows_ratings():
     host = player()
-    code = host.post("/api/rooms", json={"size": 2, "style": "own"}).json()["code"]
+    code = host.post("/api/rooms", json={"bench": False, "size": 2, "style": "own"}).json()["code"]
     d = host.post(f"/api/rooms/{code}/start").json()["draft"]
     assert all(isinstance(r, int) for r in ratings_in(d))
 
 
 def test_only_the_host_sets_memory_mode_and_only_in_the_lobby():
     host, guest = player(), player()
-    code = host.post("/api/rooms", json={"size": 4, "style": "own"}).json()["code"]
+    code = host.post("/api/rooms", json={"bench": False, "size": 4, "style": "own"}).json()["code"]
     guest.post(f"/api/rooms/{code}/join")
     assert guest.post(f"/api/rooms/{code}/memory", json={"memory": True}).status_code == 403
     assert host.post(f"/api/rooms/{code}/memory", json={"memory": True}).json()["memory"] is True
@@ -319,7 +321,7 @@ def clock(monkeypatch):
 
 def turn_room(n=2, size=4, **kw):
     people = [player() for _ in range(n)]
-    code = people[0].post("/api/rooms", json={"size": size, **kw}).json()["code"]
+    code = people[0].post("/api/rooms", json={"bench": False, "size": size, **kw}).json()["code"]
     for p in people[1:]:
         p.post(f"/api/rooms/{code}/join")
     room = people[0].post(f"/api/rooms/{code}/start").json()
@@ -334,7 +336,7 @@ def take(c, code, room):
 
 def test_a_new_room_takes_turns_by_default_and_the_host_can_change_it(clock):
     host, guest = player(), player()
-    code = host.post("/api/rooms", json={"size": 4}).json()["code"]
+    code = host.post("/api/rooms", json={"bench": False, "size": 4}).json()["code"]
     guest.post(f"/api/rooms/{code}/join")
     room = host.get(f"/api/rooms/{code}").json()
     assert room["style"] == "turns" and room["timer"] == 30
@@ -442,7 +444,7 @@ def test_a_spectator_watches_but_has_no_draft(clock):
 
 def test_a_memory_room_hides_ratings_in_the_placed_eleven_too():
     host = player()
-    code = host.post("/api/rooms", json={"size": 2, "memory": True, "style": "own"}).json()["code"]
+    code = host.post("/api/rooms", json={"bench": False, "size": 2, "memory": True, "style": "own"}).json()["code"]
     host.post(f"/api/rooms/{code}/start")
     d = draft_to_the_end(host, code, stop_after=3)["draft"]
     assert len(d["xi"]) == 3 and {c["rating"] for c in d["xi"]} == {None}
@@ -458,3 +460,121 @@ def test_a_room_whose_picks_no_longer_replay_says_so_instead_of_failing(clock):
     seen = host.get(f"/api/rooms/{code}")
     assert seen.status_code == 200
     assert seen.json()["status"] == "failed" and "positions" in seen.json()["failure_reason"]
+
+
+# -- benches (C42) --------------------------------------------------------------
+
+def bench_room(n=2, size=4, style="own", **kw):
+    people = [player() for _ in range(n)]
+    code = people[0].post("/api/rooms", json={"size": size, "style": style, **kw}).json()["code"]
+    for p in people[1:]:
+        p.post(f"/api/rooms/{code}/join")
+    room = people[0].post(f"/api/rooms/{code}/start").json()
+    return people, code, room
+
+
+def yours(t):
+    return [(m, 0 if m["home"]["you"] else 1) for m in t["your_matches"]]
+
+
+def test_a_new_room_drafts_a_bench_and_only_the_host_changes_that_in_the_lobby():
+    host, guest = player(), player()
+    code = host.post("/api/rooms", json={"size": 4}).json()["code"]
+    guest.post(f"/api/rooms/{code}/join")
+    assert host.get(f"/api/rooms/{code}").json()["bench"] is True
+    assert guest.post(f"/api/rooms/{code}/bench", json={"bench": False}).status_code == 403
+    assert host.post(f"/api/rooms/{code}/bench", json={"bench": False}).json()["bench"] is False
+    host.post(f"/api/rooms/{code}/bench", json={"bench": True})
+    host.post(f"/api/rooms/{code}/start")
+    assert host.post(f"/api/rooms/{code}/bench", json={"bench": False}).status_code == 409
+
+
+def test_an_own_pace_bench_room_waits_for_every_plan_then_plays_engine_2():
+    (host, guest), code, room = bench_room()
+    assert room["picks_each"] == 14
+    assert host.post(f"/api/rooms/{code}/plan", json={"changes": None}).status_code == 409   # picks first
+    room = draft_to_the_end(host, code)
+    d = room["draft"]
+    assert len(d["picks"]) == 14 and len(d["bench"]) == 3 and d["plan"] and not d["ready"]
+    assert room["status"] == "drafting"
+    draft_to_the_end(guest, code)
+    room = host.get(f"/api/rooms/{code}").json()
+    assert room["status"] == "drafting", "every pick is made but nobody is ready"
+    assert [s["ready"] for s in room["seats"]] == [False, False]
+    # The host names a change: the third substitute on from 45' for a man he can replace.
+    sub = room["draft"]["bench"][2]
+    slot = sub["can_replace"][0]
+    off = room["draft"]["xi"][slot]["name"]
+    plan = [{"on": 2, "minute": 45, "when": "any", "off": slot}]
+    assert host.post(f"/api/rooms/{code}/plan", json={"changes": [{**plan[0], "off": 0}]}).status_code == 400
+    assert not host.get(f"/api/rooms/{code}").json()["draft"]["ready"], "a refused plan is not stored"
+    room = host.post(f"/api/rooms/{code}/plan", json={"changes": plan}).json()
+    assert room["status"] == "drafting" and room["draft"]["ready"] and room["draft"]["plan_chosen"]
+    room = guest.post(f"/api/rooms/{code}/plan", json={"changes": None}).json()
+    assert room["status"] == "complete"
+    assert host.post(f"/api/rooms/{code}/plan", json={"changes": []}).status_code == 409   # settled
+    t = host.get(f"/api/rooms/{code}/tournament").json()
+    assert [c["name"] for c in t["you"]["bench"]] == [c["name"] for c in d["bench"]]
+    for m, side in yours(t):
+        mine = [x for x in m["subs"] if x["side"] == side and x["minute"] == 45]
+        assert [(x["off"], x["on"]) for x in mine] == [(off, sub["name"])]
+
+
+def test_a_turn_room_with_a_bench_plays_fourteen_rounds_and_no_clock_runs_on_plans(clock):
+    (host, guest), code, room = bench_room(style="turns")
+    assert room["turns"]["rounds"] == 14 and room["turns"]["total"] == 28
+    while room["turns"]["deal"] is not None:
+        on, _ = on_turn(host, guest, code)
+        r = take(on, code, on.get(f"/api/rooms/{code}").json())
+        assert r.status_code == 200, r.text
+        room = r.json()
+    assert room["status"] == "drafting" and all(s["picks"] == 14 for s in room["seats"])
+    held = [c["id"] for p in (host, guest) for c in p.get(f"/api/rooms/{code}").json()["draft"]["picks"]]
+    assert len(held) == len(set(held)) == 28, "a man taken by anyone, bench too, is gone for everyone"
+    clock.t += 1000                                    # long past any pick clock
+    room = host.get(f"/api/rooms/{code}").json()
+    assert room["status"] == "drafting" and room["turns"]["expect"] == 28
+    host.post(f"/api/rooms/{code}/plan", json={"changes": []})
+    room = guest.post(f"/api/rooms/{code}/plan", json={"changes": None}).json()
+    assert room["status"] == "complete"
+    t = host.get(f"/api/rooms/{code}/tournament").json()
+    assert not any(x["side"] == side for m, side in yours(t) for x in m["subs"]), "a plan of no changes"
+    g = guest.get(f"/api/rooms/{code}/tournament").json()
+    assert any(x["side"] == side for m, side in yours(g) for x in m["subs"]), "the automatic plan"
+
+
+def test_the_host_finishes_a_bench_room_with_automatic_plans(clock):
+    for style in ("own", "turns"):
+        (host, guest), code, room = bench_room(style=style)
+        room = host.post(f"/api/rooms/{code}/finish").json()
+        assert room["status"] == "complete" and all(s["picks"] == 14 and s["ready"] for s in room["seats"]), style
+        with db.connection() as conn:
+            plans = [p for (p,) in conn.execute("select plan from room_seats where room_code = %s", (code,))]
+        # The automatic plan written out: three changes at 60', 70', 80', any score, best change.
+        assert all(re.fullmatch(r"p\da60\.\da70\.\da80", p) for p in plans), plans
+        t = guest.get(f"/api/rooms/{code}/tournament").json()
+        assert len(t["you"]["bench"]) == 3
+
+
+def test_a_room_without_a_bench_plays_engine_1(clock):
+    (host, guest), code, room = turn_room()
+    room = host.post(f"/api/rooms/{code}/finish").json()
+    t = host.get(f"/api/rooms/{code}/tournament").json()
+    assert t["you"]["bench"] == [] and all(m["subs"] == [] for m in t["your_matches"])
+    assert host.post(f"/api/rooms/{code}/plan", json={"changes": None}).status_code == 400
+
+
+def test_set_plan_itself_refuses_a_plan_the_draft_cannot_play():
+    # Through the API a bad plan is refused twice: set_plan checks it, and were that check
+    # gone, reading the room back for the reply would fail on it and roll the write back.
+    # Only calling set_plan directly can show its own check acting.
+    from game.deck import load_deck
+    from game.draft import Change, IllegalMove
+    from web import accounts
+    (host, guest), code, room = bench_room()
+    room = draft_to_the_end(host, code)
+    me = host.get("/api/auth/me").json()["account"]["id"]
+    with db.connection() as conn:
+        account = accounts.get_account(conn, me)
+        with pytest.raises(IllegalMove):
+            rooms_mod.set_plan(conn, load_deck(), account, code, (Change(0, 60, "any", 0),))

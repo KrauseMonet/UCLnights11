@@ -121,7 +121,7 @@ async function maybeJoin() {
 function render() {
   const you = R.seats.find((s) => s.you);
   $("top").innerHTML = `
-    <div><div class="kicker">${esc(R.format)} · ${esc(STATUS[R.status] || R.status)}${R.style === "turns" ? ` · take turns, ${R.timer}s` : " · own pace"}${R.memory ? " · Memory" : ""}</div>
+    <div><div class="kicker">${esc(R.format)} · ${esc(STATUS[R.status] || R.status)}${R.style === "turns" ? ` · take turns, ${R.timer}s` : " · own pace"}${R.bench ? " · bench" : ""}${R.memory ? " · Memory" : ""}</div>
       <h1 class="room-code" aria-label="Room code ${esc(R.code)}">${esc(R.code)}</h1>
       <p class="sub">${R.seats.length} of ${R.size} players${R.fillers ? ` · ${R.fillers} place${R.fillers === 1 ? "" : "s"} for real sides` : ""}${you ? "" : " · watching"}</p></div>
     <div class="room-acts">${R.status === "lobby" ? `<button class="btn ghost small" id="invite">Copy invite link</button>` : ""}
@@ -131,6 +131,7 @@ function render() {
   renderStrip();
   if (R.status === "lobby") renderLobby();
   else if (R.status === "failed") renderFailed();
+  else if (planning()) renderPlanning();
   else if (R.style === "turns") renderTurns();
   else renderDrafting();
 }
@@ -138,11 +139,11 @@ function render() {
 function renderStrip() {
   const kick = R.is_host && R.status === "lobby";
   $("strip").innerHTML = R.seats.map((s) => `
-    <div class="seatcard ${s.you ? "me" : ""} ${s.complete ? "done" : ""} ${R.turns && R.turns.turn && R.turns.turn.id === s.id ? "on" : ""}" style="${teamStyle(s)}">
+    <div class="seatcard ${s.you ? "me" : ""} ${s.complete && s.ready ? "done" : ""} ${R.turns && R.turns.turn && R.turns.turn.id === s.id ? "on" : ""}" style="${teamStyle(s)}">
       ${sideCrest({ human: true, name: s.username, ...s }, 36)}
       <div class="who"><b>${esc(s.username)}${s.host ? ' <span class="host" title="Host">host</span>' : ""}</b>
-        <small>${esc(s.formation)}${R.status === "lobby" ? "" : s.complete ? " · eleven in" : ` · ${s.picks}/11`}</small>
-        ${R.status === "drafting" ? `<div class="mini"><i style="width:${(s.picks / 11) * 100}%"></i></div>` : ""}</div>
+        <small>${esc(s.formation)}${R.status === "lobby" ? "" : !s.complete ? ` · ${s.picks}/${R.picks_each}` : !R.bench ? " · eleven in" : s.ready ? " · ready" : " · planning"}</small>
+        ${R.status === "drafting" ? `<div class="mini"><i style="width:${(s.picks / R.picks_each) * 100}%"></i></div>` : ""}</div>
       ${kick && !s.you ? `<button class="kick" data-id="${s.id}" aria-label="Remove ${esc(s.username)}">✕</button>` : ""}
     </div>`).join("") + (R.fillers ? `<div class="seatcard ghosted"><span class="crest c36" aria-hidden="true">★</span>
       <div class="who"><b>${R.fillers} real side${R.fillers === 1 ? "" : "s"}</b><small>historical squads</small></div></div>` : "");
@@ -177,6 +178,12 @@ function renderLobby() {
            ${R.style === "turns" ? `<div class="chips" role="radiogroup" aria-label="Pick clock">${[15, 30, 45].map((t) =>
              `<button class="chip" role="radio" aria-checked="${R.timer === t}" data-timer="${t}">${t}s a pick</button>`).join("")}</div>` : ""}`
         : `<p class="note">${R.style === "turns" ? `<b>Taking turns</b>, ${R.timer} seconds a pick.` : "<b>Own pace:</b> everyone drafts at once."}</p>`}</div>
+      <div class="panel-h"><span class="label">The bench</span><span class="label">${R.is_host ? "your call as host" : "the host's call"}</span></div>
+      <div class="room-form">${R.is_host
+        ? `<div class="chips" role="radiogroup" aria-label="Bench">
+             <button class="chip" role="radio" aria-checked="${R.bench}" data-b="1">Three substitutes</button>
+             <button class="chip" role="radio" aria-checked="${!R.bench}" data-b="0">No bench</button></div>`
+        : `<p class="note">${R.bench ? "<b>A bench of three</b> each, and a plan for using it." : "No bench: eleven picks each."}</p>`}</div>
       <div class="panel-h"><span class="label">Ratings</span><span class="label">${R.is_host ? "your call as host" : "the host's call"}</span></div>
       <div class="room-form">${R.is_host
         ? `<div class="chips" role="radiogroup" aria-label="Ratings">
@@ -195,9 +202,10 @@ function renderLobby() {
         ${R.style === "turns"
           ? `<li><b>Take turns</b> in a snake: first in one round, last in the next. Each turn deals one real squad to whoever is picking.</li>
              <li><b>A player taken is gone for everyone</b>, in every season. You have ${R.timer} seconds a pick, or one is made for you.</li>
-             <li>Eleven rounds: at most about ${Math.ceil((R.seats.length * 11 * R.timer) / 60)} minutes with ${R.seats.length} ${R.seats.length === 1 ? "player" : "players"}.</li>`
+             <li>${R.picks_each === 11 ? "Eleven" : "Fourteen"} rounds: at most about ${Math.ceil((R.seats.length * R.picks_each * R.timer) / 60)} minutes with ${R.seats.length} ${R.seats.length === 1 ? "player" : "players"}.</li>`
           : `<li>Everyone is dealt from the <b>same shuffle</b>, so you all see the same squads in the same order.</li>
              <li>Draft at your own pace: one player per squad, two rerolls, just like the solo game.</li>`}
+        ${R.bench ? "<li><b>A bench of three:</b> after your eleven, three more picks. Then everyone plans their changes and says they're ready; the tournament opens when all of you are.</li>" : ""}
         ${R.memory ? "<li><b>Memory mode:</b> no ratings until the tournament. Pick on what you remember.</li>" : ""}
         <li>When the last eleven is in: ${esc(R.stages.join(" → "))}. ${R.size === 2 ? "Winner takes all." : "Ties are two legs; the final is one night on neutral ground."}</li>
       </ol>
@@ -214,6 +222,7 @@ function renderLobby() {
     show(by[you.code]);
   }).catch(() => {});
   $("view").querySelectorAll("[data-m]").forEach((b) => b.onclick = () => act("memory", { memory: b.dataset.m === "1" }));
+  $("view").querySelectorAll("[data-b]").forEach((b) => b.onclick = () => act("bench", { bench: b.dataset.b === "1" }));
   $("view").querySelectorAll("[data-style]").forEach((b) => b.onclick = () => act("style", { style: b.dataset.style, timer: R.timer }));
   $("view").querySelectorAll("[data-timer]").forEach((b) => b.onclick = () => act("style", { style: R.style, timer: +b.dataset.timer }));
   if ($("startb")) $("startb").onclick = () => act("start");
@@ -249,27 +258,69 @@ function renderDrafting() {
   const fresh = shown !== null || !$("deal");
   if (!$("deal")) {
     $("view").innerHTML = `<div class="draft-top"><h2 class="h2 tight" id="formname"></h2>
-        <div class="progress"><span class="label">Pick <b id="pickno">1</b> of 11${R.memory ? ` · <span class="memtag">Memory</span>` : ""}</span>
+        <div class="progress"><span class="label">Pick <b id="pickno">1</b> of ${d.total}${R.memory ? ` · <span class="memtag">Memory</span>` : ""}</span>
         <div class="bar"><i id="bar" style="width:0"></i></div></div>
         <div class="linechips" id="lines" aria-label="Places filled in each line"></div></div>
       <div class="draft-grid">
         <section class="panel deal" id="deal" aria-live="polite"></section>
         <aside class="panel"><div class="panel-h"><span class="label">Your XI</span><span class="label" id="xisub"></span></div>
-          <div class="pitch" id="pitch"></div><div class="xi-foot" id="xifoot"></div></aside></div>`;
+          <div class="pitch" id="pitch"></div><div class="bench-row" id="bench" hidden></div><div class="xi-foot" id="xifoot"></div></aside></div>`;
   }
   shown = d.state;
+  const forBench = d.picks.length >= 11;
   $("formname").textContent = d.formation.label;
   $("pickno").textContent = d.picks.length + 1;
-  $("bar").style.width = `${(d.picks.length / 11) * 100}%`;
+  $("bar").style.width = `${(d.picks.length / d.total) * 100}%`;
   lineChips($("lines"), d.formation, d.xi);
   const expect = movesIn(d.state);
   renderDeal($("deal"), d.deal, {
-    heading: "Dealt to the room", rerollsLeft: d.rerolls_left, fresh,
+    heading: forBench ? `For your bench · ${d.picks.length - 10} of ${d.bench_size}` : "Dealt to the room",
+    takeLabel: forBench ? "Bench" : undefined, rerollsLeft: d.rerolls_left, fresh,
     onTake: (i) => act("pick", { index: i, expect }), onReroll: () => act("reroll", { expect }),
   });
-  renderPitch($("pitch"), d.formation.slots, d.xi, d.picks.length ? d.picks[d.picks.length - 1].id : null);
-  $("xisub").textContent = `${d.picks.length} / 11`;
-  xiFoot($("xifoot"), d);
+  renderPitch($("pitch"), d.formation.slots, d.xi, d.picks.length && !forBench ? d.picks[d.picks.length - 1].id : null);
+  renderBench($("bench"), d.bench, d.bench_size);
+  $("xisub").textContent = d.bench_size ? `${d.xi.length} / 11 · bench ${d.bench.length} / ${d.bench_size}` : `${d.picks.length} / 11`;
+  xiFoot($("xifoot"), { ...d, picks: d.picks.slice(0, 11) });
+}
+
+// ------------------------------------------------------------------ the plan (C42)
+
+/* A bench room's last step: each seat plans its changes and says it is ready, and the
+   tournament opens when everyone is. Choosing here changes nothing on the server until
+   Ready, since sending a plan is what says you are ready; after that every change is
+   sent at once, until the room completes. */
+let localPlan = null;
+const planning = () => R.status === "drafting" && R.bench && R.draft && R.draft.complete;
+
+function renderPlanning() {
+  shown = null; shownTurn = null;
+  document.title = TITLE;
+  const d = R.draft, ready = d.ready;
+  if (ready) localPlan = null;
+  const waiting = R.seats.filter((s) => !s.complete || !s.ready).map((s) => s.username);
+  if (!$("plan")) {
+    $("view").innerHTML = `<div class="draft-grid">
+      <section class="panel deal" id="plan"></section>
+      <aside class="panel"><div class="panel-h"><span class="label">Your XI</span><span class="label">${esc(d.formation.label)}</span></div>
+        <div class="pitch" id="pitch"></div><div class="bench-row" id="bench" hidden></div></aside></div>`;
+  }
+  const finish = R.is_host && waiting.length ? `<button class="btn ghost" id="finishb">Finish for everyone</button>` : "";
+  planPanel($("plan"), d, !ready && localPlan ? localPlan : d.plan, {
+    tag: ready ? "ready" : localPlan || d.plan_chosen ? "your plan" : "automatic plan",
+    onChange: (p) => { if (ready) act("plan", { changes: p }); else { localPlan = p; renderPlanning(); } },
+    foot: ready
+      ? `<p class="note waiting">Ready. ${waiting.length ? `Waiting for ${esc(waiting.join(", "))}.` : "Opening the tournament…"}
+          You can change your plan until everyone is.</p>${finish}`
+      : `<button class="btn primary" id="readyb">Ready</button>${finish}
+         <p class="label">The tournament opens when everyone is ready. ${AUTO_NOTE}</p>`,
+  });
+  renderPitch($("pitch"), d.formation.slots, d.xi, null);
+  renderBench($("bench"), d.bench, d.bench_size);
+  if ($("readyb")) $("readyb").onclick = () => act("plan", { changes: localPlan || (d.plan_chosen ? d.plan : null) });
+  if ($("finishb")) $("finishb").onclick = () => {
+    if (confirm(`Finish for ${waiting.join(", ")}? Unmade picks take the best player each squad offers, and anyone not ready gets the automatic plan.`)) act("finish");
+  };
 }
 
 // ------------------------------------------------------------------ taking turns (C29)
@@ -289,14 +340,14 @@ function renderTurns() {
   if (!$("tdeal")) {
     $("view").innerHTML = `<div class="turnbar" id="turnbar"></div>
       <div class="draft-top">${d ? `<h2 class="h2 tight" id="formname"></h2>` : ""}
-        <div class="progress"><span class="label">Round <b id="roundno">1</b> of 11${R.memory ? ` · <span class="memtag">Memory</span>` : ""}</span>
+        <div class="progress"><span class="label">Round <b id="roundno">1</b> of ${T.rounds}${R.memory ? ` · <span class="memtag">Memory</span>` : ""}</span>
           <div class="bar"><i id="bar" style="width:0"></i></div></div>
         ${d ? `<div class="linechips" id="lines" aria-label="Places filled in each line"></div>` : ""}</div>
       <div class="draft-grid">
         <section class="panel deal" id="tdeal" aria-live="polite"></section>
         <aside class="cup-stack">
           ${d ? `<section class="panel"><div class="panel-h"><span class="label">Your XI</span><span class="label" id="xisub"></span></div>
-            <div class="pitch" id="pitch"></div></section>` : ""}
+            <div class="pitch" id="pitch"></div><div class="bench-row" id="bench" hidden></div></section>` : ""}
           <section class="panel"><div class="panel-h"><span class="label">Latest picks</span><span class="label" id="pickcount"></span></div>
             <ol class="feed-list" id="recent"></ol></section>
         </aside></div>`;
@@ -313,14 +364,17 @@ function renderTurns() {
   if (d) {
     $("formname").textContent = d.formation.label;
     lineChips($("lines"), d.formation, d.xi);
-    renderPitch($("pitch"), d.formation.slots, d.xi, d.picks.length ? d.picks[d.picks.length - 1].id : null);
-    $("xisub").textContent = `${d.picks.length} / 11`;
+    renderPitch($("pitch"), d.formation.slots, d.xi, d.picks.length && d.picks.length <= 11 ? d.picks[d.picks.length - 1].id : null);
+    renderBench($("bench"), d.bench, d.bench_size);
+    $("xisub").textContent = d.bench_size ? `${d.xi.length} / 11 · bench ${d.bench.length} / ${d.bench_size}` : `${d.picks.length} / 11`;
   }
   if (T.deal && shownTurn !== T.expect) {
     const fresh = shownTurn !== null;
     shownTurn = T.expect;
+    const forBench = mine && d && d.picks.length >= 11;
     renderDeal($("tdeal"), T.deal, {
-      headingHtml: mine ? "Dealt to you" : `Dealt to ${esc(T.turn.username)}`, fresh, readOnly: !mine,
+      headingHtml: forBench ? "Dealt to you · for your bench" : mine ? "Dealt to you" : `Dealt to ${esc(T.turn.username)}`,
+      takeLabel: forBench ? "Bench" : undefined, fresh, readOnly: !mine,
       onTake: (i) => act("pick", { index: i, expect: T.expect }),
     });
     if (mine && fresh && navigator.vibrate) navigator.vibrate(120);

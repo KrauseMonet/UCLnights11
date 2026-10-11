@@ -95,3 +95,22 @@ def test_a_man_held_by_one_seat_is_refused_to_the_other_in_any_season(deck):
     other_seasons = [c for cs in deck.club_seasons for c in cs.cards if c.id == held.id and c.key != held.key]
     for c in other_seasons:
         assert d.reason(c, 1) == "already drafted"
+
+
+def test_with_a_bench_the_draft_runs_fourteen_rounds_and_a_held_man_stays_held(deck):
+    # C42. Asked directly of the rule again: in a two-seat draft the bench deals rarely
+    # hold a man the other seat has, so playing it through cannot show the rule acting.
+    moves = []
+    d = sd.replay_shared(deck, 21, ["433", "352"], moves, bench=True)
+    while not d.complete:
+        moves.append(sd.autopick(d))
+        d = sd.replay_shared(deck, 21, ["433", "352"], moves, bench=True)
+    assert d.picks_each == 14 and [len(p) for p in d.picks] == [14, 14] and d.round == 14
+    on_bench = sd.replay_shared(deck, 21, ["433", "352"], moves[:24], bench=True)
+    seat = on_bench.active
+    assert len(on_bench.picks[seat]) >= 11, "the seat on turn is picking for its bench"
+    for held in on_bench.picks[1 - seat]:
+        if held.positions != ("GK",):
+            assert on_bench.reason(held, seat) == "already drafted"
+    with pytest.raises(IllegalMove, match="too many"):
+        sd.replay_shared(deck, 21, ["433", "352"], moves + [0], bench=True)

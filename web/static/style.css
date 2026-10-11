@@ -354,7 +354,7 @@ button{font:inherit;cursor:pointer}
 .xi-foot div + div{border-left:1px solid var(--line);padding-left:16px}
 .xi-foot b{display:block;font:700 26px/1 var(--display);color:var(--ink);letter-spacing:-.02em;margin-bottom:6px}
 /* The bench under a pitch (C40): three places, dashed until filled. */
-.bench-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:4px 20px 18px}
+.bench-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:4px 20px 18px;container-type:inline-size}
 .bench-row > .label{grid-column:1/-1}
 .sub-card{display:flex;align-items:center;gap:9px;min-width:0;min-height:58px;padding:8px 10px;border:1px dashed var(--line-strong);border-radius:var(--r-sm)}
 .sub-card.filled{border-style:solid;border-color:var(--line);background:var(--panel-2)}
@@ -364,6 +364,8 @@ button{font:inherit;cursor:pointer}
 .sub-card small .pos{font-size:10px;padding:1px 5px}
 .sub-empty{font:600 10.5px var(--sans);font-stretch:85%;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin:auto}
 @media (max-width:480px){.sub-card .crest{display:none}.sub-card{padding:8px}}
+/* A narrow bench (the tournament page's side column) gives its names the crest's room. */
+@container (max-width:400px){.sub-card .crest{display:none}.sub-card{padding:8px}}
 /* The plan (C41): one row per substitute, three selects beside him. */
 .plan-intro{padding:4px 20px 6px;color:var(--ink-2);font-size:14px}
 .plan-intro p{margin:0}

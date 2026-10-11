@@ -12,7 +12,10 @@ const DAY_IN = /^\d{4}-\d{2}-\d{2}$/.test(location.hash.slice(1)) ? location.has
 let D = null;            // GET /api/daily
 let MOVES = [];
 let S = null;            // the draft session
+let PLAN = null;         // a bench day's plan (C42), chosen here and sent with the match; null: automatic
 const movesKey = () => `daily:${D.challenge.day}`;
+const planKey = () => `daily:plan:${D.challenge.day}`;
+const NUMBER = { 11: "eleven", 14: "fourteen" };
 const movesText = () => MOVES.join(".");
 const fmtDay = (iso) => new Date(`${iso}T12:00:00Z`).toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" });
 
@@ -33,7 +36,7 @@ function heroHtml() {
       <div class="dl-opp"><span class="label">The opponent · ${esc(o.shape)}</span><b>${esc(o.name)}</b>
         <small>Ninety minutes on neutral ground. No extra time, no penalties.</small></div>
       <div class="dl-goal"><span class="label">Your goal</span><b>${esc(c.goal)}</b>
-        <small>Draft a ${esc(c.formation.label)} from today's eleven squads. No rerolls, and no ratings: pick on what you remember.</small></div>
+        <small>Draft a ${esc(c.formation.label)} from today's ${NUMBER[c.squads]} squads${c.bench ? ", the last three for your bench" : ""}. No rerolls, and no ratings: pick on what you remember.</small></div>
     </div>
     <p class="sub dl-meta">${D.board.entries} played today${D.board.entries ? ` · ${D.board.met} met the goal` : ""} ·
       a drafter who could see every rating and took the best player each deal reaches it ${c.success_rate}% of the time.
@@ -62,7 +65,7 @@ function boardHtml(b) {
 async function loadDraft() {
   try { S = await api(`/api/daily/draft?moves=${movesText()}${D.today ? "" : `&day=${D.challenge.day}`}`); }
   catch (e) {                                      // a stale draft from another day or version
-    MOVES = []; store.set(movesKey(), "");
+    MOVES = []; PLAN = null; store.set(movesKey(), ""); store.set(planKey(), "");
     S = await api(`/api/daily/draft?moves=`);
   }
 }
@@ -74,17 +77,23 @@ async function startDraft() {
 
 function renderDraft(fresh) {
   if (S.complete) return renderReady();
+  const forBench = S.picks.length >= 11;
   $("dlbody").innerHTML = `<div class="draft-top"><h2 class="h2 tight">${esc(S.formation.label)}</h2>
-      <div class="progress"><span class="label">Pick <b>${S.picks.length + 1}</b> of 11 · no rerolls · <span class="memtag">ratings hidden</span></span>
-        <div class="bar"><i style="width:${(S.picks.length / 11) * 100}%"></i></div></div>
+      <div class="progress"><span class="label">Pick <b>${S.picks.length + 1}</b> of ${S.total} · no rerolls · <span class="memtag">ratings hidden</span></span>
+        <div class="bar"><i style="width:${(S.picks.length / S.total) * 100}%"></i></div></div>
       <div class="linechips" id="lines"></div></div>
     <div class="draft-grid">
       <section class="panel deal" id="deal" aria-live="polite"></section>
-      <aside class="cup-stack"><section class="panel"><div class="panel-h"><span class="label">Your XI</span><span class="label">${S.picks.length} / 11</span></div>
-        <div class="pitch" id="pitch"></div></section>${opponentHtml()}</aside></div>`;
+      <aside class="cup-stack"><section class="panel"><div class="panel-h"><span class="label">Your XI</span>
+          <span class="label">${S.bench_size ? `${S.xi.length} / 11 · bench ${S.bench.length} / ${S.bench_size}` : `${S.picks.length} / 11`}</span></div>
+        <div class="pitch" id="pitch"></div><div class="bench-row" id="bench" hidden></div></section>${opponentHtml()}</aside></div>`;
   lineChips($("lines"), S.formation, S.xi);
-  renderDeal($("deal"), S.deal, { heading: `Squad ${S.picks.length + 1} of 11`, fresh, onTake: take });
-  renderPitch($("pitch"), S.formation.slots, S.xi, S.picks.length ? S.picks[S.picks.length - 1].id : null);
+  renderDeal($("deal"), S.deal, {
+    heading: forBench ? `For your bench · squad ${S.picks.length + 1} of ${S.total}` : `Squad ${S.picks.length + 1} of ${S.total}`,
+    takeLabel: forBench ? "Bench" : undefined, fresh, onTake: take,
+  });
+  renderPitch($("pitch"), S.formation.slots, S.xi, S.picks.length && !forBench ? S.picks[S.picks.length - 1].id : null);
+  renderBench($("bench"), S.bench, S.bench_size);
 }
 
 let busy = false;
@@ -101,21 +110,58 @@ async function take(i) {
   finally { busy = false; }
 }
 
+function playButtons(signedIn) {
+  return `<button class="btn primary" id="go">${signedIn ? "Play the ranked match" : "Play a practice match"}</button>
+    ${signedIn ? "" : `<button class="btn ghost" id="sign">Sign in</button>`}
+    <button class="btn ghost" id="redo">Start the draft again</button>`;
+}
+
+function wireReady() {
+  $("go").onclick = play;
+  $("redo").onclick = () => {
+    if (!confirm("Throw this squad away and draft again?")) return;
+    MOVES = []; PLAN = null; store.set(movesKey(), ""); store.set(planKey(), ""); startDraft();
+  };
+  if ($("sign")) $("sign").onclick = () => openAuth("in", "Sign in to take today's ranked attempt.");
+}
+
+/* A bench day (C42): the plan, then the match. The plan is kept here like the picks, and
+   sent with them. */
+function renderPlanReady() {
+  const signedIn = !!ME;
+  // A plan kept from before can only name substitutes and starters this squad has.
+  if (PLAN) PLAN = PLAN.filter((x) => S.bench[x.on]).map((x) =>
+    ({ ...x, off: x.off != null && S.bench[x.on].can_replace.includes(x.off) ? x.off : null }));
+  if (!$("plan")) {
+    $("dlbody").innerHTML = `<div class="draft-grid">
+      <section class="panel deal" id="plan"></section>
+      <aside class="cup-stack"><section class="panel"><div class="panel-h"><span class="label">Your XI</span><span class="label">${esc(S.formation.label)}</span></div>
+        <div class="pitch" id="pitch"></div><div class="bench-row" id="bench" hidden></div></section>${opponentHtml()}</aside></div>`;
+  }
+  planPanel($("plan"), S, PLAN || S.plan, {
+    tag: PLAN ? "your plan" : "automatic plan",
+    onChange: (p) => { PLAN = p; store.set(planKey(), JSON.stringify(p)); renderPlanReady(); },
+    foot: `${playButtons(signedIn)}
+      <p class="label">${signedIn ? "One go, ranked. Once you play, today's attempt is used." :
+        "Signed out, this is a practice match on a different seed, not ranked. Sign in before you play to be ranked."} ${AUTO_NOTE}</p>`,
+  });
+  renderPitch($("pitch"), S.formation.slots, S.xi, null);
+  renderBench($("bench"), S.bench, S.bench_size);
+  wireReady();
+}
+
 function renderReady() {
+  if (S.bench_size) return renderPlanReady();
   const signedIn = !!ME;
   $("dlbody").innerHTML = `<div class="friends-grid">
     <section class="panel gate"><div><h2>Your eleven is in</h2>
       <p>${signedIn ? "<b>One go, ranked.</b> Once you play, today's attempt is used." :
         "You're signed out, so this is a <b>practice</b> match on a different seed, and it won't be ranked. Sign in <b>before you play</b> to take today's ranked attempt."}</p></div>
-      <div class="gate-cta"><button class="btn primary" id="go">${signedIn ? "Play the ranked match" : "Play a practice match"}</button>
-        ${signedIn ? "" : `<button class="btn ghost" id="sign">Sign in</button>`}
-        <button class="btn ghost" id="redo">Start the draft again</button></div></section>
+      <div class="gate-cta">${playButtons(signedIn)}</div></section>
     <aside class="panel"><div class="panel-h"><span class="label">Your XI</span><span class="label">${esc(S.formation.label)}</span></div>
       <div class="pitch" id="pitch"></div></aside></div>`;
   renderPitch($("pitch"), S.formation.slots, S.xi, null);
-  $("go").onclick = play;
-  $("redo").onclick = () => { if (confirm("Throw this eleven away and draft again?")) { MOVES = []; store.set(movesKey(), ""); startDraft(); } };
-  if ($("sign")) $("sign").onclick = () => openAuth("in", "Sign in to take today's ranked attempt.");
+  wireReady();
 }
 
 // ---------------------------------------------------------------- the match and after
@@ -124,7 +170,8 @@ async function play() {
   $("go").disabled = true;
   let out;
   try {
-    out = await api(ME ? "/api/daily/submit" : "/api/daily/practice", { method: "POST", body: JSON.stringify({ moves: movesText() }) });
+    out = await api(ME ? "/api/daily/submit" : "/api/daily/practice",
+      { method: "POST", body: JSON.stringify({ moves: movesText(), changes: S.bench_size ? PLAN : null }) });
   } catch (e) {
     toast(e.message);
     if (e.status === 409) return boot();             // already played, in another tab
@@ -201,9 +248,9 @@ function showPast() {
 function intro() {
   $("dlbody").innerHTML = `<div class="cup-grid">
     <div class="cup-stack"><section class="panel gate"><div><h2>${MOVES.length ? "Carry on drafting" : "Draft today's eleven"}</h2>
-      <p>Eleven squads, dealt the same to everyone. Take one player from each into your ${esc(D.challenge.formation.label)}. No rerolls,
+      <p>${NUMBER[D.challenge.squads][0].toUpperCase() + NUMBER[D.challenge.squads].slice(1)} squads, dealt the same to everyone. Take one player from each into your ${esc(D.challenge.formation.label)}${D.challenge.bench ? ", the last three onto your bench, then plan your changes" : ""}. No rerolls,
         and <b>every rating is hidden</b>, the opponent's too, until you've played. ${ME ? "Then one ranked match." : "Signed out, the match is practice; sign in first to be ranked."}</p></div>
-      <div class="gate-cta"><button class="btn primary" id="start">${MOVES.length ? `Continue (${MOVES.length} of 11)` : "Start the draft"}</button>
+      <div class="gate-cta"><button class="btn primary" id="start">${MOVES.length ? `Continue (${MOVES.length} of ${D.challenge.squads})` : "Start the draft"}</button>
         ${ME ? "" : `<button class="btn ghost" id="sign">Sign in</button>`}</div></section>
       ${boardHtml(D.board)}</div>
     <div class="cup-stack">${opponentHtml()}</div></div>`;
@@ -219,6 +266,7 @@ async function boot() {
   }
   $("dlhero").innerHTML = heroHtml();
   MOVES = (store.get(movesKey()) || "").split(".").filter((x) => x !== "").map(Number);
+  try { PLAN = JSON.parse(store.get(planKey()) || "null"); } catch { PLAN = null; }
   if (D.mine) return showPlayed();
   if (!D.today) return showPast();
   intro();

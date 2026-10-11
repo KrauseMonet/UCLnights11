@@ -21,7 +21,7 @@ so the suite needs no database of yours.
 look the direct endpoint up through Google and pass the address, which keeps the hostname
 for TLS: `dig +short @8.8.8.8 <host>`, then `PGHOSTADDR=<ip> uv run python -m tools.migrate`.
 Production's endpoint is in `aws-ap-southeast-1`; the function runs in `bom1`. Vercel's
-own DNS is unaffected. Migrations 001–004 are applied to Neon `production` (003 and 004 on 2026-10-10, before the code that reads them). **Migration 007 (benches, C42) is NOT yet applied to Neon**: the room and daily code reads its columns, so it must go to Neon before that code is deployed.
+own DNS is unaffected. Migrations 001–007 are applied to Neon `production` (003 and 004 on 2026-10-10; 007, benches, on 2026-10-11, before the code that reads it was deployed; `--status` showed 001–006 already applied).
 
 ```bash
 export PATH="$HOME/.local/bin:$PATH"

@@ -18,8 +18,9 @@ turn it is, what was dealt and who holds whom are never stored, only derived.
   A bench room (C42) plays fourteen, the last three for the bench (game.draft.why_not
   turns a pick after the eleven into a bench pick), exclusive across the room as well.
 - **Stranded**: if no squad in the deck holds anyone a seat can still take, the draft
-  cannot go on. With 243 squads and at most 32 seats this needs a deck far thinner
-  than this one; it is reported rather than worked round.
+  cannot go on. With 243 squads and at most 36 seats this needs a deck far thinner
+  than this one (20 rooms of 36 seats with benches, 10,080 picks, stranded none; C50);
+  it is reported rather than worked round.
 """
 
 from __future__ import annotations

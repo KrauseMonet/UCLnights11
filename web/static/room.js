@@ -214,7 +214,7 @@ function renderLobby() {
              <li>Draft at your own pace: one player per squad, two rerolls, just like the solo game.</li>`}
         ${R.bench ? "<li><b>A bench of three:</b> after your eleven, three more picks. Then everyone plans their changes and says they're ready; the tournament opens when all of you are.</li>" : ""}
         ${R.memory ? "<li><b>Memory mode:</b> no ratings until the tournament. Pick on what you remember.</li>" : ""}
-        <li>When the last eleven is in: ${esc(R.stages.join(" → "))}. ${R.size === 2 ? "Winner takes all." : "Ties are two legs; the final is one night on neutral ground."}</li>
+        <li>When the last eleven is in: ${esc(R.stages.join(" → "))}. ${R.size === 2 ? "Winner takes all." : R.size === 36 ? "Eight league matches each against eight different sides, then two-legged ties; the final is one night on neutral ground." : "Ties are two legs; the final is one night on neutral ground."}</li>
       </ol>
       <div class="room-form"><button class="btn ghost small" id="leaveb">Leave room</button></div>
     </section></div>`;

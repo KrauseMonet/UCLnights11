@@ -191,6 +191,22 @@ def test_saving_a_solo_run_is_replayed_here_and_saving_twice_is_harmless():
             assert scorers.get(pl["name"]) == pl["goals"]
 
 
+def test_the_profile_lists_a_first_round_only_once_it_has_a_finish():
+    """Both formats' first rounds are finishes (C50), but a profile of league runs alone
+    should not show an empty "Group stage" row, nor a league-less one an empty play-off."""
+    c = player()
+    with db.connection() as conn:
+        for key, reached in (("a", "League phase"), ("b", "League phase"), ("c", "Quarter-finals")):
+            conn.execute("insert into results (account_id, source, natural_key, formation, reached, champion,"
+                         " won, drawn, lost, gf, ga, players) values (%s, 'solo', %s, '4-3-3', %s, false,"
+                         " 1, 1, 1, 3, 3, '[]')", (c.account_id, key, reached))
+    p = c.get("/api/profile").json()
+    assert [(f["stage"], f["n"]) for f in p["finishes"]] == [
+        ("Champions", 0), ("Runners-up", 0), ("Semi-finals", 0), ("Quarter-finals", 1), ("Round of 16", 0),
+        ("League phase", 2)]
+    assert p["best_finish"] == "Quarter-finals"
+
+
 def test_unsaved_lists_the_finished_solo_links_not_yet_saved():
     c = player()
     done, kept = finished_state(c, 41), finished_state(c, 42)

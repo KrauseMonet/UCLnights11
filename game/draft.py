@@ -22,6 +22,11 @@ has, so he can always come on for whoever stands there, and is never a goalkeepe
 because the engine never changes the keeper. Its state string starts with "b"; a plain
 one is the original eleven-pick draft, played by engine 1, and always will be.
 
+A LEAGUE DRAFT (C50) is a bench draft whose tournament is the league phase, not the group
+format: every solo draft made since. Its state string starts with "l" in place of the
+"b"; the draft itself, its plan and its sheet are a bench draft's exactly. Rooms keep the
+format with the room (by its size), so a room's seat never holds an "l" state.
+
 A finished bench draft may carry a PLAN (C41): for each substitute, from which minute he
 comes on, on what score, and for whom (a starter, by his slot) or for whoever it helps
 most to replace. With no plan the automatic one applies (game.tournament.auto_plan).
@@ -372,7 +377,8 @@ def replay(deck: Deck, seed: int, formation_code: str, moves: list[Move], bench:
 
 
 # -- state strings: "SEED-FORMATION" or "SEED-FORMATION-m.m.m", m an index or "r";
-# a bench draft's seed carries a "b": "bSEED-FORMATION-m.m.m", and a finished one may end
+# a bench draft's seed carries a "b": "bSEED-FORMATION-m.m.m", a league draft's an "l"
+# ("lSEED-..."), and a finished one of either may end
 # in a plan, "-p" and its changes: "p0b60o9.1a70.2a80" is substitute 0 from 60' if
 # behind for the man in slot 9, then substitutes 1 and 2 from 70' and 80' whatever the
 # score for whoever it helps most. "p" alone is a plan of no changes. A team sheet (C44)
@@ -416,11 +422,20 @@ def decode_sheet(text: str) -> tuple[int, ...]:
 
 
 def encode(seed: int, formation: str, moves: list[Move], bench: bool = False,
-           plan: tuple[Change, ...] | None = None, sheet: tuple[int, ...] | None = None) -> str:
+           plan: tuple[Change, ...] | None = None, sheet: tuple[int, ...] | None = None,
+           league: bool = False) -> str:
+    if league and not bench:
+        raise ValueError("a league draft is a bench draft")
     tokens = ["r" if isinstance(m, Reroll) else str(m.index) for m in moves]
-    out = f"{'b' if bench else ''}{seed}-{formation}" + (f"-{'.'.join(tokens)}" if tokens else "")
+    kind = "l" if league else "b" if bench else ""
+    out = f"{kind}{seed}-{formation}" + (f"-{'.'.join(tokens)}" if tokens else "")
     out += f"-{encode_sheet(sheet)}" if sheet is not None else ""
     return out + (f"-{encode_plan(plan)}" if plan is not None else "")
+
+
+def is_league(state: str) -> bool:
+    """Whether a solo state plays the league phase (C50) rather than the group format."""
+    return state.startswith("l")
 
 
 def decode(state: str) -> tuple[int, str, list[Move]]:
@@ -435,7 +450,10 @@ def decode(state: str) -> tuple[int, str, list[Move]]:
 def decode_state(state: str) -> tuple[int, str, list[Move], bool, tuple[Change, ...] | None]:
     """(seed, formation, moves, whether it is a bench draft, its plan or None). A state
     with a team sheet is refused: only a solo link carries one, read by ``decode_solo``
-    (a room keeps a seat's sheet in its own column)."""
+    (a room keeps a seat's sheet in its own column), and so is a league draft's: a room
+    plays the format its size says, and the daily plays one match."""
+    if is_league(state):
+        raise IllegalMove(f"a league draft has no place in this state: {state!r}")
     seed, formation, moves, bench, plan, sheet = decode_solo(state)
     if sheet is not None:
         raise IllegalMove(f"a team sheet has no place in this state: {state!r}")
@@ -444,8 +462,9 @@ def decode_state(state: str) -> tuple[int, str, list[Move], bool, tuple[Change, 
 
 def decode_solo(state: str) -> tuple[int, str, list[Move], bool, tuple[Change, ...] | None,
                                      tuple[int, ...] | None]:
-    """(seed, formation, moves, bench, plan, sheet): a solo link, which may carry a sheet."""
-    bench = state.startswith("b")
+    """(seed, formation, moves, bench, plan, sheet): a solo link, which may carry a sheet.
+    A league draft is a bench draft here; ``is_league`` tells it apart."""
+    bench = state.startswith(("b", "l"))
     parts = (state[1:] if bench else state).split("-")
     plan = sheet = None
     if bench and len(parts) >= 4 and parts[-1].startswith("p"):

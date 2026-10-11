@@ -15,7 +15,7 @@ def test_meta_describes_the_deck():
 
 def test_a_draft_runs_to_a_tournament():
     s = client.post("/api/draft", json={"formation": "442", "seed": 99}).json()
-    assert s["state"] == "b99-442" and s["total"] == 14       # every new draft has a bench (C40)
+    assert s["state"] == "l99-442" and s["total"] == 14       # a bench (C40) and the league phase (C50)
     while not s["complete"]:
         i = next(i for i, c in enumerate(s["deal"]["cards"]) if c["takeable"])
         s = client.post(f"/api/draft/{s['state']}/pick", json={"index": i}).json()
@@ -23,9 +23,9 @@ def test_a_draft_runs_to_a_tournament():
     t = client.get(f"/api/tournament/{s['state']}").json()
     assert t["you"]["formation"] == "4-4-2"
     assert [c["id"] for c in t["you"]["bench"]] == [c["id"] for c in s["bench"]]
-    assert len(t["your_matches"]) >= 6
-    assert t["reached"] in {"Group stage", "Round of 16", "Quarter-finals", "Semi-finals",
-                            "Runners-up", "Champions"}
+    assert t["format"] == "league" and len(t["table"]) == 36 and len(t["your_matches"]) >= 8
+    assert t["reached"] in {"League phase", "Knockout play-offs", "Round of 16", "Quarter-finals",
+                            "Semi-finals", "Runners-up", "Champions"}
 
 
 def test_the_same_state_gives_the_same_tournament():
@@ -237,6 +237,43 @@ def test_a_bench_state_is_not_an_eleven_for_rooms_or_the_daily():
     with pytest.raises(IllegalMove):
         decode("b5-433-1.2")
 
+
+
+# -- the league phase (C50) --------------------------------------------------
+
+def test_a_league_draft_keeps_its_format_through_every_change_of_its_link():
+    s = client.get("/api/draft/l31-433").json()
+    s = client.post(f"/api/draft/{s['state']}/reroll").json()
+    assert s["state"].startswith("l31-433-r")
+    s = _finish(s["state"])
+    assert s["state"].startswith("l31-433-")
+    planned = client.post(f"/api/draft/{s['state']}/plan", json={"changes": s["plan"]}).json()
+    assert planned["state"].startswith("l31-433-") and "-p" in planned["state"]
+    man, to = next((c["p"], t) for c in s["bench"] for t in c["to"] if t.startswith("s"))
+    moved = client.post(f"/api/draft/{s['state']}/sheet", json={"man": man, "to": to}).json()
+    assert moved["state"].startswith("l31-433-") and "-s" in moved["state"]
+
+
+def test_a_link_made_before_the_league_phase_still_plays_the_group_format():
+    old = _finish("b31-433")
+    new = _finish("l31-433")
+    assert [c["id"] for c in old["picks"]] == [c["id"] for c in new["picks"]]    # the same draft
+    a = client.get(f"/api/tournament/{old['state']}").json()
+    b = client.get(f"/api/tournament/{new['state']}").json()
+    assert a["format"] == "groups" and len(a["groups"]) == 8 and a["table"] == []
+    assert b["format"] == "league" and b["groups"] == [] and len(b["table"]) == 36
+    assert {r["pot"] for r in b["table"]} == {1, 2, 3, 4}
+
+
+def test_a_league_state_is_refused_where_a_room_or_the_daily_reads_one():
+    import pytest
+    from game.draft import IllegalMove, decode_solo, decode_state, encode
+    state = encode(5, "433", [], bench=True, league=True)
+    assert state == "l5-433" and decode_solo(state)[3]
+    with pytest.raises(IllegalMove):
+        decode_state(state)
+    with pytest.raises(ValueError):
+        encode(5, "433", [], league=True)                 # a league draft has a bench
 
 
 # -- the plan (C41) ---------------------------------------------------------

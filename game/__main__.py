@@ -109,7 +109,8 @@ def match_stats_report(sides: list[match.SideStats]) -> None:
 
 
 def play(seed: int) -> None:
-    """Draft automatically (best takeable card each deal) and play a tournament."""
+    """Draft automatically (best takeable card each deal) and play a tournament, in the
+    league-phase format every new draft plays (C50), on engine 1 without a bench."""
     deck = load_deck()
     moves: list[Pick] = []
     s = replay(deck, seed, "433", moves)
@@ -119,10 +120,11 @@ def play(seed: int) -> None:
         moves.append(Pick(best))
         s = replay(deck, seed, "433", moves)
     you = Side("YOU", "Your XI", "YOU", s.formation, s.picks, you=True)
-    t = play_tournament(deck, league_of(deck), seed, you)
+    t = play_tournament(deck, league_of(deck), seed, you, fmt="league")
     for c in s.picks:
         print(f"  {c.pos} {c.name:28} {c.rating} ({c.club_name} {c.label})")
-    print(f"reached: {t.reached(you)}; champion: {t.champion.name}")
+    place = next(i for i, r in enumerate(t.table, start=1) if r.side is you)
+    print(f"league phase: {place} of {len(t.table)}; reached: {t.reached(you)}; champion: {t.champion.name}")
     for card, side, n in leaders(t)[:5]:
         print(f"  {n} {card.name} ({side.short})")
 

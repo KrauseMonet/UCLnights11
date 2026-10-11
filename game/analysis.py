@@ -17,12 +17,12 @@ import math
 from dataclasses import dataclass, field
 
 from game.journey import PlayerTotals, best_mark_key, player_totals, rank_key, side_result
-from game.tournament import STAGES, Fixture, Side, Tournament
+from game.tournament import ALL_STAGES, FINISHES, Fixture, Side, Tournament
 
 GOAL_BUCKETS = [(1, 15), (16, 30), (31, 45), (46, 60), (61, 75), (76, 90), (91, 120)]
 BOARD_SIZE = 5
 MIN_PASSES_PER_MATCH = 20       # a pass-accuracy board also needs this many passes a match
-REACHED_ORDER = ["Champions", "Runners-up", "Semi-finals", "Quarter-finals", "Round of 16", "Group stage"]
+REACHED_ORDER = FINISHES
 
 
 @dataclass
@@ -84,7 +84,7 @@ def _bucket(minute: int) -> int:
 def tournament_analysis(t: Tournament, you: Side | None = None, totals: dict | None = None) -> Analysis:
     totals = totals if totals is not None else player_totals(t)
     rows = {id(s): SideRow(s, t.reached(s)) for s in t.sides}
-    stages = {st: StageRow(st) for st in STAGES}
+    stages = {st: StageRow(st) for st in ALL_STAGES}
     minutes = [0] * len(GOAL_BUCKETS)
     scored, conceded = [0] * len(GOAL_BUCKETS), [0] * len(GOAL_BUCKETS)
     home = [0, 0, 0]

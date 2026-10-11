@@ -10,8 +10,13 @@ club is recognised by also appearing next to an ``{{fbaicon}}`` somewhere in
 the season's articles, which is how Wikipedia marks a club rather than a
 stadium, city or player link.
 
-Run: ``uv run python -m etl.quarterfinalists`` writes ``data/quarterfinalists.json``.
-Exactly eight clubs per season is asserted, not hoped for.
+The same ``{{fbaicon|ENG}}`` marks name each club's UEFA association (Monaco is
+``FRA``, as UEFA counts it), which the league-phase draw needs: no club meets one of
+its own association, and none meets more than two of any one. A club marked with two
+different codes anywhere is refused rather than settled by a vote.
+
+Run: ``uv run python -m etl.quarterfinalists`` writes ``data/quarterfinalists.json`` and
+``data/associations.json``. Exactly eight clubs per season is asserted, not hoped for.
 """
 
 from __future__ import annotations
@@ -25,8 +30,11 @@ from etl import wiki
 FIRST_SEASON = 1994  # 1994-95
 LAST_SEASON = 2025   # 2025-26, the last completed season
 OUT = Path(__file__).resolve().parent.parent / "data" / "quarterfinalists.json"
+ASSOCIATIONS = OUT.parent / "associations.json"
 
 FBAICON_LINK = re.compile(r"\{\{\s*fbaicon\|[^}]*\}\}[\s']*\[\[([^\]|#]+)")
+# The same mark with its association code kept: (code, club).
+FBAICON_CODE = re.compile(r"\{\{\s*fbaicon\|\s*([A-Z]{3})\s*(?:\|[^}]*)?\}\}[\s']*\[\[([^\]|#]+)")
 LINK = re.compile(r"\[\[([^\]|#]+)(?:\|[^\]]*)?\]\]")
 HEADING = re.compile(r"^(=+)\s*(.*?)\s*\1\s*$", re.M)
 
@@ -60,7 +68,7 @@ def bracket_quarterfinal_lines(text: str) -> str | None:
     return m.group(1) if m else None
 
 
-def quarterfinalists(start: int) -> list[str]:
+def season_pages(start: int) -> list[str]:
     title = season_title(start)
     pages = []
     for suffix in (" knockout stage", " knockout phase", ""):
@@ -70,6 +78,28 @@ def quarterfinalists(start: int) -> list[str]:
             continue
     if not pages:
         raise RuntimeError(f"{title}: no article found")
+    return pages
+
+
+def associations(pages: list[str], clubs: set[str]) -> dict[str, str]:
+    """Each club's association code, as the season articles mark it. A club marked with
+    two codes is an error, and so is a club never marked at all."""
+    seen: dict[str, set[str]] = {}
+    for text in pages:
+        for m in FBAICON_CODE.finditer(text):
+            club = m.group(2).strip()
+            if club in clubs:
+                seen.setdefault(club, set()).add(m.group(1))
+    errors = [f"{c}: marked {sorted(codes)}" for c, codes in seen.items() if len(codes) > 1]
+    errors += [f"{c}: no association mark" for c in sorted(clubs - set(seen))]
+    if errors:
+        raise RuntimeError("associations:\n" + "\n".join(errors))
+    return {c: next(iter(codes)) for c, codes in sorted(seen.items())}
+
+
+def quarterfinalists(start: int) -> list[str]:
+    title = season_title(start)
+    pages = season_pages(start)
     clubs = {m.group(1).strip() for text in pages for m in FBAICON_LINK.finditer(text)}
 
     for text in pages:
@@ -87,13 +117,18 @@ def quarterfinalists(start: int) -> list[str]:
 
 
 def main() -> None:
-    out = {}
+    out, pages = {}, []
     for start in range(FIRST_SEASON, LAST_SEASON + 1):
         qf = quarterfinalists(start)
         out[str(start)] = qf
+        pages += season_pages(start)
         print(f"{season_label(start)}: {', '.join(qf)}")
     OUT.write_text(json.dumps(out, indent=1, ensure_ascii=False) + "\n")
     print(f"wrote {OUT.relative_to(OUT.parent.parent)}: {len(out)} seasons, {8 * len(out)} club-seasons")
+    assoc = associations(pages, {c for qf in out.values() for c in qf})
+    ASSOCIATIONS.write_text(json.dumps(assoc, indent=1, ensure_ascii=False, sort_keys=True) + "\n")
+    print(f"wrote {ASSOCIATIONS.relative_to(OUT.parent.parent)}: {len(assoc)} clubs, "
+          f"{len(set(assoc.values()))} associations")
 
 
 if __name__ == "__main__":

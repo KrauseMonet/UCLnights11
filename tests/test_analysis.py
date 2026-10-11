@@ -80,7 +80,8 @@ def test_the_analysis_route():
         s = c.post(f"/api/draft/{s['state']}/pick", json={"index": i}).json()
     r = c.get(f"/api/tournament/{s['state']}/analysis").json()
     a = r["analysis"]
-    assert r["you"]["you"] and a["hero"]["matches"] == 125 and len(a["sides"]) == 32
+    # 144 league matches, 16 in the play-offs, 16 + 8 + 4 and the final.
+    assert r["you"]["you"] and a["hero"]["matches"] == 189 and len(a["sides"]) == 36
     assert len(a["buckets"]) == len(a["goal_minutes"]) == 7
     assert sum(a["your_minutes"]["scored"]) == next(x for x in a["sides"] if x.get("you"))["gf"]
     assert c.get("/api/tournament/1-433/analysis").status_code == 409

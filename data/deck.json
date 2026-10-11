@@ -1,6 +1,7 @@
 {
  "club_seasons": [
   {
+   "association": "NED",
    "best": {
     "formation": "433",
     "xi": [
@@ -284,6 +285,7 @@
    "team": "#D2122E"
   },
   {
+   "association": "ESP",
    "best": {
     "formation": "4231",
     "xi": [
@@ -554,6 +556,7 @@
    "team": "#A50044"
   },
   {
+   "association": "GER",
    "best": {
     "formation": "442d",
     "xi": [
@@ -837,6 +840,7 @@
    "team": "#DC052D"
   },
   {
+   "association": "POR",
    "best": {
     "formation": "442d",
     "xi": [
@@ -1091,6 +1095,7 @@
    "team": "#E83030"
   },
   {
+   "association": "ITA",
    "best": {
     "formation": "3412",
     "xi": [
@@ -1385,6 +1390,7 @@
    "team": "#FB090B"
   },
   {
+   "association": "FRA",
    "best": {
     "formation": "3421",
     "xi": [
@@ -1649,6 +1655,7 @@
    "team": "#004170"
   },
   {
+   "association": "NED",
    "best": {
     "formation": "541",
     "xi": [
@@ -1903,6 +1910,7 @@
    "team": "#D2122E"
   },
   {
+   "association": "GER",
    "best": {
     "formation": "3412",
     "xi": [
@@ -2184,6 +2192,7 @@
    "team": "#FDE100"
   },
   {
+   "association": "ITA",
    "best": {
     "formation": "343",
     "xi": [
@@ -2480,6 +2489,7 @@
    "team": "#9aa3b5"
   },
   {
+   "association": "GRE",
    "best": {
     "formation": "3142",
     "xi": [
@@ -2744,6 +2754,7 @@
    "team": "#007841"
   },
   {
+   "association": "ESP",
    "best": {
     "formation": "3412",
     "xi": [
@@ -3032,6 +3043,7 @@
    "team": "#00529F"
   },
   {
+   "association": "ESP",
    "best": {
     "formation": "4312",
     "xi": [
@@ -3286,6 +3298,7 @@
    "team": "#CB3524"
   },
   {
+   "association": "GER",
    "best": {
     "formation": "4312",
     "xi": [
@@ -3587,6 +3600,7 @@
    "team": "#FDE100"
   },
   {
+   "association": "ITA",
    "best": {
     "formation": "352",
     "xi": [
@@ -3901,6 +3915,7 @@
    "team": "#9aa3b5"
   },
   {
+   "association": "ENG",
    "best": {
     "formation": "442",
     "xi": [
@@ -4166,6 +4181,7 @@
    "team": "#DA291C"
   },
   {
+   "association": "GER",
    "best": {
     "formation": "3412",
     "xi": [
@@ -4430,6 +4446,7 @@
    "team": "#E32221"
   },
   {
+   "association": "GER",
    "best": {
     "formation": "442d",
     "xi": [
@@ -4708,6 +4725,7 @@
    "team": "#DC052D"
   },
   {
+   "association": "GER",
    "best": {
     "formation": "3421",
     "xi": [
@@ -4973,6 +4991,7 @@
    "team": "#FDE100"
   },
   {
+   "association": "ITA",
    "best": {
     "formation": "3412",
     "xi": [
@@ -5275,6 +5294,7 @@
    "team": "#9aa3b5"
   },
   {
+   "association": "ENG",
    "best": {
     "formation": "442",
     "xi": [
@@ -5539,6 +5559,7 @@
    "team": "#DA291C"
   },
   {
+   "association": "ESP",
    "best": {
     "formation": "4312",
     "xi": [
@@ -5827,6 +5848,7 @@
    "team": "#00529F"
   },
   {
+   "association": "GER",
    "best": {
     "formation": "442d",
     "xi": [
@@ -6128,6 +6150,7 @@
    "team": "#DC052D"
   },
   {
+   "association": "UKR",
    "best": {
     "formation": "442",
     "xi": [
@@ -6366,6 +6389,7 @@
    "team": "#0055A5"
   },
   {
+   "association": "ITA",
    "best": {
     "formation": "4312",
     "xi": [
@@ -6665,6 +6689,7 @@
    "team": "#0068A8"
   },
   {
+   "association": "ITA",
    "best": {
     "formation": "3412",
     "xi": [
@@ -6977,6 +7002,7 @@
    "team": "#9aa3b5"
   },
   {
+   "association": "GER",
    "best": {
     "formation": "3412",
     "xi": [
@@ -7225,6 +7251,7 @@
    "team": "#E2001A"
   },
   {
+   "association": "ENG",
    "best": {
     "formation": "442",
     "xi": [
@@ -7511,6 +7538,7 @@
    "team": "#DA291C"
   },
   {
+   "association": "GRE",
    "best": {
     "formation": "442",
     "xi": [
@@ -7761,6 +7789,7 @@
    "team": "#E2001A"
   },
   {
+   "association": "ESP",
    "best": {
     "formation": "4312",
     "xi": [
@@ -8047,6 +8076,7 @@
    "team": "#00529F"
   },
   {
+   "association": "ESP",
    "best": {
     "formation": "433",
     "xi": [
@@ -8379,6 +8409,7 @@
    "team": "#A50044"
   },
   {
+   "association": "GER",
    "best": {
     "formation": "442",
     "xi": [
@@ -8681,6 +8712,7 @@
    "team": "#DC052D"
   },
   {
+   "association": "ENG",
    "best": {
     "formation": "4312",
     "xi": [
@@ -8945,6 +8977,7 @@
    "team": "#034694"
   },
   {
+   "association": "ITA",
    "best": {
     "formation": "352",
     "xi": [
@@ -9221,6 +9254,7 @@
    "team": "#87D8F7"
   },
   {
+   "association": "ENG",
    "best": {
     "formation": "442",
     "xi": [
@@ -9540,6 +9574,7 @@
    "team": "#DA291C"
   },
   {
+   "association": "POR",
    "best": {
     "formation": "4231",
     "xi": [
@@ -9792,6 +9827,7 @@
    "team": "#00428C"
   },
   {
+   "association": "ESP",
    "best": {
     "formation": "4312",
     "xi": [
@@ -10104,6 +10140,7 @@
    "team": "#00529F"
   },
   {
+   "association": "ESP",
    "best": {
     "formation": "442",
     "xi": [
@@ -10355,6 +10392,7 @@
    "team": "#EE3524"
   },
   {
+   "association": "ENG",
    "best": {
     "formation": "442",
     "xi": [
@@ -10656,6 +10694,7 @@
    "team": "#EF0107"
   },
   {
+   "association": "GER",
    "best": {
     "formation": "442",
     "xi": [
@@ -10961,6 +11000,7 @@
    "team": "#DC052D"
   },
   {
+   "association": "ESP",
    "best": {
     "formation": "4231",
     "xi": [
@@ -11247,6 +11287,7 @@
    "team": "#0060AA"
   },
   {
+   "association": "TUR",
    "best": {
     "formation": "442d",
     "xi": [
@@ -11511,6 +11552,7 @@
    "team": "#A90432"
   },
   {
+   "association": "ENG",
    "best": {
     "formation": "442",
     "xi": [
@@ -11821,6 +11863,7 @@
    "team": "#1D428A"
   },
   {
+   "association": "ENG",
    "best": {
     "formation": "442",
     "xi": [
@@ -12122,6 +12165,7 @@
    "team": "#DA291C"
   },
   {
+   "association": "ESP",
    "best": {
     "formation": "442d",
     "xi": [
@@ -12425,6 +12469,7 @@
    "team": "#00529F"
   },
   {
+   "association": "ESP",
    "best": {
     "formation": "352",
     "xi": [
@@ -12725,6 +12770,7 @@
    "team": "#EE3524"
   },
   {
+   "association": "ESP",
    "best": {
     "formation": "4312",
     "xi": [
@@ -13017,6 +13063,7 @@
    "team": "#A50044"
   },
   {
+   "association": "GER",
    "best": {
     "formation": "3412",
     "xi": [
@@ -13270,6 +13317,7 @@
    "team": "#E32221"
   },
   {
+   "association": "GER",
    "best": {
     "formation": "4312",
     "xi": [
@@ -13583,6 +13631,7 @@
    "team": "#DC052D"
   },
   {
+   "association": "ESP",
    "best": {
     "formation": "4231",
     "xi": [
@@ -13868,6 +13917,7 @@
    "team": "#0060AA"
   },
   {
+   "association": "ENG",
    "best": {
     "formation": "4312",
     "xi": [
@@ -14184,6 +14234,7 @@
    "team": "#C8102E"
   },
   {
+   "association": "ENG",
    "best": {
     "formation": "442",
     "xi": [
@@ -14509,6 +14560,7 @@
    "team": "#DA291C"
   },
   {
+   "association": "GRE",
    "best": {
     "formation": "4312",
     "xi": [
@@ -14783,6 +14835,7 @@
    "team": "#007841"
   },
   {
+   "association": "ESP",
    "best": {
     "formation": "442d",
     "xi": [
@@ -15084,6 +15137,7 @@
    "team": "#00529F"
   },
   {
+   "association": "NED",
    "best": {
     "formation": "4231",
     "xi": [
@@ -15362,6 +15416,7 @@
    "team": "#D2122E"
   },
   {
+   "association": "ESP",
    "best": {
     "formation": "4312",
     "xi": [
@@ -15664,6 +15719,7 @@
    "team": "#A50044"
   },
   {
+   "association": "ITA",
    "best": {
     "formation": "352",
     "xi": [
@@ -15974,6 +16030,7 @@
    "team": "#0068A8"
   },
   {
+   "association": "ITA",
    "best": {
     "formation": "442",
     "xi": [
@@ -16276,6 +16333,7 @@
    "team": "#9aa3b5"
   },
   {
+   "association": "ENG",
    "best": {
     "formation": "442",
     "xi": [
@@ -16552,6 +16610,7 @@
    "team": "#DA291C"
   },
   {
+   "association": "ITA",
    "best": {
     "formation": "4312",
     "xi": [
@@ -16865,6 +16924,7 @@
    "team": "#FB090B"
   },
   {
+   "association": "ESP",
    "best": {
     "formation": "442d",
     "xi": [
@@ -17164,6 +17224,7 @@
    "team": "#00529F"
   },
   {
+   "association": "ESP",
    "best": {
     "formation": "4231",
     "xi": [
@@ -17449,6 +17510,7 @@
    "team": "#EE3524"
   },
   {
+   "association": "ENG",
    "best": {
     "formation": "442",
     "xi": [
@@ -17747,6 +17809,7 @@
    "team": "#EF0107"
   },
   {
+   "association": "ENG",
    "best": {
     "formation": "3412",
     "xi": [
@@ -18083,6 +18146,7 @@
    "team": "#034694"
   },
   {
+   "association": "ESP",
    "best": {
     "formation": "4231",
     "xi": [
@@ -18382,6 +18446,7 @@
    "team": "#0060AA"
   },
   {
+   "association": "FRA",
    "best": {
     "formation": "3421",
     "xi": [
@@ -18635,6 +18700,7 @@
    "team": "#14387F"
   },
   {
+   "association": "ITA",
    "best": {
     "formation": "4312",
     "xi": [
@@ -18958,6 +19024,7 @@
    "team": "#FB090B"
   },
   {
+   "association": "FRA",
    "best": {
     "formation": "442",
     "xi": [
@@ -19232,6 +19299,7 @@
    "team": "#E7171E"
   },
   {
+   "association": "POR",
    "best": {
     "formation": "4312",
     "xi": [
@@ -19505,6 +19573,7 @@
    "team": "#00428C"
   },
   {
+   "association": "ESP",
    "best": {
     "formation": "442",
     "xi": [
@@ -19782,6 +19851,7 @@
    "team": "#00529F"
   },
   {
+   "association": "GER",
    "best": {
     "formation": "4312",
     "xi": [
@@ -20095,6 +20165,7 @@
    "team": "#DC052D"
   },
   {
+   "association": "ENG",
    "best": {
     "formation": "442w",
     "xi": [
@@ -20409,6 +20480,7 @@
    "team": "#034694"
   },
   {
+   "association": "ITA",
    "best": {
     "formation": "352",
     "xi": [
@@ -20735,6 +20807,7 @@
    "team": "#0068A8"
   },
   {
+   "association": "ITA",
    "best": {
     "formation": "442",
     "xi": [
@@ -21024,6 +21097,7 @@
    "team": "#9aa3b5"
   },
   {
+   "association": "ENG",
    "best": {
     "formation": "4312",
     "xi": [
@@ -21340,6 +21414,7 @@
    "team": "#C8102E"
   },
   {
+   "association": "FRA",
    "best": {
     "formation": "433",
     "xi": [
@@ -21590,6 +21665,7 @@
    "team": "#14387F"
   },
   {
+   "association": "ITA",
    "best": {
     "formation": "4312",
     "xi": [
@@ -21889,6 +21965,7 @@
    "team": "#FB090B"
   },
   {
+   "association": "NED",
    "best": {
     "formation": "433",
     "xi": [
@@ -22142,6 +22219,7 @@
    "team": "#ED1C24"
   },
   {
+   "association": "ENG",
    "best": {
     "formation": "442",
     "xi": [
@@ -22480,6 +22558,7 @@
    "team": "#EF0107"
   },
   {
+   "association": "ESP",
    "best": {
     "formation": "433",
     "xi": [
@@ -22782,6 +22861,7 @@
    "team": "#A50044"
   },
   {
+   "association": "POR",
    "best": {
     "formation": "352",
     "xi": [
@@ -23058,6 +23138,7 @@
    "team": "#E83030"
   },
   {
+   "association": "ITA",
    "best": {
     "formation": "352",
     "xi": [
@@ -23360,6 +23441,7 @@
    "team": "#0068A8"
   },
   {
+   "association": "ITA",
    "best": {
     "formation": "442",
     "xi": [
@@ -23647,6 +23729,7 @@
    "team": "#9aa3b5"
   },
   {
+   "association": "FRA",
    "best": {
     "formation": "433",
     "xi": [
@@ -23921,6 +24004,7 @@
    "team": "#14387F"
   },
   {
+   "association": "ITA",
    "best": {
     "formation": "4312",
     "xi": [
@@ -24235,6 +24319,7 @@
    "team": "#FB090B"
   },
   {
+   "association": "ESP",
    "best": {
     "formation": "532",
     "xi": [
@@ -24510,6 +24595,7 @@
    "team": "#FFE667"
   },
   {
+   "association": "GER",
    "best": {
     "formation": "442",
     "xi": [
@@ -24825,6 +24911,7 @@
    "team": "#DC052D"
   },
   {
+   "association": "ENG",
    "best": {
     "formation": "433",
     "xi": [
@@ -25140,6 +25227,7 @@
    "team": "#034694"
   },
   {
+   "association": "ENG",
    "best": {
     "formation": "352",
     "xi": [
@@ -25479,6 +25567,7 @@
    "team": "#C8102E"
   },
   {
+   "association": "ENG",
    "best": {
     "formation": "442",
     "xi": [
@@ -25821,6 +25910,7 @@
    "team": "#DA291C"
   },
   {
+   "association": "ITA",
    "best": {
     "formation": "4312",
     "xi": [
@@ -26147,6 +26237,7 @@
    "team": "#FB090B"
   },
   {
+   "association": "NED",
    "best": {
     "formation": "4312",
     "xi": [
@@ -26413,6 +26504,7 @@
    "team": "#ED1C24"
   },
   {
+   "association": "ITA",
    "best": {
     "formation": "4231",
     "xi": [
@@ -26693,6 +26785,7 @@
    "team": "#8E1F2F"
   },
   {
+   "association": "ESP",
    "best": {
     "formation": "3412",
     "xi": [
@@ -26996,6 +27089,7 @@
    "team": "#EE3524"
   },
   {
+   "association": "ENG",
    "best": {
     "formation": "442",
     "xi": [
@@ -27335,6 +27429,7 @@
    "team": "#EF0107"
   },
   {
+   "association": "ESP",
    "best": {
     "formation": "442w",
     "xi": [
@@ -27665,6 +27760,7 @@
    "team": "#A50044"
   },
   {
+   "association": "ENG",
    "best": {
     "formation": "4312",
     "xi": [
@@ -27988,6 +28084,7 @@
    "team": "#034694"
   },
   {
+   "association": "TUR",
    "best": {
     "formation": "4312",
     "xi": [
@@ -28261,6 +28358,7 @@
    "team": "#FFED00"
   },
   {
+   "association": "ENG",
    "best": {
     "formation": "352",
     "xi": [
@@ -28588,6 +28686,7 @@
    "team": "#C8102E"
   },
   {
+   "association": "ENG",
    "best": {
     "formation": "442w",
     "xi": [
@@ -28919,6 +29018,7 @@
    "team": "#DA291C"
   },
   {
+   "association": "ITA",
    "best": {
     "formation": "4231",
     "xi": [
@@ -29208,6 +29308,7 @@
    "team": "#8E1F2F"
   },
   {
+   "association": "GER",
    "best": {
     "formation": "532",
     "xi": [
@@ -29498,6 +29599,7 @@
    "team": "#004D9D"
   },
   {
+   "association": "ENG",
    "best": {
     "formation": "442",
     "xi": [
@@ -29852,6 +29954,7 @@
    "team": "#EF0107"
   },
   {
+   "association": "ESP",
    "best": {
     "formation": "433",
     "xi": [
@@ -30166,6 +30269,7 @@
    "team": "#A50044"
   },
   {
+   "association": "GER",
    "best": {
     "formation": "442d",
     "xi": [
@@ -30470,6 +30574,7 @@
    "team": "#DC052D"
   },
   {
+   "association": "ENG",
    "best": {
     "formation": "4312",
     "xi": [
@@ -30784,6 +30889,7 @@
    "team": "#034694"
   },
   {
+   "association": "ENG",
    "best": {
     "formation": "4231",
     "xi": [
@@ -31098,6 +31204,7 @@
    "team": "#C8102E"
   },
   {
+   "association": "ENG",
    "best": {
     "formation": "442w",
     "xi": [
@@ -31428,6 +31535,7 @@
    "team": "#DA291C"
   },
   {
+   "association": "POR",
    "best": {
     "formation": "433",
     "xi": [
@@ -31689,6 +31797,7 @@
    "team": "#00428C"
   },
   {
+   "association": "ESP",
    "best": {
     "formation": "442d",
     "xi": [
@@ -32000,6 +32109,7 @@
    "team": "#FFE667"
   },
   {
+   "association": "ENG",
    "best": {
     "formation": "433",
     "xi": [
@@ -32340,6 +32450,7 @@
    "team": "#EF0107"
   },
   {
+   "association": "ESP",
    "best": {
     "formation": "433",
     "xi": [
@@ -32632,6 +32743,7 @@
    "team": "#A50044"
   },
   {
+   "association": "GER",
    "best": {
     "formation": "442",
     "xi": [
@@ -32962,6 +33074,7 @@
    "team": "#DC052D"
   },
   {
+   "association": "FRA",
    "best": {
     "formation": "442d",
     "xi": [
@@ -33251,6 +33364,7 @@
    "team": "#001C50"
   },
   {
+   "association": "ITA",
    "best": {
     "formation": "4231",
     "xi": [
@@ -33592,6 +33706,7 @@
    "team": "#0068A8"
   },
   {
+   "association": "FRA",
    "best": {
     "formation": "4231",
     "xi": [
@@ -33891,6 +34006,7 @@
    "team": "#14387F"
   },
   {
+   "association": "ENG",
    "best": {
     "formation": "433",
     "xi": [
@@ -34242,6 +34358,7 @@
    "team": "#DA291C"
   },
   {
+   "association": "ESP",
    "best": {
     "formation": "433",
     "xi": [
@@ -34535,6 +34652,7 @@
    "team": "#A50044"
   },
   {
+   "association": "ENG",
    "best": {
     "formation": "433",
     "xi": [
@@ -34862,6 +34980,7 @@
    "team": "#034694"
   },
   {
+   "association": "ITA",
    "best": {
     "formation": "4312",
     "xi": [
@@ -35176,6 +35295,7 @@
    "team": "#0068A8"
   },
   {
+   "association": "ENG",
    "best": {
     "formation": "442",
     "xi": [
@@ -35528,6 +35648,7 @@
    "team": "#DA291C"
   },
   {
+   "association": "ESP",
    "best": {
     "formation": "4231",
     "xi": [
@@ -35869,6 +35990,7 @@
    "team": "#00529F"
   },
   {
+   "association": "GER",
    "best": {
     "formation": "442w",
     "xi": [
@@ -36159,6 +36281,7 @@
    "team": "#004D9D"
   },
   {
+   "association": "UKR",
    "best": {
     "formation": "4231",
     "xi": [
@@ -36435,6 +36558,7 @@
    "team": "#F26522"
   },
   {
+   "association": "ENG",
    "best": {
     "formation": "442",
     "xi": [
@@ -36760,6 +36884,7 @@
    "team": "#132257"
   },
   {
+   "association": "CYP",
    "best": {
     "formation": "4231",
     "xi": [
@@ -37036,6 +37161,7 @@
    "team": "#FFD700"
   },
   {
+   "association": "ESP",
    "best": {
     "formation": "433",
     "xi": [
@@ -37347,6 +37473,7 @@
    "team": "#A50044"
   },
   {
+   "association": "GER",
    "best": {
     "formation": "4231",
     "xi": [
@@ -37652,6 +37779,7 @@
    "team": "#DC052D"
   },
   {
+   "association": "POR",
    "best": {
     "formation": "451",
     "xi": [
@@ -37951,6 +38079,7 @@
    "team": "#E83030"
   },
   {
+   "association": "ENG",
    "best": {
     "formation": "541",
     "xi": [
@@ -38277,6 +38406,7 @@
    "team": "#034694"
   },
   {
+   "association": "FRA",
    "best": {
     "formation": "4231",
     "xi": [
@@ -38568,6 +38698,7 @@
    "team": "#2FAEE0"
   },
   {
+   "association": "ESP",
    "best": {
     "formation": "442w",
     "xi": [
@@ -38896,6 +39027,7 @@
    "team": "#00529F"
   },
   {
+   "association": "ESP",
    "best": {
     "formation": "433",
     "xi": [
@@ -39210,6 +39342,7 @@
    "team": "#A50044"
   },
   {
+   "association": "GER",
    "best": {
     "formation": "4231",
     "xi": [
@@ -39536,6 +39669,7 @@
    "team": "#DC052D"
   },
   {
+   "association": "GER",
    "best": {
     "formation": "4231",
     "xi": [
@@ -39812,6 +39946,7 @@
    "team": "#FDE100"
   },
   {
+   "association": "TUR",
    "best": {
     "formation": "4312",
     "xi": [
@@ -40088,6 +40223,7 @@
    "team": "#A90432"
   },
   {
+   "association": "ITA",
    "best": {
     "formation": "352",
     "xi": [
@@ -40412,6 +40548,7 @@
    "team": "#9aa3b5"
   },
   {
+   "association": "ESP",
    "best": {
     "formation": "4231",
     "xi": [
@@ -40689,6 +40826,7 @@
    "team": "#0077C8"
   },
   {
+   "association": "FRA",
    "best": {
     "formation": "4312",
     "xi": [
@@ -40977,6 +41115,7 @@
    "team": "#004170"
   },
   {
+   "association": "ESP",
    "best": {
     "formation": "4231",
     "xi": [
@@ -41291,6 +41430,7 @@
    "team": "#00529F"
   },
   {
+   "association": "ESP",
    "best": {
     "formation": "4231",
     "xi": [
@@ -41605,6 +41745,7 @@
    "team": "#CB3524"
   },
   {
+   "association": "ESP",
    "best": {
     "formation": "433",
     "xi": [
@@ -41936,6 +42077,7 @@
    "team": "#A50044"
   },
   {
+   "association": "GER",
    "best": {
     "formation": "442w",
     "xi": [
@@ -42249,6 +42391,7 @@
    "team": "#DC052D"
   },
   {
+   "association": "GER",
    "best": {
     "formation": "3142",
     "xi": [
@@ -42569,6 +42712,7 @@
    "team": "#FDE100"
   },
   {
+   "association": "ENG",
    "best": {
     "formation": "4231",
     "xi": [
@@ -42891,6 +43035,7 @@
    "team": "#034694"
   },
   {
+   "association": "ENG",
    "best": {
     "formation": "442d",
     "xi": [
@@ -43279,6 +43424,7 @@
    "team": "#DA291C"
   },
   {
+   "association": "FRA",
    "best": {
     "formation": "433",
     "xi": [
@@ -43586,6 +43732,7 @@
    "team": "#004170"
   },
   {
+   "association": "ESP",
    "best": {
     "formation": "4231",
     "xi": [
@@ -43938,6 +44085,7 @@
    "team": "#00529F"
   },
   {
+   "association": "ESP",
    "best": {
     "formation": "442w",
     "xi": [
@@ -44236,6 +44384,7 @@
    "team": "#CB3524"
   },
   {
+   "association": "ESP",
    "best": {
     "formation": "433",
     "xi": [
@@ -44544,6 +44693,7 @@
    "team": "#A50044"
   },
   {
+   "association": "GER",
    "best": {
     "formation": "3412",
     "xi": [
@@ -44876,6 +45026,7 @@
    "team": "#DC052D"
   },
   {
+   "association": "ITA",
    "best": {
     "formation": "352",
     "xi": [
@@ -45183,6 +45334,7 @@
    "team": "#9aa3b5"
   },
   {
+   "association": "FRA",
    "best": {
     "formation": "433",
     "xi": [
@@ -45494,6 +45646,7 @@
    "team": "#E7171E"
   },
   {
+   "association": "FRA",
    "best": {
     "formation": "433",
     "xi": [
@@ -45790,6 +45943,7 @@
    "team": "#004170"
   },
   {
+   "association": "POR",
    "best": {
     "formation": "4231",
     "xi": [
@@ -46085,6 +46239,7 @@
    "team": "#00428C"
   },
   {
+   "association": "ESP",
    "best": {
     "formation": "4231",
     "xi": [
@@ -46405,6 +46560,7 @@
    "team": "#00529F"
   },
   {
+   "association": "ESP",
    "best": {
     "formation": "442",
     "xi": [
@@ -46722,6 +46878,7 @@
    "team": "#CB3524"
   },
   {
+   "association": "ESP",
    "best": {
     "formation": "433",
     "xi": [
@@ -47044,6 +47201,7 @@
    "team": "#A50044"
   },
   {
+   "association": "GER",
    "best": {
     "formation": "352",
     "xi": [
@@ -47393,6 +47551,7 @@
    "team": "#DC052D"
   },
   {
+   "association": "POR",
    "best": {
     "formation": "352",
     "xi": [
@@ -47698,6 +47857,7 @@
    "team": "#E83030"
   },
   {
+   "association": "ENG",
    "best": {
     "formation": "4231",
     "xi": [
@@ -48049,6 +48209,7 @@
    "team": "#6CABDD"
   },
   {
+   "association": "FRA",
    "best": {
     "formation": "433",
     "xi": [
@@ -48342,6 +48503,7 @@
    "team": "#004170"
   },
   {
+   "association": "ESP",
    "best": {
     "formation": "433",
     "xi": [
@@ -48667,6 +48829,7 @@
    "team": "#00529F"
   },
   {
+   "association": "GER",
    "best": {
     "formation": "4231",
     "xi": [
@@ -48983,6 +49146,7 @@
    "team": "#65B32E"
   },
   {
+   "association": "ESP",
    "best": {
     "formation": "442",
     "xi": [
@@ -49307,6 +49471,7 @@
    "team": "#CB3524"
   },
   {
+   "association": "ESP",
    "best": {
     "formation": "433",
     "xi": [
@@ -49648,6 +49813,7 @@
    "team": "#A50044"
   },
   {
+   "association": "GER",
    "best": {
     "formation": "442w",
     "xi": [
@@ -49969,6 +50135,7 @@
    "team": "#DC052D"
   },
   {
+   "association": "GER",
    "best": {
     "formation": "4312",
     "xi": [
@@ -50332,6 +50499,7 @@
    "team": "#FDE100"
   },
   {
+   "association": "ITA",
    "best": {
     "formation": "343",
     "xi": [
@@ -50657,6 +50825,7 @@
    "team": "#9aa3b5"
   },
   {
+   "association": "ENG",
    "best": {
     "formation": "442w",
     "xi": [
@@ -50966,6 +51135,7 @@
    "team": "#003090"
   },
   {
+   "association": "FRA",
    "best": {
     "formation": "442",
     "xi": [
@@ -51253,6 +51423,7 @@
    "team": "#E7171E"
   },
   {
+   "association": "ESP",
    "best": {
     "formation": "433",
     "xi": [
@@ -51589,6 +51760,7 @@
    "team": "#00529F"
   },
   {
+   "association": "ESP",
    "best": {
     "formation": "433",
     "xi": [
@@ -51901,6 +52073,7 @@
    "team": "#A50044"
   },
   {
+   "association": "GER",
    "best": {
     "formation": "4231",
     "xi": [
@@ -52237,6 +52410,7 @@
    "team": "#DC052D"
   },
   {
+   "association": "ITA",
    "best": {
     "formation": "442w",
     "xi": [
@@ -52578,6 +52752,7 @@
    "team": "#9aa3b5"
   },
   {
+   "association": "ENG",
    "best": {
     "formation": "3142",
     "xi": [
@@ -52908,6 +53083,7 @@
    "team": "#C8102E"
   },
   {
+   "association": "ENG",
    "best": {
     "formation": "433",
     "xi": [
@@ -53238,6 +53414,7 @@
    "team": "#6CABDD"
   },
   {
+   "association": "ESP",
    "best": {
     "formation": "4312",
     "xi": [
@@ -53537,6 +53714,7 @@
    "team": "#00529F"
   },
   {
+   "association": "ITA",
    "best": {
     "formation": "433",
     "xi": [
@@ -53824,6 +54002,7 @@
    "team": "#8E1F2F"
   },
   {
+   "association": "ESP",
    "best": {
     "formation": "4231",
     "xi": [
@@ -54097,6 +54276,7 @@
    "team": "#D71920"
   },
   {
+   "association": "NED",
    "best": {
     "formation": "4231",
     "xi": [
@@ -54357,6 +54537,7 @@
    "team": "#D2122E"
   },
   {
+   "association": "ESP",
    "best": {
     "formation": "433",
     "xi": [
@@ -54655,6 +54836,7 @@
    "team": "#A50044"
   },
   {
+   "association": "ITA",
    "best": {
     "formation": "433",
     "xi": [
@@ -55015,6 +55197,7 @@
    "team": "#9aa3b5"
   },
   {
+   "association": "ENG",
    "best": {
     "formation": "433",
     "xi": [
@@ -55342,6 +55525,7 @@
    "team": "#C8102E"
   },
   {
+   "association": "ENG",
    "best": {
     "formation": "343",
     "xi": [
@@ -55667,6 +55851,7 @@
    "team": "#6CABDD"
   },
   {
+   "association": "ENG",
    "best": {
     "formation": "442w",
     "xi": [
@@ -56031,6 +56216,7 @@
    "team": "#DA291C"
   },
   {
+   "association": "POR",
    "best": {
     "formation": "433",
     "xi": [
@@ -56313,6 +56499,7 @@
    "team": "#00428C"
   },
   {
+   "association": "ENG",
    "best": {
     "formation": "3142",
     "xi": [
@@ -56657,6 +56844,7 @@
    "team": "#132257"
   },
   {
+   "association": "ITA",
    "best": {
     "formation": "3142",
     "xi": [
@@ -56940,6 +57128,7 @@
    "team": "#1E71B8"
   },
   {
+   "association": "ESP",
    "best": {
     "formation": "433",
     "xi": [
@@ -57263,6 +57452,7 @@
    "team": "#CB3524"
   },
   {
+   "association": "ESP",
    "best": {
     "formation": "433",
     "xi": [
@@ -57605,6 +57795,7 @@
    "team": "#A50044"
   },
   {
+   "association": "GER",
    "best": {
     "formation": "442w",
     "xi": [
@@ -57931,6 +58122,7 @@
    "team": "#DC052D"
   },
   {
+   "association": "FRA",
    "best": {
     "formation": "343",
     "xi": [
@@ -58233,6 +58425,7 @@
    "team": "#14387F"
   },
   {
+   "association": "ENG",
    "best": {
     "formation": "343",
     "xi": [
@@ -58561,6 +58754,7 @@
    "team": "#6CABDD"
   },
   {
+   "association": "FRA",
    "best": {
     "formation": "442w",
     "xi": [
@@ -58883,6 +59077,7 @@
    "team": "#004170"
   },
   {
+   "association": "GER",
    "best": {
     "formation": "4231",
     "xi": [
@@ -59190,6 +59385,7 @@
    "team": "#DD0741"
   },
   {
+   "association": "GER",
    "best": {
     "formation": "442w",
     "xi": [
@@ -59532,6 +59728,7 @@
    "team": "#DC052D"
   },
   {
+   "association": "GER",
    "best": {
     "formation": "4231",
     "xi": [
@@ -59874,6 +60071,7 @@
    "team": "#FDE100"
   },
   {
+   "association": "ENG",
    "best": {
     "formation": "3421",
     "xi": [
@@ -60212,6 +60410,7 @@
    "team": "#034694"
   },
   {
+   "association": "ENG",
    "best": {
     "formation": "433",
     "xi": [
@@ -60555,6 +60754,7 @@
    "team": "#C8102E"
   },
   {
+   "association": "ENG",
    "best": {
     "formation": "4231",
     "xi": [
@@ -60899,6 +61099,7 @@
    "team": "#6CABDD"
   },
   {
+   "association": "FRA",
    "best": {
     "formation": "343",
     "xi": [
@@ -61259,6 +61460,7 @@
    "team": "#004170"
   },
   {
+   "association": "POR",
    "best": {
     "formation": "4231",
     "xi": [
@@ -61531,6 +61733,7 @@
    "team": "#00428C"
   },
   {
+   "association": "ESP",
    "best": {
     "formation": "433",
     "xi": [
@@ -61875,6 +62078,7 @@
    "team": "#00529F"
   },
   {
+   "association": "ESP",
    "best": {
     "formation": "343",
     "xi": [
@@ -62231,6 +62435,7 @@
    "team": "#CB3524"
   },
   {
+   "association": "GER",
    "best": {
     "formation": "442d",
     "xi": [
@@ -62551,6 +62756,7 @@
    "team": "#DC052D"
   },
   {
+   "association": "POR",
    "best": {
     "formation": "3412",
     "xi": [
@@ -62863,6 +63069,7 @@
    "team": "#E83030"
   },
   {
+   "association": "ENG",
    "best": {
     "formation": "352",
     "xi": [
@@ -63224,6 +63431,7 @@
    "team": "#034694"
   },
   {
+   "association": "ENG",
    "best": {
     "formation": "442w",
     "xi": [
@@ -63565,6 +63773,7 @@
    "team": "#C8102E"
   },
   {
+   "association": "ENG",
    "best": {
     "formation": "433",
     "xi": [
@@ -63877,6 +64086,7 @@
    "team": "#6CABDD"
   },
   {
+   "association": "ESP",
    "best": {
     "formation": "433",
     "xi": [
@@ -64229,6 +64439,7 @@
    "team": "#00529F"
   },
   {
+   "association": "ESP",
    "best": {
     "formation": "442w",
     "xi": [
@@ -64556,6 +64767,7 @@
    "team": "#FFE667"
   },
   {
+   "association": "GER",
    "best": {
     "formation": "4231",
     "xi": [
@@ -64914,6 +65126,7 @@
    "team": "#DC052D"
   },
   {
+   "association": "POR",
    "best": {
     "formation": "442",
     "xi": [
@@ -65188,6 +65401,7 @@
    "team": "#E83030"
   },
   {
+   "association": "ENG",
    "best": {
     "formation": "352",
     "xi": [
@@ -65546,6 +65760,7 @@
    "team": "#034694"
   },
   {
+   "association": "ITA",
    "best": {
     "formation": "352",
     "xi": [
@@ -65843,6 +66058,7 @@
    "team": "#0068A8"
   },
   {
+   "association": "ENG",
    "best": {
     "formation": "352",
     "xi": [
@@ -66178,6 +66394,7 @@
    "team": "#6CABDD"
   },
   {
+   "association": "ITA",
    "best": {
     "formation": "532",
     "xi": [
@@ -66490,6 +66707,7 @@
    "team": "#FB090B"
   },
   {
+   "association": "ITA",
    "best": {
     "formation": "433",
     "xi": [
@@ -66778,6 +66996,7 @@
    "team": "#12A0D7"
   },
   {
+   "association": "ESP",
    "best": {
     "formation": "433",
     "xi": [
@@ -67101,6 +67320,7 @@
    "team": "#00529F"
   },
   {
+   "association": "ENG",
    "best": {
     "formation": "4231",
     "xi": [
@@ -67407,6 +67627,7 @@
    "team": "#EF0107"
   },
   {
+   "association": "ESP",
    "best": {
     "formation": "352",
     "xi": [
@@ -67722,6 +67943,7 @@
    "team": "#CB3524"
   },
   {
+   "association": "ESP",
    "best": {
     "formation": "541",
     "xi": [
@@ -68054,6 +68276,7 @@
    "team": "#A50044"
   },
   {
+   "association": "GER",
    "best": {
     "formation": "4231",
     "xi": [
@@ -68383,6 +68606,7 @@
    "team": "#DC052D"
   },
   {
+   "association": "GER",
    "best": {
     "formation": "4231",
     "xi": [
@@ -68704,6 +68928,7 @@
    "team": "#FDE100"
   },
   {
+   "association": "ENG",
    "best": {
     "formation": "442w",
     "xi": [
@@ -69027,6 +69252,7 @@
    "team": "#6CABDD"
   },
   {
+   "association": "FRA",
    "best": {
     "formation": "433",
     "xi": [
@@ -69357,6 +69583,7 @@
    "team": "#004170"
   },
   {
+   "association": "ESP",
    "best": {
     "formation": "4312",
     "xi": [
@@ -69695,6 +69922,7 @@
    "team": "#00529F"
   },
   {
+   "association": "ENG",
    "best": {
     "formation": "4231",
     "xi": [
@@ -70016,6 +70244,7 @@
    "team": "#EF0107"
   },
   {
+   "association": "ENG",
    "best": {
     "formation": "3142",
     "xi": [
@@ -70354,6 +70583,7 @@
    "team": "#670E36"
   },
   {
+   "association": "ESP",
    "best": {
     "formation": "4231",
     "xi": [
@@ -70664,6 +70894,7 @@
    "team": "#A50044"
   },
   {
+   "association": "GER",
    "best": {
     "formation": "4231",
     "xi": [
@@ -71020,6 +71251,7 @@
    "team": "#DC052D"
   },
   {
+   "association": "GER",
    "best": {
     "formation": "4231",
     "xi": [
@@ -71315,6 +71547,7 @@
    "team": "#FDE100"
   },
   {
+   "association": "ITA",
    "best": {
     "formation": "352",
     "xi": [
@@ -71641,6 +71874,7 @@
    "team": "#0068A8"
   },
   {
+   "association": "FRA",
    "best": {
     "formation": "433",
     "xi": [
@@ -71946,6 +72180,7 @@
    "team": "#004170"
   },
   {
+   "association": "ESP",
    "best": {
     "formation": "4231",
     "xi": [
@@ -72304,6 +72539,7 @@
    "team": "#00529F"
   },
   {
+   "association": "ENG",
    "best": {
     "formation": "4231",
     "xi": [
@@ -72658,6 +72894,7 @@
    "team": "#EF0107"
   },
   {
+   "association": "ESP",
    "best": {
     "formation": "3412",
     "xi": [
@@ -73014,6 +73251,7 @@
    "team": "#CB3524"
   },
   {
+   "association": "ESP",
    "best": {
     "formation": "4231",
     "xi": [
@@ -73364,6 +73602,7 @@
    "team": "#A50044"
   },
   {
+   "association": "GER",
    "best": {
     "formation": "4231",
     "xi": [
@@ -73700,6 +73939,7 @@
    "team": "#DC052D"
   },
   {
+   "association": "ENG",
    "best": {
     "formation": "442w",
     "xi": [
@@ -74028,6 +74268,7 @@
    "team": "#C8102E"
   },
   {
+   "association": "FRA",
    "best": {
     "formation": "433",
     "xi": [
@@ -74356,6 +74597,7 @@
    "team": "#004170"
   },
   {
+   "association": "ESP",
    "best": {
     "formation": "4312",
     "xi": [
@@ -74698,6 +74940,7 @@
    "team": "#00529F"
   },
   {
+   "association": "POR",
    "best": {
     "formation": "3421",
     "xi": [

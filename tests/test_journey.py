@@ -108,3 +108,19 @@ def test_extra_time_counts_a_hundred_and_twenty_minutes():
              if r.extra_time)
     totals = journey.player_totals(_tournament_of([Fixture("Final", a, b, r, "Final")], [a, b]))
     assert {p.minutes for p in totals.values()} == {120}
+
+
+def test_a_knockout_play_off_is_a_knockout_on_the_journey():
+    """The form strip rings knockout matches; the league phase's play-offs are one (C50)."""
+    deck = load_deck()
+    league = league_of(deck)
+    f, xi = best_xi(deck.club_seasons[40])
+    you = Side("YOU", "Your XI", "YOU", f, xi, you=True)
+    for seed in range(40):
+        t = play_tournament(deck, league, seed, you, fmt="league")
+        lines = journey.journey(t, you).matches
+        if any(m.fixture.stage == "Knockout play-offs" for m in lines):
+            break
+    else:
+        pytest.fail("no tournament put this side in the play-offs")
+    assert [m.knockout for m in lines] == [m.fixture.stage != "League phase" for m in lines]

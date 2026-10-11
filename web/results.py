@@ -14,13 +14,16 @@ from collections import defaultdict
 from datetime import date, timedelta
 
 from game.journey import Journey
+from game.tournament import FINISHES
 from web.accounts import Account
 
 SOURCES = ("solo", "room", "daily")
 RECENT = 20
 BOARD = 8
 MIN_APPS_FOR_MARK = 6          # a career mark needs this many matches behind it
-FINISH_ORDER = ["Champions", "Runners-up", "Semi-finals", "Quarter-finals", "Round of 16", "Group stage"]
+# A profile lists the first five finishes (game.tournament.FINISHES) always, and a first
+# round (the league phase, its play-offs, the group stage) once it has one.
+ALWAYS_LISTED = 5
 
 
 def crest_url(key: str | None) -> str | None:
@@ -84,11 +87,11 @@ def profile(conn, account: Account, today: date) -> dict:
     daily = conn.execute("select day, met from daily_results where account_id = %s", (account.account_id,)).fetchall()
 
     cups = [r for r in rows if r[0] != "daily"]
-    finishes = {f: 0 for f in FINISH_ORDER}
+    finishes = {f: 0 for f in FINISHES}
     for r in cups:
         if r[3] in finishes:
             finishes[r[3]] += 1
-    best = next((f for f in FINISH_ORDER if finishes[f]), None)
+    best = next((f for f in FINISHES if finishes[f]), None)
 
     # Career numbers by person, across every saved result.
     people: dict[str, dict] = {}
@@ -119,7 +122,8 @@ def profile(conn, account: Account, today: date) -> dict:
     return {
         "username": account.username, "member_since": created.date().isoformat(),
         "tournaments": len(cups), "titles": finishes["Champions"], "finals": finishes["Champions"] + finishes["Runners-up"],
-        "best_finish": best, "finishes": [{"stage": f, "n": n} for f, n in finishes.items()],
+        "best_finish": best, "finishes": [{"stage": f, "n": n} for i, (f, n) in enumerate(finishes.items())
+                                          if n or i < ALWAYS_LISTED],
         "matches": totals["matches"], "won": totals["won"], "gf": totals["gf"], "ga": totals["ga"],
         "daily": {"played": len(daily), "met": sum(1 for _, m in daily if m), "streak": current, "best_streak": best_streak},
         "boards": {

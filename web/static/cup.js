@@ -16,8 +16,19 @@ const sideSub = (s) => s.you ? CUP.you.formation : s.season;
 // A short name for tables: a real side carries its season, a friend's eleven its owner.
 const tag = (s) => s.you ? "Your XI" : s.human ? s.club : `${s.club} ${s.season.slice(2)}`;
 
+// Both formats' first rounds: the league phase (C50) and, on links made before it, groups.
+const FIRST_ROUNDS = ["League phase", "Group stage"];
+
 function stageLabel(f) {
   return f.stage === "Group stage" ? `Group ${f.group} · ${f.label}` : `${f.stage} · ${f.label}`;
+}
+
+function shortStage(f) {
+  if (f.stage === "Group stage") return `Group ${f.group} · MD${f.label.split(" ").pop()}`;
+  if (f.stage === "League phase") return `MD${f.label.split(" ").pop()}`;
+  if (f.stage === "Final") return "Final";
+  const st = { "Knockout play-offs": "Play-off", "Quarter-finals": "QF", "Semi-finals": "SF" }[f.stage] || f.stage;
+  return `${st} · ${f.label.replace(" leg", "")}`;
 }
 
 function outcome(f) {
@@ -43,9 +54,10 @@ function renderHero() {
   const squad = ROOM ? `/squad?room=${esc(ROOM)}` : `/squad#${esc(CUP.state)}`;
   const kicker = `<div class="kicker">${where}Your XI · ${esc(CUP.you.formation)} · average ${avg}</div>`;
   const squadLink = `<p class="cup-link"><a href="${squad}">Your squad and ratings</a></p>`;
+  const placed = leaguePlace();
   if (!done) {
     const next = CUP.your_matches[CUP.revealed];
-    $("hero").innerHTML = `${kicker}<h1>Your campaign</h1><p>Next: ${esc(stageLabel(next))}</p>${squadLink}`;
+    $("hero").innerHTML = `${kicker}<h1>Your campaign</h1><p>${placed ? `${placed} · ` : ""}Next: ${esc(stageLabel(next))}</p>${squadLink}`;
     $("actions").innerHTML = `<button class="btn primary" id="play">Play the match</button>${skipButtons(next, "Skip this match")}`;
     $("play").onclick = playNext;
     wireSkips((n) => {
@@ -58,9 +70,17 @@ function renderHero() {
   }
   const champ = CUP.reached === "Champions";
   $("hero").innerHTML = `${kicker}<h1 class="${champ ? "champ" : ""}">${champ ? "Champions" : esc(CUP.reached)}</h1>
-    <p>${champ ? "Your eleven won the whole thing." : `${esc(CUP.champion.name)} lifted the trophy.`}</p>${squadLink}`;
+    <p>${placed ? `${placed}. ` : ""}${champ ? "Your eleven won the whole thing." : `${esc(CUP.champion.name)} lifted the trophy.`}</p>${squadLink}`;
   endActions();
   championBlock();
+}
+
+// Where your side finished in the league phase (C50), once its eight matches are seen.
+function leaguePlace() {
+  const i = CUP.table.findIndex((r) => r.you);
+  if (i < 0 || CUP.revealed < firstRoundEnd()) return "";
+  const n = i + 1, th = n % 10 === 1 && n !== 11 ? "st" : n % 10 === 2 && n !== 12 ? "nd" : n % 10 === 3 && n !== 13 ? "rd" : "th";
+  return `${n}${th} of ${CUP.table.length} in the league phase`;
 }
 
 function renderSpectator(where) {
@@ -70,24 +90,26 @@ function renderSpectator(where) {
   championBlock();
 }
 
-/* The ways past matches without watching them: this one, the rest of the group stage
-   (while there is any of it left) and everything. Each reveals the results, never more. */
+/* The ways past matches without watching them: this one, the rest of the league phase
+   or group stage (while there is any of it left) and everything. Each reveals the
+   results, never more. */
 function skipButtons(f, oneLabel) {
-  const groups = f.stage === "Group stage" && groupsEnd() > CUP.revealed + 1;
+  const first = FIRST_ROUNDS.includes(f.stage) && firstRoundEnd() > CUP.revealed + 1;
   return `<button class="btn ghost" id="skipone">${oneLabel}</button>
-    ${groups ? `<button class="btn ghost" id="skipgroups">Skip the group stage</button>` : ""}
+    ${first ? `<button class="btn ghost" id="skipgroups">Skip the ${f.stage.toLowerCase()}</button>` : ""}
     <button class="btn ghost" id="skipall">Skip to the end</button>`;
 }
 
-// Where your knockout matches begin: after the last group match (all of them, if you went out there).
-function groupsEnd() {
-  const i = CUP.your_matches.findIndex((f) => f.stage !== "Group stage");
+// Where your knockout matches begin: after the last league or group match (all of them,
+// if you went out there).
+function firstRoundEnd() {
+  const i = CUP.your_matches.findIndex((f) => !FIRST_ROUNDS.includes(f.stage));
   return i < 0 ? CUP.your_matches.length : i;
 }
 
 function wireSkips(go) {
   $("skipone").onclick = () => go(CUP.revealed + 1);
-  if ($("skipgroups")) $("skipgroups").onclick = () => go(groupsEnd());
+  if ($("skipgroups")) $("skipgroups").onclick = () => go(firstRoundEnd());
   $("skipall").onclick = () => go(CUP.your_matches.length);
 }
 
@@ -141,7 +163,7 @@ function showJourney() {
   const y = CUP.you;
   const side = { name: y.you ? "Your XI" : y.name, formation: y.formation, crest: y.crest, human: !!y.human,
     avg: Math.round(y.xi.reduce((a, c) => a + c.rating, 0) / y.xi.length), team: y.team, deep: y.deep, ink: y.ink };
-  openJourney(CUP.journey, side, CUP.room ? `ROOM ${CUP.room.code}` : `SEED ${CUP.state.split("-")[0].replace(/^b/, "")}`);
+  openJourney(CUP.journey, side, CUP.room ? `ROOM ${CUP.room.code}` : `SEED ${CUP.state.split("-")[0].replace(/^[bl]/, "")}`);
 }
 
 function championBlock() {
@@ -192,7 +214,7 @@ function playNext() {
 
 function resRow(f) {
   const t = (s, side) => `<div class="t ${side}">${side === "h" ? `<span class="nm ${s.you ? "you-name" : ""}">${esc(sideName(s))}</span>${sideCrest(s, 22)}` : `${sideCrest(s, 22)}<span class="nm ${s.you ? "you-name" : ""}">${esc(sideName(s))}</span>`}</div>`;
-  return `<details class="res-d"><summary class="res ${outcome(f)}"><div class="tag">${esc(f.stage === "Group stage" ? `Group ${f.group} · MD${f.label.slice(-1)}` : f.stage === "Final" ? "Final" : `${f.stage.replace("Quarter-finals", "QF").replace("Semi-finals", "SF")} · ${f.label.replace(" leg", "")}`)}</div>
+  return `<details class="res-d"><summary class="res ${outcome(f)}"><div class="tag">${esc(shortStage(f))}</div>
     ${t(f.home, "h")}<div class="sc">${f.hg}–${f.ag}${extraLine(f) ? `<small>${extraLine(f)}</small>` : ""}</div>${t(f.away, "a")}</summary>
     ${f.goals.length ? `<div class="res-goals">${f.goals.map((g) => `<span class="${g.side ? "a" : "h"}">${esc(g.scorer)} ${g.minute}'${g.assist ? ` <small>${ASSIST_MARK} ${esc(g.assist)}</small>` : ""}</span>`).join("")}</div>` : ""}
     ${statsHtml(f)}</details>`;
@@ -203,6 +225,19 @@ function groupHtml(g) {
     g.table.map((r, i) => `<tr class="${r.you ? "you" : r.human ? "friend" : ""} ${i < 2 ? "q" : ""}">
       <td><div class="t">${sideCrest(r, 18)}<span class="nm">${esc(tag(r))}</span></div></td>
       <td>${r.p}</td><td>${r.gf - r.ga > 0 ? "+" : ""}${r.gf - r.ga}</td><td><b>${r.pts}</b></td></tr>`).join("")}</tbody></table></div>`;
+}
+
+/* The league phase's one table (C50): the top eight go to the round of 16, 9th to 24th
+   to the play-offs, the rest go out. The pot each side was drawn from rides alongside. */
+function leagueHtml() {
+  const zone = (i) => i < 8 ? "q" : i < 24 ? "po" : "out";
+  return `<section class="panel"><div class="panel-h"><span class="label">League phase</span>
+      <span class="label ltab-key"><i class="q"></i>Round of 16 <i class="po"></i>Play-offs</span></div>
+    <div class="ltab"><table><thead><tr><th>#</th><th>Side</th><th class="w">Pot</th><th>P</th><th class="w">W</th><th class="w">D</th><th class="w">L</th><th>GD</th><th>Pts</th></tr></thead><tbody>${
+    CUP.table.map((r, i) => `<tr class="${zone(i)} ${r.you ? "you" : r.human ? "friend" : ""}${i === 7 || i === 23 ? " cut" : ""}">
+      <td class="n">${i + 1}</td><td><div class="t">${sideCrest(r, 18)}<span class="nm">${esc(tag(r))}</span></div></td>
+      <td class="w">${r.pot}</td><td>${r.p}</td><td class="w">${r.w}</td><td class="w">${r.d}</td><td class="w">${r.l}</td>
+      <td>${r.gf - r.ga > 0 ? "+" : ""}${r.gf - r.ga}</td><td><b>${r.pts}</b></td></tr>`).join("")}</tbody></table></div></section>`;
 }
 
 function roundHtml(r) {
@@ -230,7 +265,13 @@ function renderBody() {
     ${played.map(resRow).join("")}</section>`);
   if (done && CUP.players) left.push(friendsHtml());
   if (done) {
-    left.push(`<section class="panel"><div class="panel-h"><span class="label">Knockouts</span></div><div class="rounds r${CUP.knockout.length}">${CUP.knockout.map(roundHtml).join("")}</div></section>`);
+    // The play-offs get their own panel, so the bracket is the four rounds from the last 16.
+    const playoffs = CUP.knockout.filter((r) => r.stage === "Knockout play-offs");
+    const bracket = CUP.knockout.filter((r) => r.stage !== "Knockout play-offs");
+    left.push(`<section class="panel"><div class="panel-h"><span class="label">Knockouts</span></div><div class="rounds r${bracket.length}">${bracket.map(roundHtml).join("")}</div></section>`);
+    if (playoffs.length) left.push(`<section class="panel"><div class="panel-h"><span class="label">Knockout play-offs</span><span class="label">9th–16th v 17th–24th</span></div>
+      <div class="rounds playoffs">${playoffs[0].ties.map((t) => roundHtml({ stage: "", ties: [t] })).join("")}</div></section>`);
+    if (CUP.table.length) left.push(leagueHtml());
     if (CUP.groups.length) left.push(`<section class="panel"><div class="panel-h"><span class="label">Group stage</span></div><div class="groups">${CUP.groups.map(groupHtml).join("")}</div></section>`);
   }
   const right = [];

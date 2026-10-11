@@ -4,6 +4,8 @@ Three inputs, three owners:
 
 * ``data/squads.json`` -- who was in each squad, read from Wikipedia (etl.squads);
 * ``data/clubs.csv`` -- display names, short codes and colours (declared);
+* ``data/associations.json`` -- each club's UEFA association, read from Wikipedia by
+  etl.quarterfinalists, for the league-phase draw;
 * ``data/ratings/<season>.txt`` -- one rating per player-season, a game-design
   judgement written by hand (see SPEC.md "Ratings"). A ``# Club`` line opens
   each club, then one ``Player|rating`` line per player: club and player are the
@@ -45,6 +47,7 @@ from game.positions import LINE, MAX_POSITIONS, POSITIONS as CODES, best_eleven
 ROOT = Path(__file__).resolve().parent.parent
 SQUADS = ROOT / "data" / "squads.json"
 CLUBS = ROOT / "data" / "clubs.csv"
+ASSOCIATIONS = ROOT / "data" / "associations.json"
 RATINGS = ROOT / "data" / "ratings"
 POSITION_FILES = ROOT / "data" / "positions"
 MEASURED = POSITION_FILES / "measured.json"
@@ -204,6 +207,7 @@ def build() -> dict:
     squads = squads_doc["squads"]
     with CLUBS.open(newline="", encoding="utf-8") as f:
         clubs = {row["title"]: row for row in csv.DictReader(f)}
+    associations = json.loads(ASSOCIATIONS.read_text())
     ratings = load_ratings()
     measured_from, measured, declared = load_positions()
 
@@ -223,6 +227,9 @@ def build() -> dict:
         club = clubs.get(squad["club"])
         if club is None:
             errors.append(f"{squad['club']}: missing from clubs.csv")
+            continue
+        if squad["club"] not in associations:
+            errors.append(f"{squad['club']}: no association in associations.json")
             continue
         by_title = {p["title"]: p for p in squad["players"]}
         for title in rated:
@@ -270,6 +277,7 @@ def build() -> dict:
             "club": squad["club"],
             "name": club["name"],
             "short": club["short"],
+            "association": associations[squad["club"]],
             "primary": club["primary"],
             "secondary": club["secondary"],
             "crest": crest_key(club["short"], squad["season"]),

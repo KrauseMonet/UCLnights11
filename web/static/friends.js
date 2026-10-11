@@ -9,10 +9,13 @@ const FORMATS = [
   { size: 4, name: "4-team cup", rounds: "Semi-finals, final" },
   { size: 8, name: "8-team cup", rounds: "Quarter-finals onwards" },
   { size: 16, name: "16-team cup", rounds: "Round of 16 onwards" },
-  { size: 32, name: "32-team tournament", rounds: "Eight groups, then knockouts" },
+  { size: 36, name: "36-team league", rounds: "League phase, then knockouts" },
 ];
+// A room of 32 is one made before the league phase (C50): no longer offered, still named.
+const NAMES = { ...Object.fromEntries(FORMATS.map((f) => [f.size, f.name])), 32: "32-team tournament" };
 const STATUS = { lobby: "In the lobby", drafting: "Drafting", complete: "Finished" };
 let size = +(store.get("room-size") || 8);
+if (!FORMATS.some((f) => f.size === size)) size = 8;    // a size remembered from before
 let formation = store.get("formation") || "433";
 let memory = store.get("memory") === "1";
 const RATINGS = [{ code: "0", label: "Shown" }, { code: "1", label: "Hidden · Memory" }];
@@ -44,7 +47,7 @@ async function renderMine() {
     if (!rooms.length) return;
     $("mine").innerHTML = rooms.map((r) => `<a class="myroom" href="/room#${r.code}">
       <span class="code-sm">${esc(r.code)}</span>
-      <span>${esc(FORMATS.find((f) => f.size === r.size).name)}<small>${r.players} of ${r.size} players${r.host ? " · you host" : ""}</small></span>
+      <span>${esc(NAMES[r.size] || `${r.size}-team`)}<small>${r.players} of ${r.size} players${r.host ? " · you host" : ""}</small></span>
       <span class="pill ${r.status}">${STATUS[r.status]}</span></a>`).join("");
   } catch (e) { /* the list is a convenience; the page works without it */ }
 }

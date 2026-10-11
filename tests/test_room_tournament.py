@@ -66,7 +66,7 @@ def test_a_full_room_draws_no_real_sides():
     assert all(s.owner is not None for s in t.sides)
 
 
-def test_a_room_of_32_plays_the_group_format():
+def test_a_room_of_32_made_before_the_league_phase_plays_the_group_format():
     people = humans(3)
     t = play_room(DECK, LEAGUE, 11, people, 32)
     assert len(t.sides) == 32 and len(t.tables) == 8
@@ -102,4 +102,13 @@ def test_impossible_rooms_are_refused(size, n):
 
 
 def test_room_sizes_are_the_five_formats():
-    assert ROOM_SIZES == (2, 4, 8, 16, 32)
+    assert ROOM_SIZES == (2, 4, 8, 16, 36)             # a room of 32 is one made before C50
+
+
+def test_a_room_of_36_plays_the_league_phase_with_every_human_in_it():
+    people = humans(3)
+    t = play_room(DECK, LEAGUE, 11, people, 36)
+    assert t.format == "league" and len(t.sides) == 36 and len(t.table) == 36
+    assert [s for s in t.sides if s.owner is not None] == people
+    played = Counter(id(s) for f in t.fixtures if f.stage == "League phase" for s in (f.home, f.away))
+    assert all(played[id(p)] == 8 for p in people)

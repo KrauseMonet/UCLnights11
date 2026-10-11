@@ -558,6 +558,28 @@ button{font:inherit;cursor:pointer}
 .gtab td .t .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .gtab tr.q td:first-child{box-shadow:inset 3px 0 0 var(--win)}
 .gtab tr.you td{background:rgba(242,194,90,.09)}
+/* The league phase's table (C50): one table of 36, zones marked at the left edge. */
+.ltab{padding:0 0 6px;overflow-x:auto}
+.ltab table{width:100%;border-collapse:collapse;font-size:13px}
+.ltab th{font:650 10px var(--sans);font-stretch:85%;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);text-align:right;padding:9px 8px}
+.ltab th:nth-child(2){text-align:left}
+.ltab td{padding:6px 8px;text-align:right;border-top:1px solid var(--line);font-variant-numeric:tabular-nums}
+.ltab td:nth-child(2){text-align:left;width:100%}
+.ltab td.n{color:var(--ink-3);text-align:right}
+.ltab td .t{display:flex;align-items:center;gap:7px;min-width:0}
+.ltab td .t .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;max-width:220px}
+.ltab tr.q td:first-child{box-shadow:inset 3px 0 0 var(--win)}
+.ltab tr.po td:first-child{box-shadow:inset 3px 0 0 var(--ink-2)}
+.ltab tr.out td{color:var(--ink-3)}
+.ltab tr.cut td{border-bottom:1px solid var(--line-strong)}
+.ltab tr.you td{background:rgba(242,194,90,.09);color:inherit}
+.ltab tr.friend td{background:rgba(255,255,255,.035)}
+.ltab-key i{display:inline-block;width:8px;height:8px;border-radius:2px;margin:0 4px 0 10px;vertical-align:0}
+.ltab-key i.q{background:var(--win)}.ltab-key i.po{background:var(--ink-2)}
+.rounds.playoffs{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media (max-width:980px){.rounds.playoffs{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.rounds.playoffs .label:empty{display:none}
+@media (max-width:480px){.ltab .w{display:none}.ltab td .t .nm{max-width:150px}}
 .rounds{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;padding:18px}
 .rounds .label{display:block;margin-bottom:10px;color:var(--ice-2)}
 .tie{border:1px solid var(--line);border-radius:12px;background:var(--bg-2);padding:6px 10px;margin-bottom:8px;font-size:13px}

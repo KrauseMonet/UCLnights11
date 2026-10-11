@@ -237,13 +237,28 @@ def test_unsaved_lists_my_completed_rooms_until_saved():
     assert code not in unsaved(host) and code in unsaved(guest)
 
 
-def test_a_thirty_two_room_plays_groups():
+def test_a_thirty_six_room_plays_the_league_phase():
     host = player()
-    code = host.post("/api/rooms", json={"bench": False, "size": 32, "style": "own"}).json()["code"]
+    code = host.post("/api/rooms", json={"bench": False, "size": 36, "style": "own"}).json()["code"]
+    room = host.get(f"/api/rooms/{code}").json()
+    assert room["format"] == "36-team league" and room["stages"][:2] == ["League phase", "Knockout play-offs"]
     host.post(f"/api/rooms/{code}/start")
     host.post(f"/api/rooms/{code}/finish")
     t = host.get(f"/api/rooms/{code}/tournament").json()
-    assert len(t["groups"]) == 8 and len(t["players"]) == 1
+    assert t["format"] == "league" and len(t["table"]) == 36 and t["groups"] == []
+    assert len([f for f in t["your_matches"] if f["stage"] == "League phase"]) == 8
+
+
+def test_a_room_of_32_is_no_longer_made_but_one_made_before_still_plays_groups():
+    host = player()
+    assert host.post("/api/rooms", json={"bench": False, "size": 32, "style": "own"}).status_code == 400
+    code = host.post("/api/rooms", json={"bench": False, "size": 2, "style": "own"}).json()["code"]
+    with db.connection() as conn:                  # as a room of 32 made before C50 is stored
+        conn.execute("update rooms set size = 32 where code = %s", (code,))
+    host.post(f"/api/rooms/{code}/start")
+    host.post(f"/api/rooms/{code}/finish")
+    t = host.get(f"/api/rooms/{code}/tournament").json()
+    assert t["format"] == "groups" and len(t["groups"]) == 8 and t["table"] == []
     assert len([f for f in t["your_matches"] if f["stage"] == "Group stage"]) == 6
 
 

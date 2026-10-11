@@ -74,12 +74,14 @@ def sources(tmp_path, monkeypatch):
     (tmp_path / "squads.json").write_text(json.dumps({"squads": [
         {"season": 2004, "club": "Test F.C.", "article": "2004–05 Test F.C. season", "players": players}]}))
     (tmp_path / "clubs.csv").write_text("title,name,short,primary,secondary\nTest F.C.,Test,TST,#000000,#FFFFFF\n")
+    (tmp_path / "associations.json").write_text(json.dumps({"Test F.C.": "ENG"}))
     (tmp_path / "ratings").mkdir()
     (tmp_path / "positions").mkdir()
     (tmp_path / "positions" / "measured.json").write_text(json.dumps(
         {"source": {"measured_from": 2013}, "club_seasons": []}))
     monkeypatch.setattr(build, "SQUADS", tmp_path / "squads.json")
     monkeypatch.setattr(build, "CLUBS", tmp_path / "clubs.csv")
+    monkeypatch.setattr(build, "ASSOCIATIONS", tmp_path / "associations.json")
     monkeypatch.setattr(build, "RATINGS", tmp_path / "ratings")
     monkeypatch.setattr(build, "POSITION_FILES", tmp_path / "positions")
     monkeypatch.setattr(build, "MEASURED", tmp_path / "positions" / "measured.json")
@@ -136,6 +138,19 @@ def test_a_rated_player_without_positions_is_refused(sources):
     write_ratings(root, titles)
     write_positions(root, titles[:-1], FOUR_THREE_THREE[:-1])
     with pytest.raises(BuildError, match="no positions"):
+        build.build()
+
+
+def test_a_club_season_carries_its_association_and_one_without_is_refused(sources):
+    """The league-phase draw (C50) keeps a club from its own association's clubs, so a
+    club the source gives no association must not reach the deck as one with none."""
+    root, titles = sources
+    write_ratings(root, titles)
+    write_positions(root, titles)
+    [cs] = build.build()["club_seasons"]
+    assert cs["association"] == "ENG"
+    (root / "associations.json").write_text("{}")
+    with pytest.raises(BuildError, match="no association"):
         build.build()
 
 

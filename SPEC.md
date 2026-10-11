@@ -2,7 +2,8 @@
 
 A football draft game. Each turn deals one real squad that reached the European
 Cup's quarter-finals; the player takes one man from it; eleven turns build a side
-that then plays a full 32-team tournament against real quarter-finalists.
+that then plays a full 36-team tournament, a league phase and knockouts, against real
+quarter-finalists.
 
 This is the source of truth for the rules. `CLAUDE.md` tracks state, commands and
 the decisions log.
@@ -188,6 +189,10 @@ generated (`etl.deck`) and committed; `etl.deck --check` fails if it is stale.
   and every link to one opens and plays exactly as it did.** Rooms and the daily stay
   eleven-pick drafts for now, and the plain decoder refuses a `b` state so neither can
   mistake one for an eleven.
+- **A league draft** (C50), every solo draft made since, is a bench draft whose state
+  starts with `l` in place of the `b` (`lSEED-FORMATION-moves`) and whose tournament is
+  the league phase of §7. A `b` link keeps the group format. Rooms keep their format by
+  size and the daily plays one match, so the decoder they use refuses an `l` state.
 
 ## 6. The match engine
 
@@ -299,18 +304,53 @@ home goals 1.767 (real 1.719), away 1.360 (1.327), total SD 1.801 (1.783), home 
 
 ## 7. The tournament
 
-- 32 sides: yours plus **31 different clubs**, each in one season drawn uniformly
-  from the deck, each fielding the best eleven its rated players allow.
-- Four pots of eight by strength; eight groups of four, one per pot, avoiding two
-  seasons of one club in a group. Home and away, 3/1/0 points; ties broken by goal
-  difference, goals scored, then a seeded drawing of lots.
-- Round of 16: group winners against runners-up from other groups, winners at home
-  in the second leg. Quarter- and semi-finals an open draw. Two legs; level on
-  aggregate means extra time in the second leg and then penalties. **No away-goals
+The competition's format since 2024–25 (C50): every new draft and every new full-size
+room plays it. The rules are UEFA's as Wikipedia's 2024–25 league phase and knockout
+phase articles state them; where this game departs from them it says so.
+
+- 36 sides: yours plus **35 different clubs**, each in one season drawn uniformly from
+  the deck, at most **five of one association** (four league places and a European
+  Performance Spot, the most an association enters without a holder's place), each
+  fielding the best eleven its rated players allow. A club's association is the one
+  Wikipedia's season articles mark it with (`data/associations.json`; Monaco is France's).
+- **Four pots of nine by strength** (not coefficient, which the deck has no equivalent
+  of). A pot holds at most **four clubs of one association**: with five no draw exists,
+  since each would need two opponents from its own pot among four who can take only
+  eight such matches. A fifth waits for the next pot. (Ours; real pots never need it.)
+- **The draw:** each side plays two opponents from every pot, its own included, one at
+  home and one away; eight different opponents. No club meets a club of its own
+  association, and none meets more than two of one association; a drafted eleven has no
+  association but also meets at most two of any one. A seeded constraint search
+  (`game.league_phase.draw`), like UEFA's software; it never relaxes a rule.
+- **Eight matchdays**, every side on each, under UEFA's principles: never more than two
+  home or two away in a row, and one home and one away in the first two matchdays and
+  in the last two. Built in four blocks of two matchdays, each side home in one and away
+  in the other; a draw this construction can't schedule is drawn again (about half are).
+- **One table of 36:** 3/1/0 points, then goal difference, goals scored, away goals
+  scored, wins, away wins, then the points, goal difference and goals of the opponents
+  each side met, then a seeded drawing of lots (in place of disciplinary points and the
+  coefficient). 1st–8th go to the round of 16, 9th–24th to the play-offs, 25th–36th out.
+- **Knockout play-offs**, two legs: 9/10 v 23/24, 11/12 v 21/22, 13/14 v 19/20, 15/16 v
+  17/18, each seeded side drawn against one of its two and at home in the second leg.
+- **Round of 16**, a fixed bracket: 1/2 meet the winners from 15/16 v 17/18, 3/4 those
+  from 13/14 v 19/20, 5/6 those from 11/12 v 21/22, 7/8 those from 9/10 v 23/24, the
+  league side at home in the second leg. Each pair of seeds is drawn into the two halves
+  (1 and 2 can meet only in the final) and against its two play-off winners.
+- **Quarter- and semi-finals** follow the bracket (in each half, 1/2's tie meets 7/8's
+  and 3/4's meets 5/6's); the draw decides only who hosts the first leg. Two legs; level
+  on aggregate means extra time in the second leg and then penalties. **No away-goals
   rule** (as since 2021–22).
 - Final: one match, neutral ground, extra time and penalties.
 - The honours count scorers per (person, side): one man in two drawn club-seasons
   is two rows, never one summed total no single team produced.
+- **The group format** is retired for new play, and every link and room made before
+  C50 still plays it exactly as it did: a plain or `b` state, a room of 32. 32 sides,
+  yours plus 31 different clubs.
+  Four pots of eight by strength; eight groups of four, one per pot, avoiding two
+  seasons of one club in a group. Home and away, 3/1/0 points; ties broken by goal
+  difference, goals scored, then a seeded drawing of lots. Round of 16: group winners
+  against runners-up from other groups, winners at home in the second leg; quarter- and
+  semi-finals an open draw.
 
 ### Players' tournaments, the journey card and the analysis
 
@@ -381,8 +421,9 @@ home goals 1.767 (real 1.719), away 1.360 (1.327), total SD 1.801 (1.783), home 
   Signing in is needed only for rooms: the solo game never asks and never touches the
   database.
 - **A room** has a six-character code and a size: **2** (a single final), **4**
-  (semi-finals and final), **8** (quarter-finals on), **16** (round of 16 on) or **32**
-  (the full format of §7). Up to `size` signed-in people join with the code; the host
+  (semi-finals and final), **8** (quarter-finals on), **16** (round of 16 on) or **36**
+  (the league phase of §7; a room of 32, made before C50, plays the group format). Up to
+  `size` signed-in people join with the code; the host
   starts the draft; nobody joins or leaves after that.
 - **Two ways to draft, the host's choice in the lobby** (C29). **Take turns** (the
   default, after the cricket site): seats pick in a snake order (host first, then the
@@ -418,7 +459,7 @@ home goals 1.767 (real 1.719), away 1.360 (1.327), total SD 1.801 (1.783), home 
   A cup of 4–16 is an open draw every round, two legs (extra time and penalties on a
   level aggregate) and a one-match final on neutral ground. It is a pure function of
   (seed, size, the seats' draft states) and is recomputed on every request, never
-  stored; a room of one in 32 plays exactly the solo tournament of the same seed.
+  stored; a room of one in 36 plays exactly the solo tournament of the same seed.
 - **Stored:** `accounts`, `rooms` (code, size, seed, host, status, memory, style, pick
   clock, whether it drafts a bench, the room's moves and when the current turn began, a
   version that rises on every write) and `room_seats` (who, seat, formation, draft state

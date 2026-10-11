@@ -53,6 +53,7 @@ class ClubSeason:
     ink: str
     cards: tuple[Card, ...]
     best: tuple[str, tuple[tuple[int, str], ...]]   # (formation code, ((card index, slot), ...))
+    association: str | None = None                  # UEFA association code, "ENG"
 
     @property
     def title(self) -> str:
@@ -83,6 +84,7 @@ def build_deck(doc: dict) -> Deck:
             key=s["key"], season=s["season"], label=s["label"], club=s["club"], name=s["name"],
             short=s["short"], primary=s["primary"], secondary=s["secondary"], crest=s["crest"],
             team=s["team"], deep=s["deep"], ink=s["ink"], cards=cards, best=best,
+            association=s.get("association"),
         ))
     return Deck(tuple(seasons), {s.key: s for s in seasons})
 

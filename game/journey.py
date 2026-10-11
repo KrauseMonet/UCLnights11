@@ -35,7 +35,7 @@ MARK_CLEAN_SHEET = {"GK": 0.8, "DF": 0.6, "MF": 0.2, "FW": 0.0}
 MARK_WIN, MARK_LOSS = 0.3, -0.3
 MARK_RANGE = (3.0, 10.0)
 
-KNOCKOUT_STAGES = ("Round of 16", "Quarter-finals", "Semi-finals", "Final")
+KNOCKOUT_STAGES = ("Knockout play-offs", "Round of 16", "Quarter-finals", "Semi-finals", "Final")
 
 
 def match_mark(line: PlayerLine, goals: int, assists: int, conceded: int, result: str) -> float:

@@ -26,13 +26,13 @@ from pydantic import BaseModel
 from game import analysis as analyses, daily as daily_rules, journey as journeys, match, squad_ratings
 from game.deck import Card, ClubSeason, load_deck
 from game.draft import (Change, IllegalMove, Pick, Reroll, Session, can_replace, carry_plan, check_sheet, decode,
-                        decode_solo, decode_state, default_sheet, encode, move as move_man, replay, targets,
-                        why_not)
+                        decode_solo, decode_state, default_sheet, encode, is_league, move as move_man, replay,
+                        targets, why_not)
 from game.formations import DEFAULT, FORMATIONS
 from game.positions import arrange
 from game.shared_draft import Stranded
-from game.tournament import (CUP_STAGES, Fixture, Side, Tournament, auto_plan, club_side, leaders,
-                             league_of, play_room, play_tournament)
+from game.tournament import (CUP_STAGES, FINISHES, LEAGUE_STAGES, LEAGUE_TEAMS, STAGES, Fixture, Side,
+                             Tournament, auto_plan, club_side, leaders, league_of, play_room, play_tournament)
 from web import accounts, admin, auth, daily, db, failures, results, rooms
 from web.env import load_dotenv
 
@@ -370,12 +370,15 @@ def tournament_out(t: Tournament) -> dict:
             "a": side_out(x.a), "b": side_out(x.b), "agg": list(x.aggregate()),
             "winner": x.winner.key, "legs": [fixture_out(f) for f in x.legs],
         } for x in ties]})
-    groups = [{
-        "name": g,
-        "table": [{**side_out(r.side), "p": r.played, "w": r.won, "d": r.drawn, "l": r.lost,
-                   "gf": r.gf, "ga": r.ga, "pts": r.points} for r in rows],
-    } for g, rows in t.tables.items()]
+    def row_out(r):
+        return {**side_out(r.side), "p": r.played, "w": r.won, "d": r.drawn, "l": r.lost,
+                "gf": r.gf, "ga": r.ga, "pts": r.points}
+
+    groups = [{"name": g, "table": [row_out(r) for r in rows]} for g, rows in t.tables.items()]
+    pot = {id(s): q + 1 for q, members in enumerate(t.pots) for s in members}
     return {
+        "format": t.format,
+        "table": [{**row_out(r), "pot": pot[id(r.side)]} for r in t.table],
         "you": None if you is None else {
             **side_out(you), "formation": you.formation.label, "code": you.formation.code,
             "slots": list(you.formation.slots), "xi": [card_out(c) for c in you.xi],
@@ -495,7 +498,7 @@ class StartIn(BaseModel):
 @app.post("/api/draft")
 def start(body: StartIn, memory: bool = False) -> dict:
     seed = body.seed if body.seed is not None else random.SystemRandom().randrange(1, 10**9)
-    state = encode(seed, body.formation, [], bench=True)
+    state = encode(seed, body.formation, [], bench=True, league=True)
     return session_out(state, _replay(state), memory)
 
 
@@ -513,14 +516,14 @@ class PickIn(BaseModel):
 @app.post("/api/draft/{state}/pick")
 def pick(state: str, body: PickIn, memory: bool = False) -> dict:
     seed, formation, moves, bench, *_ = _decode(state)
-    new = encode(seed, formation, moves + [Pick(body.index)], bench)
+    new = encode(seed, formation, moves + [Pick(body.index)], bench, league=is_league(state))
     return session_out(new, _replay(new), memory)
 
 
 @app.post("/api/draft/{state}/reroll")
 def reroll(state: str, memory: bool = False) -> dict:
     seed, formation, moves, bench, *_ = _decode(state)
-    new = encode(seed, formation, moves + [Reroll()], bench)
+    new = encode(seed, formation, moves + [Reroll()], bench, league=is_league(state))
     return session_out(new, _replay(new), memory)
 
 
@@ -542,7 +545,7 @@ def set_plan(state: str, body: PlanIn, memory: bool = False) -> dict:
     seed, formation, moves, bench, _, sheet = _decode(state)
     plan = None if body.changes is None else tuple(Change(c.on, c.minute, c.when, c.off) for c in body.changes)
     try:
-        new = encode(seed, formation, moves, bench, plan, sheet)
+        new = encode(seed, formation, moves, bench, plan, sheet, league=is_league(state))
     except KeyError:
         raise HTTPException(400, "a change comes on a score the plan knows") from None
     return session_out(new, _replay(new), memory)
@@ -581,7 +584,8 @@ def set_sheet(state: str, body: SheetIn, memory: bool = False) -> dict:
         after = replay(load_deck(), seed, formation, moves, bench, None, sheet)
     except IllegalMove as e:
         raise HTTPException(400, str(e)) from None
-    new = encode(seed, formation, moves, bench, carry_plan(before, after, before.plan), sheet)
+    new = encode(seed, formation, moves, bench, carry_plan(before, after, before.plan), sheet,
+                 league=is_league(state))
     return session_out(new, _replay(new), memory)
 
 
@@ -599,13 +603,15 @@ def _solo_side(state: str) -> tuple[Session, Side]:
 @lru_cache(maxsize=16)
 def _solo_tournament(state: str) -> Tournament:
     """A bench draft plays engine 2 with its bench on the automatic plan (C40); an
-    eleven-pick draft plays engine 1, as every link to one always has.
+    eleven-pick draft plays engine 1, as every link to one always has. A league draft
+    (every one since C50) plays the league phase, every other link the group format.
 
     Kept for the next request: the cup page, its analysis and saving it each ask for the
     same tournament, and playing one costs ~100 ms. Callers only read it. A refusal
     (an unfinished draft) raises, and lru_cache keeps no exception."""
     s, you = _solo_side(state)
-    return play_tournament(load_deck(), league(), s.seed, you, engine=2 if s.bench_size else 1)
+    return play_tournament(load_deck(), league(), s.seed, you, engine=2 if s.bench_size else 1,
+                           fmt="league" if is_league(state) else "groups")
 
 
 def squad_out(side: Side) -> dict:
@@ -751,7 +757,7 @@ def logout(response: Response) -> dict:
 # -- rooms ------------------------------------------------------------------
 
 ROOM_FORMATS = {2: "Final", 4: "4-team cup", 8: "8-team cup", 16: "16-team cup",
-                32: "32-team tournament"}
+                32: "32-team tournament", LEAGUE_TEAMS: "36-team league"}
 
 
 STALE_ROOM = ("This room was drafted before players had positions, and its picks no longer "
@@ -818,7 +824,7 @@ def room_out(room: rooms.Room, me_id: int | None) -> dict:
         "code": room.code, "size": room.size, "format": ROOM_FORMATS[room.size],
         "memory": room.memory, "style": room.style, "timer": room.timer_seconds, "bench": room.bench,
         "picks_each": each,
-        "stages": CUP_STAGES.get(room.size, ["Group stage", *CUP_STAGES[16]]),
+        "stages": CUP_STAGES.get(room.size, LEAGUE_STAGES if room.size == LEAGUE_TEAMS else STAGES),
         "status": room.status, "version": room.version, "failure_reason": room.failure_reason,
         "is_host": me_id is not None and room.host_id == me_id,
         "seated": mine is not None,
@@ -1046,10 +1052,6 @@ def finish_drafts(code: str, request: Request) -> dict:
         return _room_reply(conn, request, code)
 
 
-REACHED_ORDER = ["Champions", "Runners-up", "Semi-finals", "Quarter-finals", "Round of 16",
-                 "Group stage"]
-
-
 def players_out(t: Tournament) -> list[dict]:
     """Every human side's run, furthest first: the table a room is really about."""
     out = []
@@ -1070,7 +1072,7 @@ def players_out(t: Tournament) -> list[dict]:
                     "reached": t.reached(side), "w": w, "d": d, "l": l, "gf": gf, "ga": ga,
                     "avg": round(sum(c.rating for c in side.xi) / 11),
                     "xi": [card_out(c) for c in side.xi]})
-    return sorted(out, key=lambda p: (REACHED_ORDER.index(p["reached"]), -(p["gf"] - p["ga"]), -p["gf"]))
+    return sorted(out, key=lambda p: (FINISHES.index(p["reached"]), -(p["gf"] - p["ga"]), -p["gf"]))
 
 
 def _room_tournament(code: str, request: Request) -> tuple[rooms.Room, Tournament]:

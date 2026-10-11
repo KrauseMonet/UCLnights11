@@ -57,23 +57,37 @@ def _sign(payload: str) -> str:
     return hmac.new(_session_secret().encode(), payload.encode(), hashlib.sha256).hexdigest()
 
 
-def make_session_cookie(account_id: int, now: float | None = None) -> str:
-    """`<account_id>.<expiry_epoch>.<hmac_hex>`, signed over the first two fields."""
-    expiry = int(now if now is not None else time.time()) + SESSION_MAX_AGE_S
-    payload = f"{account_id}.{expiry}"
+def make_session_cookie(account_id: int, now: float | None = None, username: str | None = None,
+                        expiry: int | None = None) -> str:
+    """`<account_id>.<expiry_epoch>.<username>.<hmac_hex>`, signed over everything before
+    the signature. The username rides along so the page's "who am I" is answered from
+    the cookie alone, with no query (it can't contain a dot: USERNAME_RE). Without one
+    it is the older `<account_id>.<expiry_epoch>.<hmac_hex>`, still accepted.
+    ``expiry`` re-issues a cookie without extending it."""
+    if expiry is None:
+        expiry = int(now if now is not None else time.time()) + SESSION_MAX_AGE_S
+    payload = f"{account_id}.{expiry}" + (f".{username}" if username else "")
     return f"{payload}.{_sign(payload)}"
+
+
+def read_session_cookie(token: str, now: float | None = None) -> tuple[int, int, str | None] | None:
+    """(account id, expiry, username or None for an older cookie), or None for anything
+    malformed, tampered with or expired."""
+    parts = token.split(".")
+    if len(parts) not in (3, 4):
+        return None
+    account_id_s, expiry_s, sig = parts[0], parts[1], parts[-1]
+    username = parts[2] if len(parts) == 4 else None
+    if not account_id_s.isdigit() or not expiry_s.isdigit():
+        return None
+    if not hmac.compare_digest(_sign(".".join(parts[:-1])), sig):
+        return None
+    if int(expiry_s) < int(now if now is not None else time.time()):
+        return None
+    return int(account_id_s), int(expiry_s), username
 
 
 def verify_session_cookie(token: str, now: float | None = None) -> int | None:
     """The account id, or None for anything malformed, tampered with or expired."""
-    parts = token.split(".")
-    if len(parts) != 3:
-        return None
-    account_id_s, expiry_s, sig = parts
-    if not account_id_s.isdigit() or not expiry_s.isdigit():
-        return None
-    if not hmac.compare_digest(_sign(f"{account_id_s}.{expiry_s}"), sig):
-        return None
-    if int(expiry_s) < int(now if now is not None else time.time()):
-        return None
-    return int(account_id_s)
+    session = read_session_cookie(token, now)
+    return session[0] if session else None

@@ -670,11 +670,15 @@ def _signed_in(conn, request: Request) -> accounts.Account:
 
 
 def _set_session(request: Request, response: Response, account: accounts.Account) -> dict:
-    https = request.url.scheme == "https" or request.headers.get("x-forwarded-proto") == "https"
-    response.set_cookie(auth.COOKIE_NAME, auth.make_session_cookie(account.account_id),
-                        max_age=auth.SESSION_MAX_AGE_S, httponly=True, samesite="lax",
-                        secure=https, path="/")
+    _put_cookie(request, response, auth.make_session_cookie(account.account_id, username=account.username),
+                auth.SESSION_MAX_AGE_S)
     return {"account": account_out(account)}
+
+
+def _put_cookie(request: Request, response: Response, token: str, max_age: int) -> None:
+    https = request.url.scheme == "https" or request.headers.get("x-forwarded-proto") == "https"
+    response.set_cookie(auth.COOKIE_NAME, token, max_age=max_age, httponly=True, samesite="lax",
+                        secure=https, path="/")
 
 
 def account_out(a: accounts.Account) -> dict:
@@ -696,14 +700,30 @@ class LoginIn(BaseModel):
 
 
 @app.get("/api/auth/me")
-def me(request: Request) -> dict:
-    # No cookie, no database: a signed-out visitor costs nothing, and the solo game
-    # keeps working on a server with no database at all.
-    if not request.cookies.get(auth.COOKIE_NAME) or not db.configured():
+def me(request: Request, response: Response) -> dict:
+    """Every page asks this for its nav, so it needs no database: the signed cookie
+    carries the username (C48). No cookie costs nothing either, and the solo game keeps
+    working on a server with no database at all. A cookie from before C48 has no
+    username: it is looked up once and the cookie re-issued with it, expiring when the
+    old one would have. Usernames never change, so the cookie's can't go stale; an
+    account deleted by an admin still reads as signed in until its cookie runs out,
+    though everything that acts on the account refuses it."""
+    token = request.cookies.get(auth.COOKIE_NAME)
+    if not token or not db.configured():
         return {"account": None}
+    session = auth.read_session_cookie(token)
+    if session is None:
+        return {"account": None}
+    account_id, expiry, username = session
+    if username is not None:
+        return {"account": account_out(accounts.Account(account_id, username))}
     with db.connection() as conn:
-        a = _account(conn, request)
-    return {"account": account_out(a) if a else None}
+        a = accounts.get_account(conn, account_id)
+    if a is None:
+        return {"account": None}
+    _put_cookie(request, response, auth.make_session_cookie(a.account_id, username=a.username, expiry=expiry),
+                max(expiry - int(time.time()), 1))
+    return {"account": account_out(a)}
 
 
 @app.post("/api/auth/register")
@@ -1166,7 +1186,7 @@ def unsaved_results(body: UnsavedIn, request: Request) -> dict:
             "select r.code from rooms r join room_seats s on s.room_code = r.code"
             " where s.account_id = %s and r.status = 'complete' order by r.updated_at desc",
             (me.account_id,)).fetchall()]
-        mine = [rooms.load_room(conn, c) for c in codes if ("room", c) not in saved]
+        mine = rooms.load_rooms(conn, [c for c in codes if ("room", c) not in saved])   # one query, however many
     solo = []
     for k in keys:
         if ("solo", k) in saved:

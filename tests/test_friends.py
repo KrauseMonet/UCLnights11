@@ -717,3 +717,51 @@ def test_the_room_draft_cache_is_shared_only_by_the_same_deck_and_moves(monkeypa
     monkeypatch.setattr(rooms_mod, "id", lambda x: 1, raising=False)
     first = rooms_mod.shared_of(deck, room)
     assert rooms_mod.shared_of(copy.copy(deck), room) is not first
+
+
+# -- who am I, and the unsaved panel, without a query each (speed sweep 6 and 7) ------
+
+def test_who_am_i_is_answered_from_the_cookie_with_no_query(monkeypatch):
+    c = player()
+    seen = count_queries(monkeypatch)
+    me = c.get("/api/auth/me").json()["account"]
+    assert me["username"].startswith("player") and me["id"] and seen == []
+
+
+def test_an_older_cookie_is_looked_up_once_and_reissued_with_its_username_and_expiry(monkeypatch):
+    c = player()
+    me = c.get("/api/auth/me").json()["account"]
+    old = auth.make_session_cookie(me["id"], now=2_000_000_000 - auth.SESSION_MAX_AGE_S)   # expires at 2e9
+    c.cookies.set(auth.COOKIE_NAME, old)
+    seen = count_queries(monkeypatch)
+    r = c.get("/api/auth/me")
+    assert r.json()["account"] == me and len(seen) == 1
+    new = r.cookies.get(auth.COOKIE_NAME)
+    assert auth.read_session_cookie(new) == (me["id"], 2_000_000_000, me["username"])
+    seen.clear()
+    c.cookies.set(auth.COOKIE_NAME, new)
+    assert c.get("/api/auth/me").json()["account"] == me and seen == []
+
+
+def test_the_unsaved_panel_reads_every_completed_room_in_one_query(monkeypatch):
+    host, guest = player(), player()
+
+    def finished_room():
+        code = host.post("/api/rooms", json={"bench": False, "size": 2, "style": "own"}).json()["code"]
+        guest.post(f"/api/rooms/{code}/join")
+        host.post(f"/api/rooms/{code}/start")
+        draft_to_the_end(host, code)
+        draft_to_the_end(guest, code)
+        return code
+
+    def statements():
+        seen = count_queries(monkeypatch)
+        listed = [r["code"] for r in guest.post("/api/results/unsaved", json={}).json()["rooms"]]
+        monkeypatch.undo()
+        return listed, len(seen)
+
+    first = finished_room()
+    one, n1 = statements()
+    later = [finished_room(), finished_room()]
+    three, n3 = statements()
+    assert one == [first] and sorted(three) == sorted([first, *later]) and n3 == n1

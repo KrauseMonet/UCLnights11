@@ -189,6 +189,24 @@ ROOM_COLUMNS = ("r.code, r.size, r.seed, r.host_id, r.status, r.version, r.memor
 SEAT_COLUMNS = "s.account_id, a.username, s.seat, s.formation, s.state, s.plan, s.sheet"
 
 
+ROOM_FROM = ("  from rooms r left join room_seats s on s.room_code = r.code"
+             "  left join accounts a on a.account_id = s.account_id")
+_N_ROOM = len(ROOM_COLUMNS.split(","))
+
+
+def _rooms_of(rows) -> dict[str, Room]:
+    """Joined rows (a room's columns, then one seat's, seat order within each room) as
+    rooms by code. A room with no seats comes back as one row of nulls on the seat side."""
+    out: dict[str, Room] = {}
+    for r in rows:
+        room = out.get(r[0])
+        if room is None:
+            room = out[r[0]] = Room(*r[:_N_ROOM], seats=[])
+        if r[_N_ROOM] is not None:
+            room.seats.append(Seat(*r[_N_ROOM:]))
+    return out
+
+
 def load_room(conn, code: str, lock: bool = False) -> Room:
     """The room and its seats in ONE query: the room is read on every poll, and every
     query is a round trip to the database, so the seats ride along as joined rows."""
@@ -198,16 +216,21 @@ def load_room(conn, code: str, lock: bool = False) -> Room:
         # freezing every request behind one slow one (the cricket site's A92, A180).
         conn.execute("select set_config('lock_timeout', '5s', true)")
     rows = conn.execute(
-        f"select {ROOM_COLUMNS}, {SEAT_COLUMNS}"
-        "  from rooms r left join room_seats s on s.room_code = r.code"
-        "  left join accounts a on a.account_id = s.account_id"
-        " where r.code = %s order by s.seat"
+        f"select {ROOM_COLUMNS}, {SEAT_COLUMNS}{ROOM_FROM} where r.code = %s order by s.seat"
         + (" for update of r" if lock else ""), (code,)).fetchall()
     if not rows:
         raise NotFound("no room with that code")
-    n = len(ROOM_COLUMNS.split(","))
-    seats = [Seat(*r[n:]) for r in rows if r[n] is not None]
-    return Room(*rows[0][:n], seats=seats)
+    return _rooms_of(rows)[code]
+
+
+def load_rooms(conn, codes: list[str]) -> list[Room]:
+    """Several rooms in one query, in the order asked; a code with no room is left out."""
+    if not codes:
+        return []
+    found = _rooms_of(conn.execute(
+        f"select {ROOM_COLUMNS}, {SEAT_COLUMNS}{ROOM_FROM} where r.code = any(%s) order by r.code, s.seat",
+        (list(codes),)).fetchall())
+    return [found[c] for c in codes if c in found]
 
 
 def my_rooms(conn, account: Account) -> list[dict]:

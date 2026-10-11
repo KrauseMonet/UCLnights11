@@ -50,3 +50,22 @@ def test_no_secret_is_a_clear_error_not_an_open_door(monkeypatch):
     monkeypatch.delenv("SESSION_SECRET")
     with pytest.raises(auth.NotConfigured):
         auth.make_session_cookie(1)
+
+
+def test_a_cookie_carries_the_username_under_its_signature():
+    token = auth.make_session_cookie(42, username="alice_a")
+    assert auth.read_session_cookie(token)[::2] == (42, "alice_a")
+    account, expiry, name, sig = token.split(".")
+    assert auth.read_session_cookie(f"{account}.{expiry}.mallory.{sig}") is None
+    assert auth.verify_session_cookie(token) == 42
+
+
+def test_an_older_cookie_without_a_username_is_still_accepted():
+    assert auth.read_session_cookie(auth.make_session_cookie(42))[::2] == (42, None)
+
+
+def test_a_reissued_cookie_keeps_its_expiry():
+    old = auth.make_session_cookie(42, now=1_000_000)
+    _, expiry, _ = auth.read_session_cookie(old, now=1_000_001)
+    new = auth.make_session_cookie(42, username="alice_a", expiry=expiry)
+    assert auth.read_session_cookie(new, now=1_000_001)[1] == expiry

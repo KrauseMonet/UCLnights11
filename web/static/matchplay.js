@@ -4,8 +4,19 @@
    tournament page and the daily challenge, which differ only in how they name a side
    and label a match, passed in as `look` = { name(side), sub(side), stage(fixture) }. */
 
-const MINUTE_MS = 55;
 const GOAL_PAUSE_MS = 1700;      // the clock stops this long for a goal
+
+/* How fast a match you watch alone plays: ms per match minute, so a ninety takes about
+   5 s, 13 s or 27 s. Chosen on the card, changeable mid-match, remembered in this browser.
+   A room watching together keeps its own shared clock (watch.js), which no one screen can slow. */
+const PACES = [["fast", "Fast", 55], ["normal", "Normal", 140], ["slow", "Slow", 300]];
+const paceNow = () => PACES.find((p) => p[0] === store.get("pace")) || PACES[0];
+
+function paceHtml() {
+  const on = paceNow()[0];
+  return `<div class="pace"><span>Pace</span><div class="chips" role="radiogroup" aria-label="Match pace">${PACES.map(([k, label]) =>
+    `<button class="chip" role="radio" aria-checked="${k === on}" data-pace="${k}">${label}</button>`).join("")}</div></div>`;
+}
 
 function sideCardHtml(s, look) {
   return `<div class="side band" style="${teamStyle(s)}">${sideCrest(s, 84)}
@@ -252,17 +263,29 @@ function matchRunner(host, f, look, onWhistle = () => {}) {
   return { to, whistle, get minute() { return minute; }, get over() { return over; } };
 }
 
-/* Play `f` into `host` from kick-off, a minute every MINUTE_MS, the clock stopping for a
-   goal. Returns `finish`, which jumps to the whistle; `onDone` runs once, at the whistle
-   either way. */
+/* Play `f` into `host` from kick-off, a minute every pace step (PACES), the clock stopping
+   for a goal. Returns `finish`, which jumps to the whistle; `onDone` runs once, at the
+   whistle either way. The pace is read at every step, so a change takes hold at once. */
 function playMatch(host, f, look, onDone) {
   let timer = null, pausedUntil = 0;
-  const run = matchRunner(host, f, look, () => { clearInterval(timer); onDone(); });
-  timer = setInterval(() => {
+  const run = matchRunner(host, f, look, () => { clearTimeout(timer); host.querySelector(".pace")?.remove(); onDone(); });
+  host.insertAdjacentHTML("afterbegin", paceHtml());
+  host.querySelector(".pace").onclick = (e) => {
+    const b = e.target.closest("[data-pace]");
+    if (!b) return;
+    store.set("pace", b.dataset.pace);
+    host.querySelectorAll("[data-pace]").forEach((x) => x.setAttribute("aria-checked", x === b));
+    clearTimeout(timer);
+    timer = setTimeout(tick, Math.max(0, pausedUntil - Date.now()) || paceNow()[2]);
+  };
+  const tick = () => {
     const now = Date.now();
-    if (now < pausedUntil) return;                  // a goal is being celebrated
-    if (pausedUntil) { pausedUntil = 0; host.querySelector(".goal-burst")?.remove(); }
-    if (run.to(run.minute + 1).length) pausedUntil = now + GOAL_PAUSE_MS;
-  }, MINUTE_MS);
+    if (now >= pausedUntil) {
+      if (pausedUntil) { pausedUntil = 0; host.querySelector(".goal-burst")?.remove(); }
+      if (run.to(run.minute + 1).length) pausedUntil = now + GOAL_PAUSE_MS;
+    }
+    if (!run.over) timer = setTimeout(tick, pausedUntil > now ? pausedUntil - now : paceNow()[2]);
+  };
+  timer = setTimeout(tick, paceNow()[2]);
   return run.whistle;
 }

@@ -4,7 +4,7 @@ The tournament is played in full the moment a room completes (it is a pure funct
 the room), so watching it together is only a matter of time. The watch is cut into
 ROUNDS, one per matchday or leg in which at least one friend plays; a round is a
 countdown, then every friend's match of that round at once, then a moment at full time.
-At 0.1 s a match minute a league run to the final watches in about six minutes. The schedule is a list of
+At 0.1 s a match minute (rooms made before paces, C54) a league run to the final watches in about six minutes. The schedule is a list of
 offsets from the moment the host kicked off, and where everyone is follows from that
 moment and the clock, so the server stores one number and no screen waits on another.
 
@@ -18,6 +18,10 @@ when its countdown begins, its results at kick-off, the standings after it at fu
 
 Only the host can move the clock, and only forward: a skip moves the kick-off moment
 earlier, so every screen jumps to the same place.
+
+The host also sets the pace (C54): seconds per match minute, the solo page's three
+speeds. A change mid-watch re-times every round and moves the kick-off moment so the room
+stays where it was (``retime``): the same second of a countdown, the same match minute.
 """
 
 from __future__ import annotations
@@ -28,10 +32,21 @@ from dataclasses import dataclass
 from game.tournament import LEAGUE, Fixture, Side, Tournament, league_table
 
 BREAK_S = 8.0         # the countdown before each round's kick-off
-MINUTE_S = 0.1        # one match minute; a round where extra time can come gets 120 of them
+MINUTE_S = 0.1        # one match minute in a room made before paces (C52); a round where extra time can come gets 120 of them
 AFTER_S = 5.0         # full time stays on screen this long before the next countdown
 HOLD_S = 2.0          # and after the last round, this much longer before the watch ends
 HOST_WAIT_S = 180.0   # after the room completes, a seat may kick off if the host hasn't
+
+# The host's choice of pace (C54), the solo page's three speeds (matchplay.js PACES). A
+# room made before paces has none stored and keeps MINUTE_S, so a watch already seen keeps
+# its length, and with it its end.
+PACES = {"fast": 0.055, "normal": 0.14, "slow": 0.3}
+DEFAULT_PACE = "normal"
+
+
+def minute_s(pace: str | None) -> float:
+    return MINUTE_S if pace is None else PACES[pace]
+
 
 FIRST_PHASES = (LEAGUE, "Group stage")
 PARTS = ("pairs", "results", "after")   # what a round lets out, in the order it does
@@ -45,6 +60,7 @@ class Round:
     key: int                        # its place among every round the tournament played
     start: float                    # its countdown begins, seconds after kick-off
     minutes: int
+    minute_s: float = MINUTE_S      # one match minute at the room's pace
 
     @property
     def kick(self) -> float:
@@ -52,18 +68,19 @@ class Round:
 
     @property
     def end(self) -> float:
-        return self.kick + self.minutes * MINUTE_S + AFTER_S
+        return self.kick + self.minutes * self.minute_s + AFTER_S
 
     def at(self, part: int) -> float:
         """When part ``part`` of PARTS becomes known."""
         return (self.start, self.kick, self.end)[part]
 
 
-def rounds(t: Tournament) -> list[Round]:
+def rounds(t: Tournament, minute: float = MINUTE_S) -> list[Round]:
     """The rounds the room watches, in playing order. Fixtures are stored in the order
     they were played, a round's at the first appearance of its (stage, label); a second
     leg and a final may go to extra time, so they get 120 minutes whether they do or not
-    (an allowance that depended on the result would give the result away)."""
+    (an allowance that depended on the result would give the result away). ``minute`` is
+    the pace, seconds per match minute."""
     order: dict[tuple[str, str], list[Fixture]] = {}
     for f in t.fixtures:
         order.setdefault((f.stage, f.label), []).append(f)
@@ -72,7 +89,7 @@ def rounds(t: Tournament) -> list[Round]:
         mine = tuple(f for f in fixtures if f.home.owner is not None or f.away.owner is not None)
         if not mine:
             continue
-        r = Round(stage, label, mine, key, start, 120 if label in ("Second leg", "Final") else 90)
+        r = Round(stage, label, mine, key, start, 120 if label in ("Second leg", "Final") else 90, minute)
         out.append(r)
         start = r.end
     return out
@@ -96,6 +113,25 @@ def known(rs: list[Round], p: float) -> int:
 def current(rs: list[Round], p: float) -> int:
     """The round whose countdown began last; -1 before kick-off."""
     return max((i for i, r in enumerate(rs) if r.start <= p), default=-1)
+
+
+def retime(old: list[Round], new: list[Round], p: float) -> float:
+    """Where moment ``p`` of a watch timed as ``old`` falls when it is timed as ``new``
+    (the same rounds at another pace): the same second of a countdown or of full time, the
+    same point of a match, measured in match minutes. Past the end, as far past the new end."""
+    if p >= end_at(old):
+        return end_at(new) + (p - end_at(old))
+    i = current(old, p)
+    if i < 0:
+        return p
+    o, n = old[i], new[i]
+    d = p - o.start
+    if d < BREAK_S:
+        return n.start + d
+    played = (d - BREAK_S) / o.minute_s
+    if played < o.minutes:
+        return n.kick + played * n.minute_s
+    return n.kick + n.minutes * n.minute_s + (d - BREAK_S - o.minutes * o.minute_s)
 
 
 SKIPS = ("kickoff", "fulltime", "phase", "end")

@@ -8,7 +8,9 @@
    cricket site's A119), so no screen waits on another and a late arrival lands on the
    current minute.
 
-   Only the host moves the clock, and only forward. The cup page hands the room to this
+   Only the host moves the clock, and only forward, and only the host sets its pace (C54):
+   the solo page's three speeds, changeable mid-watch, every screen staying at the minute
+   it was at. A pace change re-times every round, so the parts are fetched again. The cup page hands the room to this
    while it is being watched and takes it back, every result shown, when the watch ends. */
 
 const WATCH_POLL_MS = 2000;
@@ -57,13 +59,20 @@ function watchStart(w, t0, t1) {
 
 function wApply(w) {
   if (w.ended) return watchEnd();
+  if ("pace" in w && w.pace !== WS.pace) {
+    // Every round's timings changed: this reply carries every part again, timed anew.
+    WS.rounds = [];
+    WS.have = 0;
+    wDrawn = "";
+  }
+  for (const k of ["pace", "minute_s"]) if (k in w) WS[k] = w[k];
   if (w.unchanged) return;
   for (const k of ["started", "t0", "is_host", "seated", "host", "can_start", "host_wait", "you", "format",
-                   "break_s", "minute_s"]) if (k in w) WS[k] = w[k];
+                   "break_s"]) if (k in w) WS[k] = w[k];
   if (w.humans) WS.humans = w.humans;
   if (w.host_wait != null) WS.host_wait_until = wNow() + w.host_wait;
   for (const part of w.parts || []) {
-    if (part.n < WS.have) continue;
+    if (part.n !== WS.have) continue;              // a gap is filled by the next poll
     const r = WS.rounds[part.round] ||= {};
     if (part.kind === "pairs") Object.assign(r, part);
     else if (part.kind === "results") r.fixtures = part.fixtures;
@@ -100,7 +109,7 @@ function wPoll() {
 
 async function wPollOnce() {
   clearTimeout(wPollTimer);
-  const q = WS.started ? `?have=${WS.have}&t0=${WS.t0}` : "";
+  const q = WS.started ? `?have=${WS.have}&t0=${WS.t0}&pace=${WS.pace || ""}` : "";
   const t0 = Date.now();
   let w;
   try { w = await api(`/api/rooms/${ROOM}/watch${q}`, { timeout: 8000 }); }
@@ -220,9 +229,10 @@ function wDraw(at) {
       <p>${kicked ? "The first round is on its way…" : WS.is_host
         ? "Every friend watches the same matches at the same moment. Kick off when they're here."
         : `Every friend watches the same matches at the same moment. Waiting for ${esc(WS.host || "the host")} to kick off.`}</p>
-      <p class="note" id="wwait"></p>${squad}`;
+      <p class="note" id="wwait"></p>${squad}${wPaceHtml()}`;
     $("actions").innerHTML = !kicked && WS.can_start ? `<button class="btn primary" id="wkick">Kick off</button>` : "";
     if ($("wkick")) $("wkick").onclick = () => wPost("start");
+    wPaceWire();
     $("match").innerHTML = "";
     $("left").innerHTML = wFriendsHtml(WS.humans.map((h) => ({ ...h })), "In this room");
     $("right").innerHTML = "";
@@ -231,7 +241,8 @@ function wDraw(at) {
   }
   const r = at.r;
   $("hero").innerHTML = `<div class="kicker">${where}</div><h1>${esc(wTitle(r))}</h1>
-    <p>${wSubtitle(r) ? `${esc(wSubtitle(r))} · ` : ""}<span id="wstate"></span></p>${squad}`;
+    <p>${wSubtitle(r) ? `${esc(wSubtitle(r))} · ` : ""}<span id="wstate"></span></p>${squad}${wPaceHtml()}`;
+  wPaceWire();
   wActions(at);
   wCard(at, true);
   $("left").innerHTML = wRoundHtml(at) + wYourResults(at);
@@ -239,6 +250,23 @@ function wDraw(at) {
   const st = wStandings(at);
   $("right").innerHTML = st ? wFriendsHtml(st.rows, `Friends · after ${wTitle(st.r)}${wFirstPhase(st.r) ? "" : ` ${st.r.label === "Final" ? "" : st.r.label.toLowerCase()}`}`) : "";
   $("more").innerHTML = "";
+}
+
+/* The pace (C54): the host's chips, the solo page's three speeds; everyone else is told it.
+   A room made before paces has none chosen and plays at its old speed until the host picks. */
+function wPaceHtml() {
+  if (!WS.is_host) {
+    const p = PACES.find((x) => x[0] === WS.pace);
+    return p ? `<p class="note wpace-note">Pace: ${p[1]} · the host's choice</p>` : "";
+  }
+  return `<div class="pace wpace"><span>Pace for everyone</span><div class="chips" role="radiogroup" aria-label="Match pace for the room">${PACES.map(([k, label]) =>
+    `<button class="chip" role="radio" aria-checked="${k === WS.pace}" data-wpace="${k}">${label}</button>`).join("")}</div></div>`;
+}
+
+function wPaceWire() {
+  $("hero").querySelectorAll("[data-wpace]").forEach((b) => b.onclick = () => {
+    if (b.dataset.wpace !== WS.pace) wPost("pace", { pace: b.dataset.wpace });
+  });
 }
 
 /* Only the host can skip, and only forward: to this round's kick-off or full time, past
@@ -257,7 +285,7 @@ function wActions(at) {
   $("actions").querySelectorAll("[data-skip]").forEach((x) => x.onclick = () => {
     const to = x.dataset.skip;
     if (to === "end" && !confirm("Skip to the end for everyone in the room? Every result will show.")) return;
-    wPost("skip", { to, round: at.i, have: WS.have });
+    wPost("skip", { to, round: at.i, have: WS.have, pace: WS.pace || "" });
   });
 }
 

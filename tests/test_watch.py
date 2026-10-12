@@ -47,6 +47,39 @@ def test_a_round_with_no_friend_in_it_is_left_out():
     assert "Knockout play-offs" not in stages and stages[8] == "Round of 16"
 
 
+def _place(rs, p):
+    """Where moment p is: (round, phase, how far into it), the match part in minutes."""
+    i = watch.current(rs, p)
+    r = rs[i]
+    d = p - r.start
+    if d < watch.BREAK_S:
+        return i, "countdown", round(d, 6)
+    if d < watch.BREAK_S + r.minutes * r.minute_s:
+        return i, "live", round((d - watch.BREAK_S) / r.minute_s, 6)
+    return i, "after", round(d - watch.BREAK_S - r.minutes * r.minute_s, 6)
+
+
+@pytest.mark.parametrize("old,new", [(watch.MINUTE_S, 0.3), (0.3, 0.055), (0.14, 0.14)])
+def test_a_new_pace_keeps_the_round_the_phase_and_the_match_minute(old, new):
+    t = TOURNAMENTS[(36, 4, 5)]
+    a, b = watch.rounds(t, old), watch.rounds(t, new)
+    assert all(r.minute_s == old for r in a) and all(r.minute_s == new for r in b)
+    assert a[0].end - a[0].kick == pytest.approx(a[0].minutes * old + watch.AFTER_S)
+    end = watch.end_at(a)
+    for k in range(400):
+        p = end * k / 400 + 0.0137
+        q = watch.retime(a, b, p)
+        assert _place(b, q) == pytest.approx(_place(a, p)), p
+        assert watch.retime(b, a, q) == pytest.approx(p)
+    # The watch's end maps to the end, and past it as far past.
+    assert watch.retime(a, b, end + 3) == pytest.approx(watch.end_at(b) + 3)
+
+
+def test_a_room_made_before_paces_keeps_the_old_minute():
+    assert watch.minute_s(None) == watch.MINUTE_S == 0.1
+    assert watch.minute_s("slow") == watch.PACES["slow"] and watch.DEFAULT_PACE in watch.PACES
+
+
 def test_parts_come_out_in_order_pairs_then_results_then_standings():
     rs = watch.rounds(TOURNAMENTS[(36, 4, 5)])
     times = [r.at(k) for r in rs for k in range(3)]
@@ -322,3 +355,75 @@ def test_someone_without_a_seat_is_never_offered_the_kick_off(clock):
     assert watch_of(guest, code)["can_start"] is True
     assert watch_of(stranger, code)["can_start"] is False
     assert stranger.post(f"/api/rooms/{code}/watch/start").status_code == 403
+
+
+# -- the pace (C54) ----------------------------------------------------------------
+
+def set_pace(c, code, pace):
+    return c.post(f"/api/rooms/{code}/watch/pace", json={"pace": pace})
+
+
+def test_a_new_room_watches_at_normal_pace_and_only_the_host_changes_it(clock):
+    (host, guest), code = finished_room()
+    w = watch_of(guest, code)
+    assert w["pace"] == "normal" and w["minute_s"] == watch.PACES["normal"]
+    assert set_pace(guest, code, "slow").status_code == 403
+    assert set_pace(host, code, "glacial").status_code == 400
+    w = set_pace(host, code, "slow").json()                          # before kick-off: stored, nothing moves
+    assert w["pace"] == "slow" and w["minute_s"] == watch.PACES["slow"] and w["t0"] is None
+    _, rs = schedule(code)
+    assert all(r.minute_s == watch.PACES["slow"] for r in rs)
+
+
+def test_a_pace_changed_mid_match_keeps_every_screen_at_the_same_minute(clock):
+    (host, guest), code = finished_room()
+    host.post(f"/api/rooms/{code}/watch/start")
+    _, rs = schedule(code)
+    clock.t += rs[0].kick + 30.5 * watch.PACES["normal"]           # 30 and a half minutes in
+    held = watch_of(guest, code)
+    w = set_pace(host, code, "slow").json()
+    _, slow = schedule(code)
+    assert clock.t - w["t0"] == pytest.approx(slow[0].kick + 30.5 * watch.PACES["slow"])
+    # Every part comes again, timed at the new pace.
+    assert [p["n"] for p in w["parts"]] == [0, 1]
+    assert w["parts"][0]["end"] == pytest.approx(slow[0].end)
+    # A screen that held the old timings is sent them all again.
+    again = watch_of(guest, code, have=held["have"], t0=held["t0"], pace="normal")
+    assert [p["n"] for p in again["parts"]] == [0, 1] and again["pace"] == "slow"
+    assert watch_of(guest, code, have=2, t0=w["t0"], pace="slow")["unchanged"] is True
+
+
+def test_a_pace_change_in_the_first_countdown_resends_the_timings_though_the_start_stays(clock):
+    (host, guest), code = finished_room()
+    host.post(f"/api/rooms/{code}/watch/start")
+    clock.t += 3
+    held = watch_of(guest, code)
+    w = set_pace(host, code, "fast").json()
+    assert w["t0"] == pytest.approx(held["t0"])                       # 3 s into the countdown either way
+    again = watch_of(guest, code, have=held["have"], t0=held["t0"], pace="normal")
+    assert "unchanged" not in again and again["parts"][0]["end"] != held["parts"][0]["end"]
+
+
+def test_the_pace_cannot_change_once_the_watch_is_over(clock):
+    (host, guest), code = finished_room()
+    host.post(f"/api/rooms/{code}/watch/start")
+    host.post(f"/api/rooms/{code}/watch/skip", json={"to": "end"})
+    assert set_pace(host, code, "slow").status_code == 409
+    assert guest.get(f"/api/rooms/{code}/tournament").status_code == 200
+
+
+def test_a_room_made_before_paces_watches_as_it_did(clock):
+    (host, guest), code = finished_room()
+    with db.connection() as conn:
+        conn.execute("update rooms set watch_pace = null where code = %s", (code,))
+    w = watch_of(guest, code)
+    assert w["pace"] is None and w["minute_s"] == watch.MINUTE_S
+    _, rs = schedule(code)
+    assert all(r.minute_s == watch.MINUTE_S for r in rs)
+    held = watch_of(guest, code, have=0, pace="")
+    assert held["pace"] is None
+
+
+def test_a_room_watching_alone_has_no_pace_to_set(clock):
+    (host, guest), code = finished_room(together=False)
+    assert set_pace(host, code, "slow").status_code == 400

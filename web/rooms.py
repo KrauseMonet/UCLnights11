@@ -129,6 +129,7 @@ class Room:
     together: bool                  # watches its tournament together (C52)
     watch_started_at: float | None  # when the watch's first countdown began, moved earlier by a skip
     completed_at: float | None
+    watch_pace: str | None          # the host's pace for watching together (C54); None: before paces
     seats: list[Seat]
 
     def seat_of(self, account_id: int | None) -> Seat | None:
@@ -194,7 +195,7 @@ def seat_session(deck: Deck, room: Room, seat: Seat, d: shared.SharedDraft | Non
 
 ROOM_COLUMNS = ("r.code, r.size, r.seed, r.host_id, r.status, r.version, r.memory, r.style, r.timer_seconds,"
                 " r.moves, r.turn_started_at, r.failure_reason, r.bench, r.together, r.watch_started_at,"
-                " r.completed_at")
+                " r.completed_at, r.watch_pace")
 SEAT_COLUMNS = "s.account_id, a.username, s.seat, s.formation, s.state, s.plan, s.sheet"
 
 
@@ -289,10 +290,10 @@ def create_room(conn, account: Account, size: int, formation: str = DEFAULT,
     for _ in range(20):
         code = "".join(secrets.choice(CODE_ALPHABET) for _ in range(CODE_LENGTH))
         row = conn.execute("insert into rooms (code, size, seed, host_id, memory, style, timer_seconds, bench,"
-                           " together) values (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
+                           " together, watch_pace) values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
                            " on conflict (code) do nothing returning code",
                            (code, size, seed, account.account_id, memory, style, timer, bench,
-                            together)).fetchone()
+                            together, watch.DEFAULT_PACE)).fetchone()
         if row:
             conn.execute("insert into room_seats (room_code, account_id, seat, formation)"
                          " values (%s, %s, 0, %s)", (code, account.account_id, formation))
@@ -615,6 +616,13 @@ def engine(room: Room) -> int:
 
 # -- watching together (C52) ---------------------------------------------------
 
+def watched_for(room: Room, now: float) -> float:
+    """How far into its watch a room is: seconds since kick-off, read a microsecond late,
+    so a skip that lands exactly on a moment (now - target, in floats around 1e9) has
+    reached it rather than falling a rounding error short."""
+    return now - room.watch_started_at + 1e-6
+
+
 def host_waited(room: Room, now: float) -> bool:
     """The host has let the finished room sit long enough that any seat may kick off, so
     a host who wandered off can't keep everyone from their tournament."""
@@ -653,9 +661,34 @@ def skip_watch(conn, account: Account, code: str, rounds_of, to: str, expect: in
     except ValueError as e:
         raise RoomError(str(e)) from None
     now = clock()
-    if target > now - room.watch_started_at:
+    if target > watched_for(room, now):
         conn.execute("update rooms set watch_started_at = %s, updated_at = now() where code = %s",
                      (now - target, room.code))
+
+
+def set_watch_pace(conn, account: Account, code: str, rounds_of, pace: str) -> None:
+    """The host's pace for watching together (C54), any time before the watch ends. Once
+    it has kicked off, the start moves so every screen stays at the moment it was at, now
+    timed at the new pace. ``rounds_of(room, minute_s)`` is the room's watch at a pace."""
+    if pace not in watch.PACES:
+        raise RoomError(f"the pace is {', '.join(watch.PACES)}")
+    room = load_room(conn, code, lock=True)
+    if room.host_id != account.account_id:
+        raise Forbidden("only the host sets the pace")
+    if not room.together:
+        raise RoomError("in this room each friend watches on their own")
+    if pace == room.watch_pace:
+        return
+    start = room.watch_started_at
+    if start is not None and room.status == "complete":
+        old = rounds_of(room, watch.minute_s(room.watch_pace))
+        now = clock()
+        p = watched_for(room, now)
+        if p >= watch.end_at(old):
+            raise Conflict("the watch is over")
+        start = now - watch.retime(old, rounds_of(room, watch.minute_s(pace)), p)
+    conn.execute("update rooms set watch_pace = %s, watch_started_at = %s, updated_at = now() where code = %s",
+                 (pace, start, room.code))
 
 
 # -- taking turns (C29) --------------------------------------------------------

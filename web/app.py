@@ -1151,11 +1151,17 @@ _watch_lock = threading.Lock()   # requests run on a thread pool
 
 
 def _watched(room: rooms.Room) -> tuple[Tournament, list[watch.Round]]:
-    """A completed room's tournament and the rounds it is watched in. Every screen polls
-    the watch every couple of seconds and playing a league tournament costs ~100 ms, so
-    it is kept for the next request, keyed by everything the tournament is a function of
-    (a seat taken out by an admin changes the key). Its sides are never marked as anyone's
-    (``you`` stays False): callers mark their copy of the reply instead."""
+    """A completed room's tournament and the rounds it is watched in, at the room's pace.
+    Every screen polls the watch every couple of seconds and playing a league tournament
+    costs ~100 ms, so it is kept for the next request, keyed by everything the tournament
+    is a function of (a seat taken out by an admin changes the key). The rounds are cut
+    afresh (well under a millisecond), since the host can change the pace. Its sides are
+    never marked as anyone's (``you`` stays False): callers mark their copy of the reply."""
+    t = _watched_tournament(room)
+    return t, watch.rounds(t, watch.minute_s(room.watch_pace))
+
+
+def _watched_tournament(room: rooms.Room) -> Tournament:
     deck = load_deck()
     key = (id(deck), room.code, room.seed, room.size, room.bench, room.moves_text,
            tuple((s.account_id, s.formation, s.state, s.plan, s.sheet) for s in room.seats))
@@ -1163,14 +1169,13 @@ def _watched(room: rooms.Room) -> tuple[Tournament, list[watch.Round]]:
         hit = _watch_cache.get(key)
         if hit is not None and hit[0] is deck:
             _watch_cache.move_to_end(key)
-            return hit[1], hit[2]
+            return hit[1]
     t = play_room(deck, league(), room.seed, rooms.sides(deck, room), room.size, engine=rooms.engine(room))
-    rs = watch.rounds(t)
     with _watch_lock:
-        _watch_cache[key] = (deck, t, rs)
+        _watch_cache[key] = (deck, t)
         while len(_watch_cache) > WATCH_CACHE_SIZE:
             _watch_cache.popitem(last=False)
-    return t, rs
+    return t
 
 
 def _watch_over(room: rooms.Room) -> bool:
@@ -1181,7 +1186,7 @@ def _watch_over(room: rooms.Room) -> bool:
     if room.watch_started_at is None:
         return False
     _, rs = _watched(room)
-    return rooms.clock() - room.watch_started_at >= watch.end_at(rs)
+    return rooms.watched_for(room, rooms.clock()) >= watch.end_at(rs)
 
 
 def _mark_you(x, key: str | None):
@@ -1216,11 +1221,14 @@ def _part_out(t: Tournament, rs: list[watch.Round], j: int) -> dict:
     return out
 
 
-def watch_out(room: rooms.Room, me_id: int | None, have: int = 0, t0: float | None = None) -> dict:
+def watch_out(room: rooms.Room, me_id: int | None, have: int = 0, t0: float | None = None,
+              pace: str | None = None) -> dict:
     """The watch as this screen may see it now. ``have`` is how many parts the screen
     holds; only the newer ones are sent, and none that the clock hasn't reached, so
     nobody can read a result before its kick-off. With nothing new and the same start
-    (``t0``: no skip since), a few bytes."""
+    (``t0``: no skip since), a few bytes. ``pace`` is the pace the screen's parts were
+    timed at ("" before paces): if the host has changed it since, every part is sent again,
+    since each round's timings are in its first part."""
     if not room.together:
         return {"code": room.code, "together": False}
     if room.status != "complete":
@@ -1229,10 +1237,13 @@ def watch_out(room: rooms.Room, me_id: int | None, have: int = 0, t0: float | No
         raise HTTPException(409, STALE_ROOM)
     now = rooms.clock()
     mine = room.seat_of(me_id) if me_id is not None else None
+    if pace is not None and pace != (room.watch_pace or ""):
+        have = 0
     base = {"code": room.code, "together": True, "server_now": now, "t0": room.watch_started_at,
-            "started": room.watch_started_at is not None}
+            "started": room.watch_started_at is not None, "pace": room.watch_pace,
+            "minute_s": watch.minute_s(room.watch_pace)}
     t, rs = _watched(room)
-    p = None if room.watch_started_at is None else now - room.watch_started_at
+    p = None if room.watch_started_at is None else rooms.watched_for(room, now)
     n = 0 if p is None else watch.known(rs, p)
     ended = p is not None and p >= watch.end_at(rs)
     if (p is not None and not ended and n == have and t0 is not None
@@ -1247,7 +1258,7 @@ def watch_out(room: rooms.Room, me_id: int | None, have: int = 0, t0: float | No
         # Seconds until any seat may kick off, while the host hasn't.
         "host_wait": (max(0.0, watch.HOST_WAIT_S - (now - room.completed_at))
                       if p is None and room.completed_at is not None else None),
-        "break_s": watch.BREAK_S, "minute_s": watch.MINUTE_S,
+        "break_s": watch.BREAK_S,
         "you": f"P{mine.seat}" if mine is not None else None,
         "humans": [side_out(s) for s in t.sides if s.owner is not None] if have == 0 else None,
         "parts": [] if ended else [_part_out(t, rs, j) for j in range(max(0, have), n)],
@@ -1259,15 +1270,21 @@ class SkipIn(BaseModel):
     to: str
     round: int = -1
     have: int = 0
+    pace: str | None = None
+
+
+class PaceIn(BaseModel):
+    pace: str
 
 
 @app.get("/api/rooms/{code}/watch")
-def get_watch(code: str, request: Request, have: int = 0, t0: float | None = None) -> dict:
+def get_watch(code: str, request: Request, have: int = 0, t0: float | None = None,
+              pace: str | None = None) -> dict:
     """The poll while a room watches together. One query, and the tournament from the
     in-process cache."""
     with db.connection() as conn:
         room = rooms.load_room(conn, code)
-    return watch_out(room, _viewer_id(request), have, t0)
+    return watch_out(room, _viewer_id(request), have, t0, pace)
 
 
 @app.post("/api/rooms/{code}/watch/start")
@@ -1285,7 +1302,18 @@ def skip_watch(code: str, body: SkipIn, request: Request) -> dict:
     with db.connection() as conn:
         rooms.skip_watch(conn, _signed_in(conn, request), code, lambda r: _watched(r)[1], body.to, body.round)
         room = rooms.load_room(conn, code)
-    return watch_out(room, _viewer_id(request), body.have)
+    return watch_out(room, _viewer_id(request), body.have, pace=body.pace)
+
+
+@app.post("/api/rooms/{code}/watch/pace")
+def pace_watch(code: str, body: PaceIn, request: Request) -> dict:
+    """The host's pace (C54), before kick-off or during the watch; every screen re-times
+    at the moment it was at. The reply holds every part, timed at the new pace."""
+    with db.connection() as conn:
+        rooms.set_watch_pace(conn, _signed_in(conn, request), code,
+                             lambda r, m: watch.rounds(_watched_tournament(r), m), body.pace)
+        room = rooms.load_room(conn, code)
+    return watch_out(room, _viewer_id(request))
 
 
 # -- saved results and the profile (C31) ---------------------------------------

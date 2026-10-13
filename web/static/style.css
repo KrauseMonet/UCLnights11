@@ -855,6 +855,12 @@ button{font:inherit;cursor:pointer}
 .admin-acts{display:flex;gap:6px;margin-left:auto}
 .btn.danger:hover:not(:disabled){border-color:var(--loss);color:var(--loss);background:rgba(255,111,111,.08)}
 .admin-fail{margin-top:22px}
+.admin-daily{margin-top:22px}
+.admin-dsum{display:flex;flex-wrap:wrap;align-items:center;gap:6px 18px;padding:16px 20px}
+.admin-dsum p{margin:0;flex:1 1 100%}
+.admin-dsum .admin-acts{margin-left:0}
+.admin-daily .admin-table small{display:block;color:var(--ink-3);margin-top:3px}
+.admin-daily .admin-table td.admin-acts{display:table-cell;text-align:right}
 .join input#aq{font:500 15px var(--sans);letter-spacing:normal;text-transform:none}
 .admin-row small{display:block}
 .admin-table{width:100%;border-collapse:collapse;font-size:13px}

@@ -66,7 +66,58 @@ async function loadRooms() {
   });
 }
 
-function refresh() { return Promise.all([loadOverview(), loadAccounts($("aq").value), loadRooms()]); }
+/* The daily challenge (C55): a day's challenge and attempts, and the three fixes: let one
+   account play again, clear everyone's attempts (the same challenge, open again), or make
+   today again (new squads, opponent and goal). Tomorrow's never shows, even here. */
+let DAY = null;
+
+function drawDaily(d) {
+  DAY = d.day;
+  const fmt = (iso) => new Date(`${iso}T12:00:00Z`).toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" });
+  const days = d.days.some((x) => x.day === d.day) ? d.days : [{ day: d.day, edition: 0, entries: 0, met: 0 }, ...d.days];
+  $("dday").innerHTML = days.map((x) => `<option value="${esc(x.day)}" ${x.day === d.day ? "selected" : ""}>
+    ${esc(fmt(x.day))}${x.day === d.now ? " (today)" : ""} · ${x.entries} played</option>`).join("");
+  const c = d.challenge;
+  $("dsum").innerHTML = c ? `<div class="admin-dsum">
+      <p><b>${esc(c.goal)}</b> against <b>${esc(c.opponent)}</b> · ${esc(c.formation)}${c.bench ? " with a bench" : ""}</p>
+      <p class="label">Measured ${c.success_rate}% · ${d.rows.length} played, ${d.rows.filter((r) => r.met).length} met the goal
+        · ${c.edition ? `made again ${c.edition === 1 ? "once" : `${c.edition} times`}, last ${when(c.made_at)}` : `made ${when(c.made_at)}`}</p>
+      <div class="admin-acts">
+        <button class="btn ghost small danger" id="dclear" ${d.rows.length ? "" : "disabled"}>Clear all attempts</button>
+        ${d.today ? `<button class="btn ghost small danger" id="dremake">Make today again</button>` : ""}</div></div>`
+    : `<p class="empty">No challenge was made for this day.</p>`;
+  $("dlist").innerHTML = d.rows.length ? `<table class="admin-table"><tbody>${d.rows.map((r, n) => `
+      <tr><td class="num">${n + 1}</td><td><b>${esc(r.username)}</b> <small>#${r.id}</small></td>
+        <td>${r.met ? "Met" : "Missed"} · ${r.gf}–${r.ga}${r.mark == null ? "" : ` · ${r.mark.toFixed(2)}`}${r.sheet ? " · own sheet" : ""}
+          <small>${when(r.submitted_at)}</small></td>
+        <td class="admin-acts"><button class="btn ghost small" data-reset="${r.id}" data-name="${esc(r.username)}">${d.today ? "Let play again" : "Remove"}</button></td></tr>`).join("")}</tbody></table>`
+    : c ? `<p class="empty">Nobody has played this day.</p>` : "";
+  if ($("dclear")) $("dclear").onclick = async () => {
+    if (!confirm(`Clear all ${d.rows.length} attempts at ${d.day}? ${d.today ? "Everyone can play again; the challenge stays the same." : "That day's table and everyone's saved result go."}`)) return;
+    try { const r = await api(`/api/admin/daily/clear?day=${d.day}`, { method: "POST" }); drawDaily(r); toast(`${r.cleared} cleared`); }
+    catch (e) { toast(e.message); }
+  };
+  if ($("dremake")) $("dremake").onclick = async () => {
+    if (prompt(`Make today's challenge again? New squads, a new opponent and goal; all ${d.rows.length} attempts are cleared, and anyone mid-draft starts over. Type "new day" to confirm.`) !== "new day") return;
+    const b = $("dremake");
+    b.disabled = true; b.textContent = "Measuring…";
+    try { const r = await api("/api/admin/daily/remake", { method: "POST" }); drawDaily(r); toast("Today is made again"); }
+    catch (e) { toast(e.message); b.disabled = false; b.textContent = "Make today again"; }
+  };
+  $("dlist").querySelectorAll("[data-reset]").forEach((b) => b.onclick = async () => {
+    if (!confirm(`${d.today ? "Let" : "Remove"} ${b.dataset.name}'s attempt at ${d.day}${d.today ? " play again" : ""}? Their result goes from the table and their profile.`)) return;
+    try { await api(`/api/admin/daily/${b.dataset.reset}?day=${d.day}`, { method: "DELETE" }); toast("Attempt removed"); loadDaily(d.day); }
+    catch (e) { toast(e.message); }
+  });
+}
+
+async function loadDaily(day = DAY) {
+  drawDaily(await api(`/api/admin/daily${day ? `?day=${day}` : ""}`));
+}
+
+$("dday").onchange = () => loadDaily($("dday").value).catch((e) => toast(e.message));
+
+function refresh() { return Promise.all([loadOverview(), loadDaily(), loadAccounts($("aq").value), loadRooms()]); }
 
 $("asearch").onsubmit = (e) => { e.preventDefault(); loadAccounts($("aq").value).catch((err) => toast(err.message)); };
 

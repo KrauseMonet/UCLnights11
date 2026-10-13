@@ -15,7 +15,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preload" href="/static/fonts/Unbounded.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/static/fonts/InstrumentSans.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/static/style.css?v=2e092600e3">
+<link rel="stylesheet" href="/static/style.css?v=8296c5f7e9">
 </head>
 <body>
 <main class="sheet">
@@ -24,6 +24,12 @@
     <div class="home-stats admin-stats" id="astats"></div>
     <section class="panel"><div class="panel-h"><span class="label">Sign-ups, last 14 days</span></div>
       <div class="bars" id="signups"></div></section>
+    <section class="panel admin-daily">
+      <div class="panel-h"><span class="label">Daily challenge</span>
+        <select id="dday" aria-label="Which day"></select></div>
+      <div id="dsum"></div>
+      <div id="dlist"></div>
+    </section>
     <div class="friends-grid">
       <section class="panel">
         <div class="panel-h"><span class="label">Accounts</span><span class="label">newest first</span></div>
@@ -42,6 +48,6 @@
   </div>
 </main>
 <script src="/static/common.js?v=aedb3beda3"></script>
-<script src="/static/admin.js?v=6b9878401f"></script>
+<script src="/static/admin.js?v=09720e3e7e"></script>
 </body>
 </html>

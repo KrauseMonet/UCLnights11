@@ -16,6 +16,7 @@ import random
 import threading
 import time
 from collections import OrderedDict
+from datetime import date
 from functools import lru_cache
 from pathlib import Path
 
@@ -1410,6 +1411,8 @@ def _plan_refused(e: Exception) -> HTTPException:
 class DailyIn(BaseModel):
     moves: str = ""
     changes: list[ChangeIn] | None = None     # a bench day's plan (C42); None: automatic
+    sheet: list[int] | None = None            # a bench day's team sheet (C44, C55); None: as drafted
+    edition: int | None = None                # the edition of the day it was drafted in (C55)
 
 
 def _daily_plan(body: DailyIn):
@@ -1434,7 +1437,8 @@ def challenge_out(ch: daily_rules.Challenge, reveal: bool) -> dict:
             "opponent": {**side_out(opp), "xi": xi if reveal else hide_ratings(xi), "shape": opp.formation.label},
             "ratings_hidden": not reveal,
             "goal": daily_rules.describe(ch.kind, ch.target), "kind": ch.kind, "target": ch.target,
-            "success_rate": pct(ch.success_rate), "bench": ch.bench, "squads": 14 if ch.bench else 11}
+            "success_rate": pct(ch.success_rate), "bench": ch.bench, "squads": 14 if ch.bench else 11,
+            "edition": ch.edition}
 
 
 def daily_result_out(ch, fx, j, met: bool, ranked: bool) -> dict:
@@ -1460,7 +1464,7 @@ def daily_today(request: Request, day: str | None = None) -> dict:
             if row is not None:
                 try:
                     fx, j = daily.play(load_deck(), league(), ch, daily.moves_of(ch, row[0]), "ranked",
-                                       daily.plan_of(ch, row[6]))
+                                       daily.plan_of(ch, row[6]), daily.sheet_of(ch, row[7]))
                     mine = daily_result_out(ch, fx, j, row[1], True)
                 except (IllegalMove, ValueError):
                     # The picks no longer replay (the deck changed since that day): the
@@ -1486,16 +1490,48 @@ def daily_prepare() -> dict:
 
 
 @app.get("/api/daily/draft")
-def daily_draft(request: Request, moves: str = "", day: str | None = None) -> dict:
+def daily_draft(request: Request, moves: str = "", day: str | None = None, sheet: str = "",
+                edition: int | None = None) -> dict:
+    """The day's draft so far; once it is finished, with its team sheet (``sheet``, as
+    encode_sheet writes it) and where each man could be moved."""
     d = daily.parse_day(day)
     with db.connection() as conn:
         ch = daily.get_challenge(conn, load_deck(), league(), d)
+    daily.check_edition(ch, edition)
     try:
-        s = daily_rules.draft(load_deck(), ch, daily.moves_of(ch, moves))
+        s = daily_rules.draft(load_deck(), ch, daily.moves_of(ch, moves), None, daily.sheet_of(ch, sheet or None))
     except IllegalMove as e:
         raise HTTPException(400, str(e)) from None
     # Always blind (C33): no ratings, and each line listed by name, not best first.
-    return {**session_out(moves, s, memory=True), "rerolls_left": 0}
+    return {**session_out(moves, s, memory=True), "rerolls_left": 0, "sheet": None if s.sheet is None else list(s.sheet)}
+
+
+class DailySheetIn(SheetIn):
+    """A move on today's team sheet (C55): the draft's ``moves``, the sheet it has now
+    (``current``, None as drafted) and the move, as SheetIn says; the page keeps the result."""
+    moves: str = ""
+    current: list[int] | None = None
+    edition: int | None = None
+
+
+@app.post("/api/daily/sheet")
+def daily_sheet(body: DailySheetIn) -> dict:
+    """Today's team sheet after one move, worked out here (who can stand where, everyone
+    else moving as little as possible) and sent back for the page to keep with its picks.
+    Nothing is stored: the sheet rides with the ranked match, as the picks and plan do.
+    Positions only, never a rating, so the draft stays blind (C33)."""
+    with db.connection() as conn:
+        ch = daily.get_challenge(conn, load_deck(), league(), daily.today())
+    daily.check_edition(ch, body.edition)
+    try:
+        moves = daily.moves_of(ch, body.moves)
+        before = daily_rules.draft(load_deck(), ch, moves, None, daily.sheet_of(ch, body.current))
+        sheet = new_sheet(before, body)
+        after = daily_rules.draft(load_deck(), ch, moves, None, sheet)
+    except IllegalMove as e:
+        raise HTTPException(400, str(e)) from None
+    return {**session_out(body.moves, after, memory=True), "rerolls_left": 0,
+            "sheet": None if sheet is None else list(sheet)}
 
 
 @app.post("/api/daily/submit")
@@ -1504,7 +1540,7 @@ def daily_submit(body: DailyIn, request: Request) -> dict:
         me = _signed_in(conn, request)
         try:
             ch, fx, j, ok = daily.submit(conn, load_deck(), league(), me, daily.today(), body.moves,
-                                         _daily_plan(body))
+                                         _daily_plan(body), body.sheet, body.edition)
         except (IllegalMove, KeyError) as e:
             raise _plan_refused(e) from None
         out = daily_result_out(ch, fx, j, ok, True)
@@ -1520,20 +1556,73 @@ def daily_practice(body: DailyIn) -> dict:
     d = daily.today()
     with db.connection() as conn:
         ch = daily.get_challenge(conn, load_deck(), league(), d)
+    daily.check_edition(ch, body.edition)
     try:
         fx, j = daily.play(load_deck(), league(), ch, daily.moves_of(ch, body.moves), "practice",
-                           daily.plan_of(ch, _daily_plan(body)))
+                           daily.plan_of(ch, _daily_plan(body)), daily.sheet_of(ch, body.sheet))
     except (IllegalMove, KeyError) as e:
         raise _plan_refused(e) from None
     r = fx.result
     return daily_result_out(ch, fx, j, daily_rules.met(ch.kind, ch.target, r.home_goals, r.away_goals), False)
 
 
-@app.delete("/api/admin/daily/{account_id}")
-def admin_reset_daily(account_id: int, request: Request) -> dict:
+# An admin's controls for the daily (C55): see a day, let one account play it again,
+# clear everyone's attempts, or make today again.
+
+def _admin_day(day: str | None) -> date:
+    """An admin may look at any day that has come, as anyone may: never tomorrow's, which
+    the scheduled job may already have made but nobody, an admin included, should see."""
+    return daily.parse_day(day)
+
+
+def admin_daily_out(conn, d: date) -> dict:
+    row = conn.execute("select 1 from daily_challenges where day = %s", (d,)).fetchone()
+    ch = daily.get_challenge(conn, load_deck(), league(), d) if row or d == daily.today() else None
+    out = {"day": d.isoformat(), "today": d == daily.today(), "now": daily.today().isoformat(),
+           "days": daily.recent_days(conn, daily.today()),
+           "challenge": None, "rows": []}
+    if ch is not None:
+        opp = load_deck().by_key[ch.opponent]
+        made = conn.execute("select created_at from daily_challenges where day = %s", (d,)).fetchone()[0]
+        out["challenge"] = {"formation": FORMATIONS[ch.formation].label, "opponent": opp.title,
+                            "goal": daily_rules.describe(ch.kind, ch.target), "success_rate": pct(ch.success_rate),
+                            "bench": ch.bench, "edition": ch.edition, "made_at": made.isoformat()}
+        out.update(daily.admin_day(conn, d))
+    return out
+
+
+@app.get("/api/admin/daily")
+def admin_daily(request: Request, day: str | None = None) -> dict:
     with db.connection() as conn:
         _admin(conn, request)
-        return {"reset": daily.reset(conn, daily.today(), account_id)}
+        return admin_daily_out(conn, _admin_day(day))
+
+
+@app.delete("/api/admin/daily/{account_id}")
+def admin_reset_daily(account_id: int, request: Request, day: str | None = None) -> dict:
+    """One account's attempt at a day (today unless ``day``) gone, so it can play again."""
+    with db.connection() as conn:
+        _admin(conn, request)
+        return {"reset": daily.reset(conn, _admin_day(day), account_id)}
+
+
+@app.post("/api/admin/daily/clear")
+def admin_clear_daily(request: Request, day: str | None = None) -> dict:
+    """Every attempt at a day gone: the same challenge, open to everyone again."""
+    with db.connection() as conn:
+        _admin(conn, request)
+        d = _admin_day(day)
+        return {"cleared": daily.clear(conn, d), **admin_daily_out(conn, d)}
+
+
+@app.post("/api/admin/daily/remake")
+def admin_remake_daily(request: Request) -> dict:
+    """Today made again: new squads, opponent and goal, every attempt cleared."""
+    with db.connection() as conn:
+        _admin(conn, request)
+        before = conn.execute("select count(*) from daily_results where day = %s", (daily.today(),)).fetchone()[0]
+        daily.remake(conn, load_deck(), league(), daily.today())
+        return {"cleared": before, **admin_daily_out(conn, daily.today())}
 
 
 # -- what browsers saw go wrong ----------------------------------------------

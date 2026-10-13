@@ -49,6 +49,7 @@ class Challenge:
     target: int
     success_rate: float
     bench: bool = False      # drafted with a bench and played by engine 2 (C42)
+    edition: int = 0         # 0 as first made; n once an admin has made the day again n times (C55)
 
     @property
     def engine(self) -> int:
@@ -72,11 +73,13 @@ def describe(kind: str, target: int) -> str:
             "clean_sheet": "Win without conceding", "score": f"Score {target} or more"}[kind]
 
 
-def draft(deck: Deck, ch: Challenge, moves: list, plan: tuple[Change, ...] | None = None) -> Session:
-    """The day's draft so far. Rerolls are refused: everyone gets the same squads."""
+def draft(deck: Deck, ch: Challenge, moves: list, plan: tuple[Change, ...] | None = None,
+          sheet: tuple[int, ...] | None = None) -> Session:
+    """The day's draft so far. Rerolls are refused: everyone gets the same squads. A
+    finished bench day may carry a team sheet (C44, for the daily C55)."""
     if any(isinstance(m, Reroll) for m in moves):
         raise IllegalMove("there are no rerolls in the daily challenge")
-    return replay(deck, ch.seed, ch.formation, moves, ch.bench, plan)
+    return replay(deck, ch.seed, ch.formation, moves, ch.bench, plan, sheet)
 
 
 def best_pick_draft(deck: Deck, seed: int, formation: str, bench: bool = False) -> Session:
@@ -92,9 +95,10 @@ def best_pick_draft(deck: Deck, seed: int, formation: str, bench: bool = False) 
 
 
 def side_of(s: Session) -> Side:
-    """A finished daily draft as the side that plays: the eleven, and its bench and plan."""
+    """A finished daily draft as the side that plays: the eleven where its sheet puts them
+    (without one, where Side would have placed the first eleven picks), its bench and plan."""
     subs = s.subs()
-    return Side("YOU", "Your XI", "YOU", s.formation, s.picks[:11], you=True,
+    return Side("YOU", "Your XI", "YOU", s.formation, s.xi, you=True,
                 bench=s.bench, plan=auto_plan(s.bench) if subs is None else subs)
 
 

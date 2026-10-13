@@ -51,6 +51,21 @@
         "8033"
       ],
       "port": 8033
+    },
+    {
+      "name": "campeones-db-admin",
+      "runtimeExecutable": "env",
+      "runtimeArgs": [
+        "ADMIN_ACCOUNT_IDS=1",
+        "uv",
+        "run",
+        "python",
+        "-m",
+        "tools.devserver",
+        "--port",
+        "8034"
+      ],
+      "port": 8034
     }
   ]
 }

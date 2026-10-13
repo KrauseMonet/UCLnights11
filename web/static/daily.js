@@ -5,7 +5,9 @@
 
    The draft so far is kept in this browser (localStorage), so a reload carries on; the
    server replays it on every request, as the solo draft does. /daily#YYYY-MM-DD shows
-   a past day. */
+   a past day. A bench day's team sheet (C44, here since C55) is kept the same way, and
+   so is everything else under a key naming the day's edition: an admin can make a day
+   again, and picks from the old edition would replay into other squads. */
 
 shell("daily");
 const DAY_IN = /^\d{4}-\d{2}-\d{2}$/.test(location.hash.slice(1)) ? location.hash.slice(1) : null;
@@ -13,8 +15,16 @@ let D = null;            // GET /api/daily
 let MOVES = [];
 let S = null;            // the draft session
 let PLAN = null;         // a bench day's plan (C42), chosen here and sent with the match; null: automatic
-const movesKey = () => `daily:${D.challenge.day}`;
-const planKey = () => `daily:plan:${D.challenge.day}`;
+let SHEET = null;        // a bench day's team sheet (C55): pick indices, the eleven in slot order then the bench; null: as drafted
+const dayKey = () => D.challenge.edition ? `${D.challenge.day}:${D.challenge.edition}` : D.challenge.day;
+const movesKey = () => `daily:${dayKey()}`;
+const planKey = () => `daily:plan:${dayKey()}`;
+const sheetKey = () => `daily:sheet:${dayKey()}`;
+const sheetText = () => SHEET ? "s" + SHEET.map((i) => i.toString(36)).join("") : "";
+function forget() {
+  MOVES = []; PLAN = null; SHEET = null;
+  store.set(movesKey(), ""); store.set(planKey(), ""); store.set(sheetKey(), "");
+}
 const NUMBER = { 11: "eleven", 14: "fourteen" };
 const movesText = () => MOVES.join(".");
 const fmtDay = (iso) => new Date(`${iso}T12:00:00Z`).toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" });
@@ -62,16 +72,27 @@ function boardHtml(b) {
 
 // ---------------------------------------------------------------- the draft
 
+const draftUrl = (moves) => `/api/daily/draft?moves=${moves}&edition=${D.challenge.edition}`;
+
 async function loadDraft() {
-  try { S = await api(`/api/daily/draft?moves=${movesText()}${D.today ? "" : `&day=${D.challenge.day}`}`); }
-  catch (e) {                                      // a stale draft from another day or version
-    MOVES = []; PLAN = null; store.set(movesKey(), ""); store.set(planKey(), "");
-    S = await api(`/api/daily/draft?moves=`);
+  try { S = await api(`${draftUrl(movesText())}${SHEET ? `&sheet=${sheetText()}` : ""}${D.today ? "" : `&day=${D.challenge.day}`}`); }
+  catch (e) {
+    if (e.status === 409) { await boot(); throw e; }   // an admin made the day again: start on the new one
+    forget();                                          // a stale draft from another day or version
+    S = await api(draftUrl(""));
   }
 }
 
+/* The day changed under the page (C55): say so and show the new one. */
+function changed(e) {
+  if (e.status !== 409) return false;
+  toast(e.message);
+  boot();
+  return true;
+}
+
 async function startDraft() {
-  await loadDraft();
+  try { await loadDraft(); } catch { return; }
   renderDraft(false);
 }
 
@@ -102,11 +123,11 @@ async function take(i) {
   busy = true;
   try {
     const next = [...MOVES, i];
-    S = await api(`/api/daily/draft?moves=${next.join(".")}`);
+    S = await api(draftUrl(next.join(".")));
     MOVES = next;
     store.set(movesKey(), movesText());
     renderDraft(true);
-  } catch (e) { toast(e.status === 0 ? `${e.message}. Your picks are safe; try again.` : e.message); }
+  } catch (e) { if (!changed(e)) toast(e.status === 0 ? `${e.message}. Your picks are safe; try again.` : e.message); }
   finally { busy = false; }
 }
 
@@ -120,13 +141,13 @@ function wireReady() {
   $("go").onclick = play;
   $("redo").onclick = () => {
     if (!confirm("Throw this squad away and draft again?")) return;
-    MOVES = []; PLAN = null; store.set(movesKey(), ""); store.set(planKey(), ""); startDraft();
+    forget(); startDraft();
   };
   if ($("sign")) $("sign").onclick = () => openAuth("in", "Sign in to take today's ranked attempt.");
 }
 
-/* A bench day (C42): the plan, then the match. The plan is kept here like the picks, and
-   sent with them. */
+/* A bench day (C42): the team sheet and the plan, then the match. Both are kept here like
+   the picks, and sent with them. */
 function renderPlanReady() {
   const signedIn = !!ME;
   // A plan kept from before can only name substitutes and starters this squad has.
@@ -147,7 +168,27 @@ function renderPlanReady() {
   });
   renderPitch($("pitch"), S.formation.slots, S.xi, null);
   renderBench($("bench"), S.bench, S.bench_size);
+  // The team sheet (C44, C55): worked out by the server, kept here; a plan follows its men.
+  if (!$("sheethint")) $("bench").insertAdjacentHTML("afterend", `<p class="sheet-hint" id="sheethint"></p>`);
+  sheetEditor($("pitch"), $("bench"), S, {
+    hint: $("sheethint"), onMove: (man, to) => postSheet({ man, to }), reset: SHEET ? () => postSheet({}) : null,
+  });
   wireReady();
+}
+
+async function postSheet(body) {
+  if (busy) return;
+  busy = true;
+  try {
+    const before = S;
+    S = await api("/api/daily/sheet", { method: "POST", body: JSON.stringify({
+      moves: movesText(), current: SHEET, edition: D.challenge.edition, ...body }) });
+    SHEET = S.sheet;
+    if (PLAN) PLAN = carryPlan(PLAN, before, S);
+    store.set(sheetKey(), SHEET ? JSON.stringify(SHEET) : "");
+    store.set(planKey(), PLAN ? JSON.stringify(PLAN) : "");
+  } catch (e) { if (changed(e)) return; toast(e.message); } finally { busy = false; }
+  renderPlanReady();
 }
 
 function renderReady() {
@@ -170,11 +211,12 @@ async function play() {
   $("go").disabled = true;
   let out;
   try {
-    out = await api(ME ? "/api/daily/submit" : "/api/daily/practice",
-      { method: "POST", body: JSON.stringify({ moves: movesText(), changes: S.bench_size ? PLAN : null }) });
+    out = await api(ME ? "/api/daily/submit" : "/api/daily/practice", { method: "POST", body: JSON.stringify({
+      moves: movesText(), changes: S.bench_size ? PLAN : null, sheet: S.bench_size ? SHEET : null,
+      edition: D.challenge.edition }) });
   } catch (e) {
     toast(e.message);
-    if (e.status === 409) return boot();             // already played, in another tab
+    if (e.status === 409) return boot();             // already played in another tab, or the day was made again
     $("go").disabled = false;
     return;
   }
@@ -248,7 +290,7 @@ function showPast() {
 function intro() {
   $("dlbody").innerHTML = `<div class="cup-grid">
     <div class="cup-stack"><section class="panel gate"><div><h2>${MOVES.length ? "Carry on drafting" : "Draft today's eleven"}</h2>
-      <p>${NUMBER[D.challenge.squads][0].toUpperCase() + NUMBER[D.challenge.squads].slice(1)} squads, dealt the same to everyone. Take one player from each into your ${esc(D.challenge.formation.label)}${D.challenge.bench ? ", the last three onto your bench, then plan your changes" : ""}. No rerolls,
+      <p>${NUMBER[D.challenge.squads][0].toUpperCase() + NUMBER[D.challenge.squads].slice(1)} squads, dealt the same to everyone. Take one player from each into your ${esc(D.challenge.formation.label)}${D.challenge.bench ? ", the last three onto your bench, then set who starts where and plan your changes" : ""}. No rerolls,
         and <b>every rating is hidden</b>, the opponent's too, until you've played. ${ME ? "Then one ranked match." : "Signed out, the match is practice; sign in first to be ranked."}</p></div>
       <div class="gate-cta"><button class="btn primary" id="start">${MOVES.length ? `Continue (${MOVES.length} of ${D.challenge.squads})` : "Start the draft"}</button>
         ${ME ? "" : `<button class="btn ghost" id="sign">Sign in</button>`}</div></section>
@@ -267,6 +309,7 @@ async function boot() {
   $("dlhero").innerHTML = heroHtml();
   MOVES = (store.get(movesKey()) || "").split(".").filter((x) => x !== "").map(Number);
   try { PLAN = JSON.parse(store.get(planKey()) || "null"); } catch { PLAN = null; }
+  try { SHEET = JSON.parse(store.get(sheetKey()) || "null"); } catch { SHEET = null; }
   if (D.mine) return showPlayed();
   if (!D.today) return showPast();
   intro();

@@ -359,3 +359,163 @@ def test_prepare_makes_today_and_tomorrow_once_and_keeps_tomorrow_hidden(monkeyp
     assert c.get("/api/daily", params={"day": "2031-03-15"}).status_code == 400  # not yet
     monkeypatch.setattr(daily, "today", lambda: day + timedelta(days=1))         # midnight
     assert c.get("/api/daily").json()["challenge"]["day"] == "2031-03-15" and len(made) == 2
+
+
+# -- the daily's team sheet and an admin's controls (C55) ----------------------------
+
+def a_swap(s):
+    """A move that changes who starts: a substitute onto the pitch, as the server offers it."""
+    for b in s["bench"]:
+        for to in b["to"]:
+            if to.startswith("s"):
+                return b, to
+    raise AssertionError("no substitute could start anywhere")
+
+
+def test_a_bench_day_takes_a_team_sheet_and_the_ranked_match_plays_it():
+    from game.draft import encode_sheet
+    c = player()
+    moves = drafted(c)
+    s = c.get("/api/daily/draft", params={"moves": moves}).json()
+    assert s["sheet"] is None and all("to" in x and "p" in x for x in [*s["xi"], *s["bench"]])
+    sub, to = a_swap(s)
+    out = c.post("/api/daily/sheet", json={"moves": moves, "man": sub["p"], "to": to}).json()
+    sheet = out["sheet"]
+    off = s["xi"][int(to[1:])]["name"]                               # he replaces that slot's starter
+    assert sheet and sub["name"] in [x["name"] for x in out["xi"]] and off in [x["name"] for x in out["bench"]]
+    assert all(x["rating"] is None for x in [*out["xi"], *out["bench"], *out["picks"]]), "the daily stays blind"
+    # The sheet the page keeps reads back the same draft, and back to the drafted order is None.
+    again = c.get("/api/daily/draft", params={"moves": moves, "sheet": encode_sheet(tuple(sheet))}).json()
+    assert [x["name"] for x in again["xi"]] == [x["name"] for x in out["xi"]] and again["sheet"] == sheet
+    assert c.post("/api/daily/sheet", json={"moves": moves, "current": sheet}).json()["sheet"] is None
+    played = c.post("/api/daily/submit", json={"moves": moves, "sheet": sheet}).json()
+    assert sub["name"] in [x["name"] for x in played["fixture"]["lineups"][0]["xi"]], "he starts"
+    with db.connection() as conn:
+        (stored,) = conn.execute("select sheet from daily_results where day = %s and account_id = %s",
+                                 (daily.today(), c.account_id)).fetchone()
+    assert stored == encode_sheet(tuple(sheet))
+    mine = c.get("/api/daily").json()["mine"]
+    assert mine["fixture"]["lineups"] == played["fixture"]["lineups"] and (mine["gf"], mine["ga"]) == (played["gf"], played["ga"])
+
+
+def test_a_sheet_that_doesn_t_fit_is_refused_everywhere():
+    c = player()
+    moves = drafted(c)
+    s = c.get("/api/daily/draft", params={"moves": moves}).json()
+    keeper = next(x["p"] for x in s["xi"] if x["slot"] == "GK")
+    others = [x for x in range(14) if x != keeper]
+    bad = [*others[:11], keeper, *others[11:]]                       # the keeper on the bench
+    for r in (c.post("/api/daily/practice", json={"moves": moves, "sheet": bad}),
+              c.post("/api/daily/submit", json={"moves": moves, "sheet": bad}),
+              c.post("/api/daily/sheet", json={"moves": moves, "current": bad, "man": 0, "to": "b0"}),
+              c.post("/api/daily/submit", json={"moves": moves, "sheet": list(range(13))})):
+        assert r.status_code == 400, r.text
+    unfinished = moves.rsplit(".", 1)[0]
+    assert c.post("/api/daily/sheet", json={"moves": unfinished, "man": 0, "to": "s1"}).status_code == 400
+    assert c.post("/api/daily/submit", json={"moves": moves}).status_code == 200      # the attempt wasn't used
+
+
+def test_a_sheet_on_a_day_without_a_bench_is_refused():
+    deck = load_deck()
+    ch = rules.make_challenge(deck, league_of(deck), "2026-01-01", 424242)
+    from game.draft import IllegalMove
+    with pytest.raises(IllegalMove, match="no bench"):
+        daily.sheet_of(ch, list(range(14)))
+
+
+def test_without_a_sheet_the_daily_side_is_placed_as_before():
+    """side_of reads the session's placed eleven now; with no sheet that is exactly where
+    Side placed the first eleven picks, so no day already played changes."""
+    from game.tournament import Side
+    deck = load_deck()
+    for seed in (5, 77, 1234):
+        for formation in ("433", "352", "4231"):
+            s = rules.best_pick_draft(deck, seed, formation, True)
+            old = Side("YOU", "Your XI", "YOU", s.formation, s.picks[:11], you=True)
+            assert [(c.id, c.slot) for c in rules.side_of(s).xi] == [(c.id, c.slot) for c in old.xi]
+
+
+def test_edition_0_keeps_the_seeds_every_day_had():
+    import hashlib, hmac
+    d = date(2026, 3, 1)
+    for purpose in ("deal", "ranked", "practice"):
+        mac = hmac.new(b"test-secret", f"daily:{d.isoformat()}:{purpose}".encode(), hashlib.sha256)
+        assert daily.seed_for(d, purpose, 0) == int.from_bytes(mac.digest()[:8], "big") % (2**31 - 2) + 1
+        assert daily.seed_for(d, purpose, 1) != daily.seed_for(d, purpose, 0)
+
+
+def admin_and(monkeypatch):
+    boss = player()
+    monkeypatch.setenv("ADMIN_ACCOUNT_IDS", str(boss.account_id))
+    return boss
+
+
+def test_an_admin_sees_a_day_and_nobody_else_does(monkeypatch):
+    boss, c = admin_and(monkeypatch), player()
+    c.post("/api/daily/submit", json={"moves": drafted(c)})
+    assert c.get("/api/admin/daily").status_code == 404
+    d = boss.get("/api/admin/daily").json()
+    assert d["day"] == d["now"] == daily.today().isoformat() and d["today"]
+    assert d["challenge"]["goal"] and c.account_id in [r["id"] for r in d["rows"]]
+    assert d["days"][0]["day"] == d["day"]
+    tomorrow = (daily.today() + timedelta(days=1)).isoformat()
+    assert boss.get("/api/admin/daily", params={"day": tomorrow}).status_code == 400   # never tomorrow
+    past = boss.get("/api/admin/daily", params={"day": "2020-02-02"}).json()
+    assert past["challenge"] is None and past["rows"] == []
+    with db.connection() as conn:                                                    # and not made by looking
+        assert conn.execute("select 1 from daily_challenges where day = '2020-02-02'").fetchone() is None
+
+
+def test_an_admin_can_clear_a_day_for_everyone(monkeypatch):
+    boss, a, b = admin_and(monkeypatch), player(), player()
+    for c in (a, b):
+        assert c.post("/api/daily/submit", json={"moves": drafted(c)}).status_code == 200
+    assert a.post("/api/admin/daily/clear").status_code == 404
+    out = boss.post("/api/admin/daily/clear").json()
+    assert out["cleared"] >= 2 and out["rows"] == []
+    with db.connection() as conn:
+        assert conn.execute("select count(*) from results where source = 'daily' and natural_key = %s",
+                            (daily.today().isoformat(),)).fetchone()[0] == 0
+    for c in (a, b):
+        assert c.post("/api/daily/submit", json={"moves": drafted(c)}).status_code == 200
+
+
+def test_an_admin_can_make_today_again(monkeypatch):
+    boss, c = admin_and(monkeypatch), player()
+    before = c.get("/api/daily").json()["challenge"]
+    old = drafted(c)
+    assert c.post("/api/daily/submit", json={"moves": old, "edition": before["edition"]}).status_code == 200
+    assert c.post("/api/admin/daily/remake").status_code == 404
+    out = boss.post("/api/admin/daily/remake").json()
+    assert out["cleared"] >= 1 and out["rows"] == [] and out["challenge"]["edition"] == before["edition"] + 1
+    after = c.get("/api/daily").json()
+    assert after["challenge"]["edition"] == before["edition"] + 1 and after["mine"] is None
+    with db.connection() as conn:
+        (seed,) = conn.execute("select seed from daily_challenges where day = %s", (daily.today(),)).fetchone()
+    assert seed == daily.seed_for(daily.today(), "deal", before["edition"] + 1)
+    # A draft made against the old edition is refused, never replayed into the new squads.
+    stale = {"moves": old, "edition": before["edition"]}
+    assert c.post("/api/daily/practice", json=stale).status_code == 409
+    assert c.post("/api/daily/submit", json=stale).status_code == 409
+    assert c.get("/api/daily/draft", params=stale).status_code == 409
+    assert c.post("/api/daily/sheet", json={**stale, "man": 0, "to": "s1"}).status_code == 409
+    new = drafted(c)
+    assert c.post("/api/daily/submit", json={"moves": new, "edition": after["challenge"]["edition"]}).status_code == 200
+
+
+def test_only_today_can_be_made_again(monkeypatch):
+    deck = load_deck()
+    with db.connection() as conn, pytest.raises(daily.DailyError, match="only today"):
+        daily.remake(conn, deck, league_of(deck), daily.today() - timedelta(days=1))
+
+
+def test_an_admin_can_let_one_account_play_a_past_day_s_attempt_go(monkeypatch):
+    boss, c = admin_and(monkeypatch), player()
+    yesterday = daily.today() - timedelta(days=1)
+    with db.connection() as conn:
+        daily.get_challenge(conn, load_deck(), league_of(load_deck()), yesterday)
+        conn.execute("insert into daily_results (day, account_id, moves, met, gf, ga) values (%s, %s, '', true, 1, 0)",
+                     (yesterday, c.account_id))
+    assert boss.delete(f"/api/admin/daily/{c.account_id}", params={"day": yesterday.isoformat()}).json()["reset"] is True
+    with db.connection() as conn:
+        assert daily.result_of(conn, yesterday, c.account_id) is None

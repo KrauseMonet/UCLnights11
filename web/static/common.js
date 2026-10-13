@@ -327,9 +327,9 @@ function renderDeal(el, d, opts) {
         ${positionsHtml(c)}
         <div class="who"><b>${esc(c.name)}</b><small>${altPositions(c)}${esc(c.nation || "")}</small></div>
         ${c.rating == null ? "" : rate(c.rating)}
-        ${opts.readOnly ? (c.takeable ? "" : `<span class="why">${esc(c.reason)}</span>`)
+        ${opts.readOnly ? (c.takeable ? "" : `<span class="why">${whyHtml(c.reason)}</span>`)
           : c.takeable ? `<button class="take" data-i="${i}" aria-label="${opts.takeLabel || "Take"} ${esc(c.name)}">${opts.takeLabel || "Take"}</button>`
-                     : `<span class="why">${esc(c.reason)}</span>`}
+                     : `<span class="why">${whyHtml(c.reason)}</span>`}
       </div>`).join("")).join("");
   el.style.cssText = teamStyle(d);
   el.innerHTML = `
@@ -348,10 +348,27 @@ function renderDeal(el, d, opts) {
     el.classList.remove("flip"); void el.offsetWidth; el.classList.add("flip");
     // After a pick far down a long squad, the next squad starts above the screen; on a
     // phone that looked like nothing had happened.
-    if (el.getBoundingClientRect().top < 0) (document.querySelector(".draft-top") || el).scrollIntoView({ block: "start", behavior: "smooth" });
+    // Where the page is going is kept, so a pick in flight can aim at where his place will be.
+    SCROLL_DEST = null;
+    if (el.getBoundingClientRect().top < 0) {
+      const to = document.querySelector(".draft-top") || el;
+      SCROLL_DEST = Math.max(0, Math.min(to.getBoundingClientRect().top + scrollY - (parseFloat(getComputedStyle(to).scrollMarginTop) || 0),
+        document.documentElement.scrollHeight - innerHeight));
+      scrollTo({ top: SCROLL_DEST, behavior: "smooth" });
+    }
   }
-  el.querySelectorAll(".take").forEach((b) => b.onclick = () => opts.onTake(+b.dataset.i));
+  const byI = new Map(d.cards.map((c, k) => [c.i ?? k, c]));
+  el.querySelectorAll(".take").forEach((b) => b.onclick = () => {
+    takeoff(b.closest(".row"), byI.get(+b.dataset.i));
+    opts.onTake(+b.dataset.i);
+  });
   if (opts.onReroll) el.querySelector("[data-reroll]").onclick = opts.onReroll;
+}
+
+/* Why a man can't be taken. A formation's name ("4-3-3") breaks at its hyphens, and in
+   a narrow column the last digit went onto a line of its own. */
+function whyHtml(reason) {
+  return esc(reason).replace(/\d(?:-\d)+/g, (f) => `<span class="nw">${f}</span>`);
 }
 
 /* Which of the formation's places are filled, for the bar above the deal: on a phone the
@@ -381,9 +398,10 @@ function renderBench(el, bench, size) {
   el.innerHTML = `<div class="label">Bench</div>` + Array.from({ length: size }, (_, k) => {
     const c = bench[k];
     if (!c) return `<div class="sub-card"><span class="sub-empty">Sub ${k + 1}</span></div>`;
-    return `<div class="sub-card filled">${crest(c.crest, 28, c.club)}
+    return `<div class="sub-card filled" data-id="${esc(c.id)}">${crest(c.crest, 28, c.club)}
       <div class="who"><b>${esc(c.name)}</b><small>${(c.positions || [c.pos]).map(posChip).join("")}${c.rating == null ? "" : ` ${c.rating}`}</small></div></div>`;
   }).join("");
+  if (FLIGHT) requestAnimationFrame(land);
 }
 
 /* A plan's conditions in words (C41), from your side's point of view; in a second leg the
@@ -472,15 +490,192 @@ function slotSpots(slots) {
 function renderPitch(el, slots, xi, newest) {
   const spots = slotSpots(slots);
   const left = [...xi];
+  const was = placesOf(el);
   el.innerHTML = slots.map((s, j) => {
     const at = left.findIndex((c) => c.slot === s);
     const c = at >= 0 ? left.splice(at, 1)[0] : null;
     const { x, y } = spots[j];
-    return `<div class="slot ${c ? "filled" : ""} ${c && c.id === newest ? "new" : ""}" style="left:${x}%;top:${y}%">
+    return `<div class="slot ${c ? "filled" : ""} ${c && c.id === newest ? "new" : ""}" ${c ? `data-id="${esc(c.id)}"` : ""} style="left:${x}%;top:${y}%">
       <div class="disc">${c ? crest(c.crest, 48, c.club) + (c.rating == null ? "" : `<span class="r">${c.rating}</span>`) + `<span class="sl">${s}</span>` : s}</div>
       ${c ? `<div class="nm">${esc(c.name)}</div><div class="cl">${esc(c.short)} ${esc(c.season.slice(2))}</div>` : ""}
     </div>`;
   }).join("");
+  slideFrom(el, was);
+  if (FLIGHT) requestAnimationFrame(land);
+  peekShow();
+}
+
+/* A pick lands. Take lifts the man off his row; when the reply has placed him, he flies
+   to his place (the pitch, the bench, or the peek on a phone), and anyone the placement
+   moved (C35 re-assigns after every pick) slides to his new slot. Display only: nothing
+   here waits for it, and with reduced motion none of it runs. */
+const CALM = matchMedia("(prefers-reduced-motion: reduce)");
+let FLIGHT = null, SCROLL_DEST = null;
+
+function takeoff(row, c) {
+  if (!row || !c || FLIGHT || CALM.matches) return;
+  const r = (row.querySelector(".pos") || row).getBoundingClientRect();
+  const el = document.createElement("div");
+  el.className = "flyer";
+  el.setAttribute("aria-hidden", "true");
+  el.innerHTML = `${crest(c.crest, 46, "")}<span class="fn">${esc(c.name)}</span>`;
+  el.style.left = `${r.left + r.width / 2}px`;
+  el.style.top = `${r.top + r.height / 2}px`;
+  document.body.append(el);
+  row.classList.add("taking");
+  // A reply that never places him (refused, or lost) mustn't leave him hanging there.
+  FLIGHT = { el, id: c.id, row, timer: setTimeout(dropFlight, 20000) };
+}
+
+/* The pick didn't happen: he goes back down. The pages call this when a pick fails. */
+function dropFlight() {
+  const f = FLIGHT;
+  if (!f) return;
+  FLIGHT = null;
+  clearTimeout(f.timer);
+  f.row.classList.remove("taking");
+  f.el.animate([{ opacity: 1 }, { opacity: 0, transform: "scale(.6)" }], { duration: 220, fill: "forwards" }).onfinish = () => f.el.remove();
+}
+
+function land() {
+  const f = FLIGHT;
+  if (!f) return;
+  const sel = `[data-id="${CSS.escape(f.id)}"]`;
+  const peek = document.querySelector(".peek.on");
+  const spot = (peek && peek.querySelector(sel)) || document.querySelector(`.pitch ${sel}, .bench-row ${sel}`);
+  if (!spot) return;                                  // not placed yet: a later render lands him
+  FLIGHT = null;
+  clearTimeout(f.timer);
+  // The flyer is fixed to the screen. A long squad scrolls the page back up to the next
+  // deal as he leaves, so a place on the page is aimed at where it will be when the scroll
+  // ends; the peek is fixed too, so it stays put.
+  const onPeek = !!(peek && peek.contains(spot));
+  const shift = onPeek || SCROLL_DEST == null ? 0 : scrollY - SCROLL_DEST;
+  SCROLL_DEST = null;
+  spot.classList.remove("new");                       // its pop would shrink what's measured
+  spot.classList.add("awaiting");
+  const aim = (spot.querySelector(".disc, .crest") || spot).getBoundingClientRect();
+  const now = f.el.getBoundingClientRect();
+  const x0 = now.left + now.width / 2, y0 = now.top + now.height / 2;
+  const x1 = aim.left + aim.width / 2, y1 = aim.top + aim.height / 2 + shift;
+  Object.assign(f.el.style, { left: `${x0}px`, top: `${y0}px`, animation: "none" });
+  const dx = x1 - x0, dy = y1 - y0, arc = Math.min(90, 30 + Math.abs(dx) * 0.12);
+  if (onPeek) peekHold(1500);
+  f.el.querySelector(".fn").animate([{ opacity: 1 }, { opacity: 0 }], { duration: 260, fill: "forwards" });
+  f.el.animate([
+    { transform: "scale(1.08)" },
+    { transform: `translate(${dx * 0.5}px,${dy * 0.5 - arc}px) scale(1.2)`, offset: 0.5 },
+    { transform: `translate(${dx}px,${dy}px) scale(${aim.width / 46})` },
+  ], { duration: 620 + Math.min(280, Math.abs(shift) * 0.25), easing: "cubic-bezier(.5,0,.25,1)", fill: "forwards" }).onfinish = () => {
+    f.el.remove();
+    spot.classList.remove("awaiting");
+    spot.classList.add("new");                        // the pop and the ring, now he's there
+  };
+}
+
+/* Where each placed man's centre is, inside `el`, before it is redrawn. */
+function placesOf(el) {
+  const at = new Map(), box = el.getBoundingClientRect();
+  if (!box.width) return at;
+  el.querySelectorAll("[data-id]").forEach((n) => {
+    const r = n.getBoundingClientRect();
+    at.set(n.dataset.id, [r.left + r.width / 2 - box.left, r.top + r.height / 2 - box.top]);
+  });
+  return at;
+}
+
+/* After a redraw, everyone who stood somewhere else slides from there. */
+function slideFrom(el, was) {
+  if (!was.size || CALM.matches) return;
+  const box = el.getBoundingClientRect();
+  el.querySelectorAll("[data-id]").forEach((n) => {
+    const old = was.get(n.dataset.id);
+    if (!old) return;
+    const r = n.getBoundingClientRect();
+    const dx = old[0] - (r.left + r.width / 2 - box.left), dy = old[1] - (r.top + r.height / 2 - box.top);
+    if (Math.hypot(dx, dy) < 2) return;
+    n.animate([{ translate: `${dx}px ${dy}px` }, { translate: "0px 0px" }], { duration: 520, easing: "cubic-bezier(.3,.7,.2,1)" });
+  });
+}
+
+/* The peek: on a phone the pitch is below the deal, so you'd pick blind to your shape.
+   While the deal's heading and the pitch are both out of sight, a small pitch on its side
+   (attacking right) stays under the nav; a tap opens the real one over the page. `d` is a
+   drafting side ({formation, xi, bench, bench_size}); null takes the peek away. */
+let PEEK = null;
+const ONE_COLUMN = matchMedia("(max-width: 980px)");
+
+function pitchPeek(pitchEl, d) {
+  if (!d) {
+    if (PEEK) { PEEK.io.disconnect(); PEEK.el.remove(); PEEK = null; }
+    return;
+  }
+  if (!PEEK) {
+    const el = document.createElement("button");
+    el.type = "button";
+    el.className = "peek";
+    document.body.append(el);
+    const io = new IntersectionObserver((es) => { es.forEach((e) => PEEK.seen.set(e.target, e.isIntersecting)); peekShow(); });
+    PEEK = { el, io, seen: new Map(), watched: [], hold: 0, d: null };
+    el.onclick = peekOpen;
+    ONE_COLUMN.addEventListener("change", peekShow);
+  }
+  // Rooms and the daily redraw the whole page, so what's watched may be new elements.
+  const watch = [pitchEl, document.querySelector(".draft-top")].filter(Boolean);
+  if (watch.length !== PEEK.watched.length || watch.some((w, k) => w !== PEEK.watched[k])) {
+    PEEK.io.disconnect();
+    PEEK.watched = watch;
+    watch.forEach((w) => PEEK.io.observe(w));
+  }
+  // A room's turn bar is pinned under the nav too; the peek sits under it.
+  const bar = document.querySelector(".turnbar");
+  PEEK.el.style.top = bar && bar.offsetHeight ? `calc(var(--nav-h) + ${bar.offsetHeight + 6}px)` : "";
+  const spots = slotSpots(d.formation.slots), left = [...d.xi];
+  const dot = (c, style, label) => `<span class="pk ${c ? "filled" : ""}" ${c ? `data-id="${esc(c.id)}"` : ""} ${style}>${c ? crest(c.crest, 20, c.club) : label}</span>`;
+  const was = placesOf(PEEK.el);
+  PEEK.el.innerHTML = `<span class="pk-pitch"><i class="pk-box a"></i><i class="pk-box b"></i>${d.formation.slots.map((s, j) => {
+    const at = left.findIndex((c) => c.slot === s);
+    return dot(at >= 0 ? left.splice(at, 1)[0] : null, `style="left:${100 - spots[j].y}%;top:${spots[j].x}%"`, s);
+  }).join("")}</span>` + (d.bench_size ? `<span class="pk-bench">${Array.from({ length: d.bench_size }, (_, k) => dot(d.bench[k], "", "")).join("")}</span>` : "");
+  PEEK.el.setAttribute("aria-label", `Your XI so far: ${d.xi.length} of 11${d.bench_size ? `, bench ${d.bench.length} of ${d.bench_size}` : ""}. Show it.`);
+  PEEK.d = d;
+  slideFrom(PEEK.el, was);
+  peekShow();
+  if (FLIGHT) requestAnimationFrame(land);
+}
+
+function peekShow() {
+  if (!PEEK) return;
+  const { watched, seen } = PEEK;
+  // Until the observer has reported on newly watched elements, leave it as it is.
+  if (watched.some((w) => w.isConnected && !seen.has(w))) return;
+  const live = watched.length && watched[0].isConnected;
+  const on = live && ONE_COLUMN.matches && !document.querySelector(".peek-sheet")
+    && (Date.now() < PEEK.hold || !watched.some((w) => seen.get(w)));
+  PEEK.el.classList.toggle("on", !!on);
+}
+
+/* Keep the peek up a moment after a pick lands on it, whatever scrolls. */
+function peekHold(ms) {
+  PEEK.hold = Date.now() + ms;
+  setTimeout(peekShow, ms + 20);
+}
+
+function peekOpen() {
+  const d = PEEK.d, sheet = document.createElement("div");
+  sheet.className = "peek-sheet";
+  sheet.innerHTML = `<div class="peek-card" role="dialog" aria-modal="true" aria-label="Your XI">
+    <div class="panel-h"><span class="label">Your XI · ${esc(d.formation.label)}</span><button class="btn small ghost" type="button">Back to the deal</button></div>
+    <div class="pitch"></div><div class="bench-row" hidden></div></div>`;
+  document.body.append(sheet);
+  renderPitch(sheet.querySelector(".pitch"), d.formation.slots, d.xi, null);
+  renderBench(sheet.querySelector(".bench-row"), d.bench, d.bench_size);
+  peekShow();
+  const onKey = (e) => { if (e.key === "Escape") close(); };
+  const close = () => { sheet.remove(); document.removeEventListener("keydown", onKey); peekShow(); PEEK && PEEK.el.focus(); };
+  sheet.onclick = close;                              // a tap anywhere puts it away
+  document.addEventListener("keydown", onKey);
+  sheet.querySelector("button").focus();
 }
 
 /* The team sheet (C44): once a bench draft is finished, tap a man and then where he should

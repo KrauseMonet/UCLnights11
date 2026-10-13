@@ -115,6 +115,7 @@ function renderDraft(fresh) {
   });
   renderPitch($("pitch"), S.formation.slots, S.xi, S.picks.length && !forBench ? S.picks[S.picks.length - 1].id : null);
   renderBench($("bench"), S.bench, S.bench_size);
+  pitchPeek($("pitch"), S);
 }
 
 let busy = false;
@@ -127,7 +128,7 @@ async function take(i) {
     MOVES = next;
     store.set(movesKey(), movesText());
     renderDraft(true);
-  } catch (e) { if (!changed(e)) toast(e.status === 0 ? `${e.message}. Your picks are safe; try again.` : e.message); }
+  } catch (e) { dropFlight(); if (!changed(e)) toast(e.status === 0 ? `${e.message}. Your picks are safe; try again.` : e.message); }
   finally { busy = false; }
 }
 

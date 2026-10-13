@@ -110,6 +110,7 @@ async function act(path, body) {
     // twice is refused by its `expect`, so asking again can't take a second player. A
     // 409 carries the room as it now is, so the screen catches up at once.
     toast(e.status === 0 ? "Connection dropped. Checking whether that went through…" : e.message);
+    if (e.status !== 0) dropFlight();               // refused: he isn't going anywhere
     if (e.status === 409 && e.body && e.body.room) apply(e.body.room);
     else poll();
   }
@@ -295,6 +296,7 @@ function renderDrafting() {
   });
   renderPitch($("pitch"), d.formation.slots, d.xi, d.picks.length && !forBench ? d.picks[d.picks.length - 1].id : null);
   renderBench($("bench"), d.bench, d.bench_size);
+  pitchPeek($("pitch"), d);
   $("xisub").textContent = d.bench_size ? `${d.xi.length} / 11 · bench ${d.bench.length} / ${d.bench_size}` : `${d.picks.length} / 11`;
   xiFoot($("xifoot"), { ...d, picks: d.picks.slice(0, 11) });
 }
@@ -391,6 +393,7 @@ function renderTurns() {
     lineChips($("lines"), d.formation, d.xi);
     renderPitch($("pitch"), d.formation.slots, d.xi, d.picks.length && d.picks.length <= 11 ? d.picks[d.picks.length - 1].id : null);
     renderBench($("bench"), d.bench, d.bench_size);
+    pitchPeek($("pitch"), d);
     $("xisub").textContent = d.bench_size ? `${d.xi.length} / 11 · bench ${d.bench.length} / ${d.bench_size}` : `${d.picks.length} / 11`;
   }
   if (T.deal && shownTurn !== T.expect) {

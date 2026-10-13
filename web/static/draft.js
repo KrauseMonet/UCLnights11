@@ -39,6 +39,7 @@ function render(fresh) {
   });
   renderPitch($("pitch"), S.formation.slots, S.xi, S.picks.length && !forBench ? S.picks[S.picks.length - 1].id : null);
   renderBench($("bench"), S.bench, S.bench_size);
+  pitchPeek($("pitch"), S);
   $("xisub").textContent = S.bench_size ? `${S.xi.length} / 11 · bench ${S.bench.length} / ${S.bench_size}` : `${S.picks.length} / 11`;
   xiFoot($("xifoot"), { ...S, picks: S.picks.slice(0, 11) });
 }
@@ -46,6 +47,7 @@ function render(fresh) {
 /* The plan (C41): for each substitute, from when, on what score and for whom. Every
    change is sent at once and comes back as a new state, so the link always holds the plan. */
 function renderPlan() {
+  pitchPeek(null);
   $("formname").textContent = S.formation.label;
   $("progtext").textContent = "Squad complete · your changes";
   $("bar").style.width = "100%";
@@ -94,6 +96,7 @@ async function move(kind, body) {
     store.set(draftedKey(s.state), "1");
     setSession(s);
   } catch (e) {
+    dropFlight();
     // A pick is the state plus one move, so sending it again is harmless; no reply just means try again.
     toast(e.status === 0 ? `${e.message}. Your draft is safe; try that pick again.` : e.message);
   } finally { busy = false; }

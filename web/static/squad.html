@@ -14,7 +14,12 @@
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preload" href="/static/fonts/Unbounded.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/static/fonts/InstrumentSans.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/static/style.css?v=7b1ea01817">
+<!-- Hold the first paint until the page has drawn itself: a module runs only once parsing is
+     done, after the scripts below, so a pitch handed over by the draft is there to be shown
+     arriving (C57). rel=expect was tried first; Chrome lost track of its element once the nav
+     was put in above it. -->
+<script type="module" blocking="render"></script>
+<link rel="stylesheet" href="/static/style.css?v=47e7a87d1e">
 </head>
 <body>
 <main class="sheet sq">
@@ -22,7 +27,7 @@
   <div id="compare"></div>
   <div id="detail"></div>
 </main>
-<script src="/static/common.js?v=e9cb2792d0"></script>
-<script src="/static/squad.js?v=36823a1d46"></script>
+<script src="/static/common.js?v=e372f26986"></script>
+<script src="/static/squad.js?v=c3ea809d68"></script>
 </body>
 </html>

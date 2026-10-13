@@ -298,6 +298,14 @@ function teamStyle(x) {
   return `--team:${x.team};--team-deep:${x.deep};--team-ink:${x.ink}`;
 }
 
+/* A club-season's era, by the year its season began: a texture on its band and a mark above
+   its season. Decoration only, and claims nothing about the side. */
+const ERAS = [[2020, "e20", "’20s"], [2010, "e10", "’10s"], [2000, "e00", "’00s"], [0, "e90", "’90s"]];
+function eraOf(x) {
+  const e = x && x.year ? ERAS.find(([from]) => x.year >= from) : null;
+  return e ? { cls: e[1], mark: `<span class="era-mark">${e[2]}</span>` } : { cls: "", mark: "" };
+}
+
 /* A dealt squad, by line, with a Take button on every player who fits. Shared by the
    solo draft and a room's draft; `opts` carries what differs between them. */
 const LINES = { GK: "Goalkeepers", DF: "Defenders", MF: "Midfielders", FW: "Forwards" };
@@ -332,11 +340,12 @@ function renderDeal(el, d, opts) {
                      : `<span class="why">${whyHtml(c.reason)}</span>`}
       </div>`).join("")).join("");
   el.style.cssText = teamStyle(d);
+  const era = eraOf(d);
   el.innerHTML = `
     <div class="panel-h"><span class="label">${opts.headingHtml || esc(opts.heading || "Dealt to you")}</span><span class="label"><b>${open}</b> of ${d.cards.length} available</span></div>
-    <div class="band">
+    <div class="band ${era.cls}">
       ${crest(d.crest, 104, d.name)}
-      <div class="deal-year">${esc(d.season)}</div>
+      ${era.mark}<div class="deal-year">${esc(d.season)}</div>
       <div class="deal-club">${esc(d.name)}</div>
       ${opts.onReroll ? `<div class="deal-actions">
         <button class="btn small" data-reroll ${opts.rerollsLeft ? "" : "disabled"}>Another squad</button>
@@ -676,6 +685,44 @@ function peekOpen() {
   sheet.onclick = close;                              // a tap anywhere puts it away
   document.addEventListener("keydown", onKey);
   sheet.querySelector("button").focus();
+}
+
+/* Moving between pages. Where the browser has cross-document view transitions, the nav
+   stays put and the page fades through (style.css), and a pitch marked `data-xi` on both
+   pages carries its eleven across, each man to his place on the next. Names are given only
+   for the transition, since a page may hold each name once. */
+function nameEleven() {
+  const p = document.querySelector("[data-xi]");
+  if (!p) return;
+  p.style.viewTransitionName = "xi-pitch";
+  p.querySelectorAll(".slot[data-id]").forEach((s) => { s.style.viewTransitionName = `xi-${s.dataset.id.replace(/[^\w-]/g, "_")}`; });
+}
+// A transition the browser skips (a hidden tab, a slow page) rejects `ready`; that is not a
+// failure of the page, and unhandled it would be reported as one.
+const onTransition = (e) => { if (!e.viewTransition) return; e.viewTransition.ready.catch(() => {}); nameEleven(); };
+addEventListener("pageswap", onTransition);
+addEventListener("pagereveal", onTransition);
+
+/* The next page's first request, made on this one and handed over in this tab's
+   sessionStorage, so it can draw at once (which is what the transition shows). Taken
+   once; a page that finds nothing asks as it always did. */
+const handoff = {
+  put(key, value) { try { sessionStorage.setItem(`h:${key}`, JSON.stringify(value)); } catch {} },
+  take(key) {
+    try {
+      const v = sessionStorage.getItem(`h:${key}`);
+      sessionStorage.removeItem(`h:${key}`);
+      return v ? JSON.parse(v) : null;
+    } catch { return null; }
+  },
+};
+
+/* To a finished draft's squad page, its figures fetched first; `wait` lets a pick land. */
+async function goSquad(state, wait = 0) {
+  const pause = new Promise((r) => setTimeout(r, wait));
+  try { handoff.put(`squad:${state}`, await api(`/api/draft/${state}/squad`)); } catch {}
+  await pause;
+  location.href = `/squad#${state}`;
 }
 
 /* The team sheet (C44): once a bench draft is finished, tap a man and then where he should

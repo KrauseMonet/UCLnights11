@@ -97,7 +97,7 @@ function detailHtml(s) {
       <div class="cup-stack"><section class="panel"><div class="panel-h"><span class="label">By line</span><span class="label">${esc(s.formation)}</span></div>
         <div class="sq-lines">${linesHtml(s)}</div></section></div>
       <div class="cup-stack"><section class="panel"><div class="panel-h"><span class="label">${s.you ? "Your XI" : "Their XI"}</span><span class="label">${esc(s.formation)}</span></div>
-        <div class="pitch" id="sqpitch"></div><div class="bench-row" id="sqbench" hidden></div>
+        <div class="pitch" id="sqpitch" ${s.you && !SQ_ROOM ? "data-xi" : ""}></div><div class="bench-row" id="sqbench" hidden></div>
         ${s.bench.length ? `<div class="plan-box"><div class="panel-h"><span class="label">${s.you ? "Your" : "Their"} changes</span></div>${planHtml(s.plan)}</div>` : ""}</section></div>
     </div></section>`;
 }
@@ -121,7 +121,9 @@ function render() {
   loadMeta().catch(() => {});
   const bad = SQ_ROOM ? !/^[A-Za-z0-9]{6}$/.test(SQ_ROOM) : !/^[\w.-]+$/.test(SQ_STATE);
   if (bad) { location.href = SQ_ROOM ? "/friends" : "/start"; return; }
-  try { SQ = await api(SQ_ROOM ? `/api/rooms/${SQ_ROOM}/squads` : `/api/draft/${SQ_STATE}/squad`); }
+  // Handed over by the draft page when it sent us here: drawn without waiting (C57).
+  const ready = SQ_ROOM ? null : handoff.take(`squad:${SQ_STATE}`);
+  try { SQ = ready || await api(SQ_ROOM ? `/api/rooms/${SQ_ROOM}/squads` : `/api/draft/${SQ_STATE}/squad`); }
   catch (e) {
     $("hero").innerHTML = `<div class="kicker">Draft complete</div><h1 class="arch-h">Not here</h1><p class="sub">${esc(e.message)}</p>
       <div class="cup-actions sq-acts"><a class="btn primary" href="${SQ_ROOM ? `/room#${esc(SQ_ROOM)}` : `/draft#${esc(SQ_STATE)}`}">Back to the draft</a></div>`;

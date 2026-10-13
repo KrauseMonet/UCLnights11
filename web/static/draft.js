@@ -16,7 +16,12 @@ function setSession(s, fresh = true) {
   history.replaceState(null, "", `/draft${Q}#${s.state}`);
   // A finished bench draft stops to plan its changes (C41); an eleven-pick one goes
   // straight to its completed squad, and kicks off from there.
-  if (s.complete && !s.bench_size) { location.href = `/squad#${s.state}`; return; }
+  if (s.complete && !s.bench_size) {
+    // The last man lands on the pitch first, then the eleven goes on to the squad page.
+    renderPitch($("pitch"), s.formation.slots, s.xi, s.picks[s.picks.length - 1].id);
+    goSquad(s.state, FLIGHT ? 900 : 0);
+    return;
+  }
   render(fresh);
 }
 
@@ -69,6 +74,12 @@ function renderPlan() {
       <p class="label">${AUTO_NOTE}</p>`,
   });
   $("autoplan").onclick = () => postPlan(null);
+  // Fetched before leaving, so the squad page can draw its pitch at once.
+  $("deal").querySelector(`a[href^="/squad#"]`).onclick = (e) => {
+    if (e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    e.preventDefault();
+    goSquad(S.state);
+  };
 }
 
 async function postSheet(body) {
@@ -88,7 +99,7 @@ async function postPlan(changes) {
 }
 
 async function move(kind, body) {
-  if (busy) return;
+  if (busy || S.complete) return;                 // a finished draft is on its way to its squad
   busy = true;
   try {
     const s = await api(`/api/draft/${S.state}/${kind}${Q}`, { method: "POST", body: body ? JSON.stringify(body) : undefined });

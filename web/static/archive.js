@@ -24,8 +24,9 @@ async function openSquad(key) {
     ? "Positions: every one he started at least once that season, most-played first (Transfermarkt line-ups)."
     : "Positions: this game's judgement of the roles he played that season. No open match-by-match source exists before 2013–14."}</p>`;
   $("drawer-in").style.cssText = teamStyle(d);
-  $("drawer-in").innerHTML = `<div class="band"><button class="close" id="close">Close</button>
-      ${crest(d.crest, 84, d.name)}<div class="deal-year" style="font-size:56px">${esc(d.season)}</div>
+  const era = eraOf(d);
+  $("drawer-in").innerHTML = `<div class="band ${era.cls}"><button class="close" id="close">Close</button>
+      ${crest(d.crest, 84, d.name)}${era.mark}<div class="deal-year">${esc(d.season)}</div>
       <div class="deal-club">${esc(d.name)}</div></div>${note}${rows}`;
   $("drawer").hidden = false;
   history.replaceState(null, "", `#${key}`);

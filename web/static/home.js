@@ -4,8 +4,9 @@ shell("home");
 function deckCard(cs) {
   const rows = cs.cards.map((c) => `<div class="deck-row">${positionsHtml(c)}
     <span>${esc(c.name)}</span>${rate(c.rating)}</div>`).join("");
+  const era = eraOf(cs);
   return `<div class="deck-card" style="${teamStyle(cs)}">
-    <div class="band">${crest(cs.crest, 64, cs.name)}<div class="deck-year">${esc(cs.season)}</div>
+    <div class="band ${era.cls}">${crest(cs.crest, 64, cs.name)}${era.mark}<div class="deck-year">${esc(cs.season)}</div>
       <div class="deck-name">${esc(cs.name)}</div></div>
     <div class="deck-rows">${rows}</div></div>`;
 }

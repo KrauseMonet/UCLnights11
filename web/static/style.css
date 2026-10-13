@@ -46,6 +46,18 @@
   --team:#7cc4ff; --team-deep:#10233f; --team-ink:#c4e5ff;
 }
 *{box-sizing:border-box}
+/* Moving between pages (cross-document view transitions, where the browser has them): the
+   nav stays put, the page fades through with a slight rise, and an eleven marked on both
+   pages moves across (common.js `nameEleven`). Elsewhere, pages load as they always did. */
+@view-transition{navigation:auto}
+.topnav{view-transition-name:site-nav}
+::view-transition-old(root){animation:vtOut .18s ease-in both}
+::view-transition-new(root){animation:vtIn .34s cubic-bezier(.2,.8,.2,1) .06s both}
+::view-transition-group(*){animation-duration:.55s;animation-timing-function:cubic-bezier(.3,.7,.2,1)}
+::view-transition-group(root){animation-duration:.4s}
+@keyframes vtOut{to{opacity:0;transform:translateY(-6px)}}
+@keyframes vtIn{from{opacity:0;transform:translateY(12px)}}
+@media (prefers-reduced-motion:reduce){@view-transition{navigation:none}}
 html,body{margin:0;padding:0}
 body{background-color:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.55;
   -webkit-font-smoothing:antialiased;min-height:100vh;display:flex;flex-direction:column;
@@ -141,6 +153,29 @@ button{font:inherit;cursor:pointer}
     radial-gradient(circle at var(--rx,calc(100% - 74px)) var(--ry,74px),transparent 0 var(--rr,92px),rgba(255,255,255,.11) var(--rr,92px) calc(var(--rr,92px) + 1.5px),transparent calc(var(--rr,92px) + 2px)),
     radial-gradient(circle at var(--rx,calc(100% - 74px)) var(--ry,74px),transparent 0 calc(var(--rr,92px) * 1.9),rgba(255,255,255,.055) calc(var(--rr,92px) * 1.9) calc(var(--rr,92px) * 1.9 + 1.5px),transparent calc(var(--rr,92px) * 1.9 + 2px))}
 .band > *{position:relative;z-index:1}
+/* An era's texture on a club's band (common.js `eraOf`), in the club's own colours and
+   strongest at the top, so the season written over the bottom still reads first. */
+.band.e90::before,.band.e00::before,.band.e10::before,.band.e20::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;
+  -webkit-mask:linear-gradient(180deg,#000 0%,rgba(0,0,0,.55) 45%,transparent 92%);mask:linear-gradient(180deg,#000 0%,rgba(0,0,0,.55) 45%,transparent 92%)}
+/* the '90s: a loud shadow print, as the shirts had */
+.band.e90::before{background:
+  repeating-linear-gradient(60deg,transparent 0 14px,color-mix(in srgb,var(--team-ink) 14%,transparent) 14px 16px),
+  repeating-linear-gradient(-60deg,transparent 0 14px,color-mix(in srgb,var(--team-ink) 9%,transparent) 14px 16px)}
+/* the '00s: a glossy sheen over pinstripes */
+.band.e00::before{background:
+  linear-gradient(115deg,transparent 26%,rgba(255,255,255,.11) 36%,rgba(255,255,255,.03) 47%,transparent 48%),
+  repeating-linear-gradient(90deg,rgba(255,255,255,.05) 0 1px,transparent 1px 11px)}
+/* the '10s: flat colour, one clean sash */
+.band.e10::before{background:
+  linear-gradient(112deg,transparent 0 40%,color-mix(in srgb,var(--team) 26%,transparent) 40% 55%,transparent 55%),
+  repeating-linear-gradient(180deg,rgba(255,255,255,.035) 0 1px,transparent 1px 6px)}
+/* the '20s: a soft glow and a fine grain */
+.band.e20::before{opacity:.9;background:
+  url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .34 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
+  radial-gradient(70% 90% at 8% 0%,color-mix(in srgb,var(--team-ink) 26%,transparent),transparent 70%),radial-gradient(50% 70% at 62% 20%,color-mix(in srgb,var(--team) 22%,transparent),transparent 70%)}
+.era-mark{align-self:flex-start;margin-bottom:12px;font:700 11px/1 var(--display);letter-spacing:.02em;padding:5px 9px 6px;border-radius:999px;
+  color:var(--team-ink);background:rgba(3,4,10,.38);border:1px solid color-mix(in srgb,var(--team-ink) 32%,transparent)}
+.deck-card .era-mark{margin-bottom:8px}
 
 /* --- headings shared by every page --- */
 .h2{font:700 clamp(26px,3.2vw,36px)/1.1 var(--display);letter-spacing:-.02em;margin:88px 0 10px}
@@ -716,6 +751,10 @@ button{font:inherit;cursor:pointer}
 @keyframes slide{from{transform:translateX(40px);opacity:0}to{transform:none;opacity:1}}
 .drawer .band{padding:26px;min-height:180px;display:flex;flex-direction:column;justify-content:flex-end}
 .drawer .band .crest{position:absolute;right:22px;top:22px}
+.drawer .deal-year{font-size:56px}
+/* The era mark clears the Close button above it however tall the band's content is. */
+.drawer .band .era-mark{margin-top:46px}
+@media (max-width:480px){.drawer .deal-year{font-size:40px}.drawer .band .crest{width:64px;height:64px}}
 .drawer .close{position:absolute;left:16px;top:16px;background:rgba(3,4,10,.45);border:1px solid rgba(255,255,255,.2);color:#fff;
   border-radius:999px;padding:6px 13px;font:650 12px var(--sans);letter-spacing:.06em;z-index:2}
 .drawer .close:hover{border-color:var(--ice);color:var(--ice-2)}

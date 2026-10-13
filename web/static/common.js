@@ -40,8 +40,29 @@ function shell(active) {
   const t = document.createElement("div");
   t.className = "toast"; t.id = "toast"; t.setAttribute("role", "status");
   document.body.append(t);
+  lens();
   loadMe();
   installable();
+}
+
+/* Liquid glass (C58). Every floating layer is frosted glass in the stylesheet; in Chromium,
+   the one engine that takes an SVG filter as a backdrop, the small ones that stay put also
+   bend the light at their edges, through this displacement map. Not under the nav or
+   anything else that floats over scrolling content: re-running a filter there every frame
+   is what makes scrolling stutter on a phone. */
+function lens() {
+  const chromium = navigator.userAgentData && navigator.userAgentData.brands.some((b) => /Chromium/.test(b.brand));
+  if (!chromium || matchMedia("(prefers-reduced-transparency: reduce)").matches) return;
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("aria-hidden", "true");
+  svg.setAttribute("style", "position:absolute;width:0;height:0");
+  svg.innerHTML = `<filter id="lg-lens" x="0%" y="0%" width="100%" height="100%" color-interpolation-filters="sRGB">
+    <feImage href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' preserveAspectRatio='none'%3E%3ClinearGradient id='a' x2='1' y2='0'%3E%3Cstop offset='0' stop-color='rgb(255,0,0)'/%3E%3Cstop offset='0.07' stop-color='rgb(128,0,0)'/%3E%3Cstop offset='0.93' stop-color='rgb(128,0,0)'/%3E%3Cstop offset='1' stop-color='rgb(0,0,0)'/%3E%3C/linearGradient%3E%3Crect width='100' height='100' fill='url(%23a)'/%3E%3C/svg%3E" preserveAspectRatio="none" x="0%" y="0%" width="100%" height="100%" result="r"/>
+    <feImage href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' preserveAspectRatio='none'%3E%3ClinearGradient id='a' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='rgb(0,255,0)'/%3E%3Cstop offset='0.22' stop-color='rgb(0,128,0)'/%3E%3Cstop offset='0.78' stop-color='rgb(0,128,0)'/%3E%3Cstop offset='1' stop-color='rgb(0,0,0)'/%3E%3C/linearGradient%3E%3Crect width='100' height='100' fill='url(%23a)'/%3E%3C/svg%3E" preserveAspectRatio="none" x="0%" y="0%" width="100%" height="100%" result="g"/>
+    <feComposite in="r" in2="g" operator="arithmetic" k2="1" k3="1" result="map"/>
+    <feDisplacementMap in="SourceGraphic" in2="map" scale="26" xChannelSelector="R" yChannelSelector="G"/></filter>`;
+  document.body.append(svg);
+  document.documentElement.classList.add("lens");
 }
 
 /* Installing the site as an app (sw.js, manifest.webmanifest). Not on a local server,

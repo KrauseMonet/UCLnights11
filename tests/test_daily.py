@@ -444,6 +444,53 @@ def test_edition_0_keeps_the_seeds_every_day_had():
         assert daily.seed_for(d, purpose, 1) != daily.seed_for(d, purpose, 0)
 
 
+# -- each account's own ranked match (C59) -----------------------------------------
+
+def test_each_account_plays_its_own_ranked_match_on_a_day_made_since():
+    a, b = player(), player()
+    moves = drafted(a)
+    assert drafted(b) == moves                                 # the same eleven, picked the same way
+    outs = [c.post("/api/daily/submit", json={"moves": moves}).json() for c in (a, b)]
+    assert outs[0]["fixture"]["shots"] != outs[1]["fixture"]["shots"]   # two games, not one
+    for c, out in zip((a, b), outs):                           # and each replays as it was played
+        again = c.get("/api/daily").json()["mine"]
+        assert again["fixture"]["shots"] == out["fixture"]["shots"] and (again["gf"], again["ga"]) == (out["gf"], out["ga"])
+    with db.connection() as conn:
+        (own,) = conn.execute("select own_seed from daily_challenges where day = %s", (daily.today(),)).fetchone()
+    assert own is True
+
+
+def test_a_day_stored_with_one_seed_keeps_it_and_so_does_its_remake(monkeypatch):
+    day = date(2031, 6, 9)
+    monkeypatch.setattr(daily, "today", lambda: day)
+    monkeypatch.setattr(daily, "NEW_DAYS_OWN_SEED", False)      # a day as every day before C59 was made
+    a, b = player(), player()
+    moves = drafted(a)
+    outs = [c.post("/api/daily/submit", json={"moves": moves}).json() for c in (a, b)]
+    assert outs[0]["fixture"]["shots"] == outs[1]["fixture"]["shots"]   # one match for the day
+    with db.connection() as conn:
+        ch = daily.get_challenge(conn, load_deck(), league_of(load_deck()), day)
+    assert not ch.own_seed and daily.match_seed(ch, "ranked", a.account_id) == daily.seed_for(day, "ranked")
+    for c, out in zip((a, b), outs):
+        assert c.get("/api/daily").json()["mine"]["fixture"]["shots"] == out["fixture"]["shots"]
+    monkeypatch.setattr(daily, "NEW_DAYS_OWN_SEED", True)
+    boss = admin_and(monkeypatch)
+    assert boss.post("/api/admin/daily/remake").status_code == 200
+    with db.connection() as conn:                              # a remade day keeps how it was made, as its bench does
+        (own,) = conn.execute("select own_seed from daily_challenges where day = %s", (day,)).fetchone()
+    assert own is False
+
+
+def test_an_own_seed_is_the_account_s_and_never_practice_s():
+    d = date(2026, 3, 1)
+    ch = rules.Challenge(d.isoformat(), 1, "433", "x", "win", 1, 0.4, True, 0, own_seed=True)
+    one, two = daily.match_seed(ch, "ranked", 1), daily.match_seed(ch, "ranked", 2)
+    assert len({one, two, daily.seed_for(d, "ranked")}) == 3
+    assert daily.match_seed(ch, "practice", 1) == daily.match_seed(ch, "practice") == daily.seed_for(d, "practice")
+    with pytest.raises(ValueError, match="account"):
+        daily.match_seed(ch, "ranked")
+
+
 def admin_and(monkeypatch):
     boss = player()
     monkeypatch.setenv("ADMIN_ACCOUNT_IDS", str(boss.account_id))

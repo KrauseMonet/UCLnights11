@@ -1464,7 +1464,7 @@ def daily_today(request: Request, day: str | None = None) -> dict:
             if row is not None:
                 try:
                     fx, j = daily.play(load_deck(), league(), ch, daily.moves_of(ch, row[0]), "ranked",
-                                       daily.plan_of(ch, row[6]), daily.sheet_of(ch, row[7]))
+                                       daily.plan_of(ch, row[6]), daily.sheet_of(ch, row[7]), me.account_id)
                     mine = daily_result_out(ch, fx, j, row[1], True)
                 except (IllegalMove, ValueError):
                     # The picks no longer replay (the deck changed since that day): the

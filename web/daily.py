@@ -12,6 +12,10 @@ job makes today's and tomorrow's ahead of anyone asking (`prepare`, C49), so the
 visitor of a day doesn't wait for one to be measured. One ranked
 attempt per account per day; the result is replayed on the server from the moves.
 
+**Each account plays its own ranked match (C59)** on a day made since: the ranked seed
+takes the account too, so friends' matches draw different luck. A day stored before
+keeps one ranked seed for everyone and replays as it did.
+
 **An admin can make a day again (C55)**: a new edition of it, with new squads, opponent
 and goal, every attempt at the old one cleared. Its seeds come from the day and the
 edition number, so it is as secret as the first.
@@ -38,6 +42,9 @@ STAGE = "Daily challenge"
 # Every day made from now on has a bench and plays engine 2 (C42). A day already stored
 # keeps what it was made with, so a played day never changes.
 NEW_DAYS_BENCH = True
+# Likewise every day made from now on plays each account's ranked match from its own seed
+# (C59); a day already stored keeps the one seed it was played with.
+NEW_DAYS_OWN_SEED = True
 
 
 class DailyError(ValueError):
@@ -69,26 +76,30 @@ def parse_day(text: str | None) -> date:
     return d
 
 
-def seed_for(day: date, purpose: str, edition: int = 0) -> int:
+def seed_for(day: date, purpose: str, edition: int = 0, account_id: int | None = None) -> int:
     """A secret seed for `purpose` ("deal", "ranked" or "practice") on `day`, in the day's
-    `edition` (0, the day as first made, keeps the seeds every day before C55 had)."""
-    text = f"daily:{day.isoformat()}:{purpose}" + (f":{edition}" if edition else "")
+    `edition` (0, the day as first made, keeps the seeds every day before C55 had), and
+    for one account's ranked match on a day made with its own seeds (C59; None keeps the
+    day's one seed, as every day before had)."""
+    text = (f"daily:{day.isoformat()}:{purpose}" + (f":{edition}" if edition else "")
+            + (f":account:{account_id}" if account_id is not None else ""))
     mac = hmac.new(auth._session_secret().encode(), text.encode(), hashlib.sha256)
     return int.from_bytes(mac.digest()[:8], "big") % (2**31 - 2) + 1
 
 
 def get_challenge(conn, deck: Deck, league: match.League, day: date) -> rules.Challenge:
     """The day's challenge, made and stored the first time anyone asks."""
-    columns = "day, seed, formation, opponent, kind, target, success_rate, bench, edition"
+    columns = "day, seed, formation, opponent, kind, target, success_rate, bench, edition, own_seed"
     row = conn.execute(f"select {columns} from daily_challenges where day = %s", (day,)).fetchone()
     if row is None:
         ch = rules.make_challenge(deck, league, day.isoformat(), seed_for(day, "deal"), NEW_DAYS_BENCH)
-        conn.execute(f"insert into daily_challenges ({columns}) values (%s, %s, %s, %s, %s, %s, %s, %s, 0)"
+        conn.execute(f"insert into daily_challenges ({columns}) values (%s, %s, %s, %s, %s, %s, %s, %s, 0, %s)"
                      " on conflict (day) do nothing",
-                     (day, ch.seed, ch.formation, ch.opponent, ch.kind, ch.target, ch.success_rate, ch.bench))
+                     (day, ch.seed, ch.formation, ch.opponent, ch.kind, ch.target, ch.success_rate, ch.bench,
+                      NEW_DAYS_OWN_SEED))
         row = conn.execute(f"select {columns} from daily_challenges where day = %s", (day,)).fetchone()
-    d, seed, formation, opponent, kind, target, rate, bench, edition = row
-    return rules.Challenge(d.isoformat(), seed, formation, opponent, kind, target, rate, bench, edition)
+    d, seed, formation, opponent, kind, target, rate, bench, edition, own_seed = row
+    return rules.Challenge(d.isoformat(), seed, formation, opponent, kind, target, rate, bench, edition, own_seed)
 
 
 def check_edition(ch: rules.Challenge, edition: int | None) -> None:
@@ -137,16 +148,26 @@ def plan_of(ch: rules.Challenge, plan: tuple[Change, ...] | str | None) -> tuple
     return decode_plan(plan) if isinstance(plan, str) else plan
 
 
+def match_seed(ch: rules.Challenge, purpose: str, account_id: int | None = None) -> int:
+    """The seed a match of the day is played from: on a day made with its own seeds (C59)
+    a ranked match is the account's alone; practice and every older day share the day's."""
+    own = purpose == "ranked" and ch.own_seed
+    if own and account_id is None:
+        raise ValueError("a ranked match on this day is played from its account's seed")
+    return seed_for(date.fromisoformat(ch.day), purpose, ch.edition, account_id if own else None)
+
+
 def play(deck: Deck, league: match.League, ch: rules.Challenge, moves: list, purpose: str,
-         plan: tuple[Change, ...] | None = None, sheet: tuple[int, ...] | None = None):
-    """The finished eleven's match: (fixture, journey). Refuses an unfinished draft."""
+         plan: tuple[Change, ...] | None = None, sheet: tuple[int, ...] | None = None,
+         account_id: int | None = None):
+    """The finished eleven's match: (fixture, journey). Refuses an unfinished draft. A
+    ranked match names its account, whose seed it is played from on a day made since C59."""
     s = rules.draft(deck, ch, moves, plan, sheet)
     if not s.complete:
         raise IllegalMove("the squad isn't complete yet" if ch.bench else "the eleven isn't complete yet")
     you = rules.side_of(s)
     opp = club_side(deck.by_key[ch.opponent])
-    day = date.fromisoformat(ch.day)
-    r = rules.play(league, seed_for(day, purpose, ch.edition), you, deck.by_key[ch.opponent], ch.engine)
+    r = rules.play(league, match_seed(ch, purpose, account_id), you, deck.by_key[ch.opponent], ch.engine)
     fx = Fixture(STAGE, you, opp, r, ch.day)
     t = Tournament([you, opp], {}, {})
     t.fixtures = [fx]
@@ -174,7 +195,7 @@ def submit(conn, deck: Deck, league: match.League, account: Account, day: date, 
     check_edition(ch, edition)
     moves = moves_of(ch, text)
     plan, sheet = plan_of(ch, plan), sheet_of(ch, sheet)
-    fx, j = play(deck, league, ch, moves, "ranked", plan, sheet)
+    fx, j = play(deck, league, ch, moves, "ranked", plan, sheet, account.account_id)
     r = fx.result
     ok = rules.met(ch.kind, ch.target, r.home_goals, r.away_goals)
     # The plan is stored as played, the automatic one written out, so the match replays.

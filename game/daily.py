@@ -18,6 +18,10 @@ out ahead) and stores what is made here.
   bench; its goal is measured the same way, the calibration drafter taking the best
   player for its bench too and using the automatic plan. Days made before keep eleven
   picks and engine 1, and play exactly as they did.
+- **Each account's own match (C59).** A day made with `own_seed` plays every ranked
+  attempt from a seed of the day and the account, so friends draw different luck; days
+  made before share one seed for the day, which kept giving different elevens the same
+  score. The web layer makes the seeds; nothing here changes.
 """
 
 from __future__ import annotations
@@ -50,6 +54,7 @@ class Challenge:
     success_rate: float
     bench: bool = False      # drafted with a bench and played by engine 2 (C42)
     edition: int = 0         # 0 as first made; n once an admin has made the day again n times (C55)
+    own_seed: bool = False   # each account's ranked match from its own seed (C59)
 
     @property
     def engine(self) -> int:

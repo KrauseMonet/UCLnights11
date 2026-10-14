@@ -399,7 +399,10 @@ phase articles state them; where this game departs from them it says so.
   day (measured over 60 days: always in the band, mean 41%; a random drafter, 14%).
 - **The seeds are secret**: the deal's and the match's come from SESSION_SECRET by HMAC,
   so the day can't be known ahead nor the best eleven found offline with the public
-  engine. One ranked attempt per account per day. Signed out, a practice match uses a
+  engine. One ranked attempt per account per day. **Each account's ranked match has its
+  own seed** (C59) on a day made since, so friends don't share the day's luck (one seed for
+  everyone kept giving different elevens the same score); older days keep their one seed.
+  Signed out, a practice match uses a
   third seed and is kept nowhere. Ranked by goal met, goal difference, goals scored,
   the eleven's average mark, then who played first. A streak lasts until a day is missed.
 - **A day with a bench** (C42): every day made from then on is fourteen squads, the last

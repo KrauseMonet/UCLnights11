@@ -451,7 +451,9 @@ function planHtml(plan) {
 /* The plan panel (C41): for each substitute, from when, on what score and for whom. `d` is
    a finished bench draft ({bench, xi} with each bench card's `can_replace`), `plan` the
    lines to show ([{on, minute, when, off}]); `opts.tag` heads it, `opts.foot` is the
-   page's own buttons, and `opts.onChange(plan)` gets the whole plan after any change. */
+   page's own buttons, and `opts.onChange(plan)` gets the whole plan after any change.
+   `opts.mode` ({ manual, onMode(manual) }, C60) offers making the changes during each
+   match instead, the plan then used only where a match is skipped. */
 function planPanel(el, d, plan, opts) {
   // A null plan is the automatic one, not shown: drafting blind, its order would rank the
   // substitutes (C42). Each row says "Automatic" until the drafter chooses.
@@ -464,6 +466,12 @@ function planPanel(el, d, plan, opts) {
     <div class="panel-h"><span class="label">Your changes</span><span class="label">${esc(opts.tag || "")}</span></div>
     <div class="plan-intro"><p>Players tire as a match goes on, and a tired man defends worst. A substitute comes on fresh.
       Up to three changes, the same plan for every match. The score is the tie's: in a second leg, the aggregate.</p></div>
+    ${opts.mode ? `<div class="plan-mode"><span>During matches</span><div class="chips" role="radiogroup" aria-label="Who makes the changes">
+        <button class="chip" role="radio" data-manual="0" aria-checked="${!opts.mode.manual}">Follow this plan</button>
+        <button class="chip" role="radio" data-manual="1" aria-checked="${!!opts.mode.manual}">I'll make them myself</button></div></div>
+      <p class="plan-mode-note">${opts.mode.manual
+        ? "You make the changes: <b>Make a sub</b> pauses the match, and nobody comes on unless you bring him on. The plan below is only used in a match you skip, if you say so then."
+        : "The plan below makes the changes in every match. Or make them yourself: pause a match whenever you like and bring a man on."}</p>` : ""}
     ${d.bench.map((c, i) => {
       const x = line(i);
       return `<div class="plan-row" data-i="${i}">
@@ -476,6 +484,9 @@ function planPanel(el, d, plan, opts) {
     }).join("")}
     <div class="plan-foot">${opts.foot || ""}</div>`;
   el.querySelectorAll(".plan-row select").forEach((sel) => sel.onchange = () => opts.onChange(readPlan(el)));
+  el.querySelectorAll("[data-manual]").forEach((b) => b.onclick = () => {
+    if ((b.dataset.manual === "1") !== !!opts.mode.manual) opts.mode.onMode(b.dataset.manual === "1");
+  });
 }
 
 /* The plan as the panel shows it. Two changes for one man can't both happen; the later
@@ -849,6 +860,7 @@ function previewOnHover(chipsEl, byCode, attr, show, current) {
 const store = {
   get(k) { try { return localStorage.getItem(k); } catch { return null; } },
   set(k, v) { try { localStorage.setItem(k, v); } catch { /* private mode: not remembered */ } },
+  del(k) { try { localStorage.removeItem(k); } catch { /* nothing kept to remove */ } },
 };
 
 // A solo draft is known by its seed (with the bench's "b"): its sheet and plan change the

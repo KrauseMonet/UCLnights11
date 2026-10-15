@@ -23,26 +23,36 @@ opened would change what everyone had seen. Rooms made before benches have none.
 A ROOM THAT WATCHES TOGETHER (C52) shows its tournament on one clock once it completes:
 the host kicks off, every screen plays the same round at the same moment (game.watch),
 and only the host can skip ahead. Rooms made before it let each friend watch alone.
+
+A LIVE ROOM (C60: made since, drafting a bench and watching together) lets a seat make its
+own changes during its matches. Pausing stops everyone's clock (at most game.watch.PAUSE_S)
+while the seat chooses; the change comes at the first break after everything the room has
+been sent, and the tournament, a pure function of the room as ever, now includes it. Every
+match is on a stream of its own (game.tournament.Live), so one friend's change moves
+nobody else's match. A host's skip past matches can hand them to the plans instead.
 """
 
 from __future__ import annotations
 
+import math
 import random
 import secrets
 import threading
 import time
 from collections import OrderedDict
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from game.colours import palette
 from game.deck import Deck
 from game import shared_draft as shared
 from game import watch
-from game.draft import (BENCH, Change, IllegalMove, Move, Pick, Session, carry_plan, check_plan, check_sheet,
-                        decode_plan, decode_sheet, decode_state, encode, encode_plan, encode_sheet, replay,
-                        why_not)
+from game.draft import (BENCH, Change, IllegalMove, LiveEntry, Move, Pick, Session, carry_plan, check_plan,
+                        check_sheet, decode_live, decode_plan, decode_sheet, decode_state, encode, encode_live,
+                        encode_plan, encode_sheet, replay, why_not)
 from game.formations import DEFAULT, FORMATIONS
-from game.tournament import ROOM_SIZES, Side, auto_plan
+from game.match import BLOCK
+from game.tournament import (ROOM_SIZES, Live, MatchPlan, Side, Tournament, auto_plan, bench_options,
+                             change_made)
 from web.accounts import Account
 
 STYLES = ("turns", "own")
@@ -88,6 +98,8 @@ class Seat:
     state: str | None
     plan: str | None = None         # a bench room's: encode_plan once the seat is ready
     sheet: str | None = None        # a bench room's team sheet (C44), encode_sheet; None: as drafted
+    live: str | None = None         # a live room's seat that makes its own changes (C60): encode_live
+    idle_pauses: int = 0            # pauses it ended without a change
 
     @property
     def bench(self) -> bool:
@@ -130,10 +142,18 @@ class Room:
     watch_started_at: float | None  # when the watch's first countdown began, moved earlier by a skip
     completed_at: float | None
     watch_pace: str | None          # the host's pace for watching together (C54); None: before paces
+    live: bool                      # made since live changes (C60); see live_watch
+    watch_paused_at: float | None   # a pause for a change (C60), by the app's clock
+    watch_paused_by: int | None     # the seat that asked for it
     seats: list[Seat]
 
     def seat_of(self, account_id: int | None) -> Seat | None:
         return next((s for s in self.seats if s.account_id == account_id), None)
+
+    @property
+    def live_watch(self) -> bool:
+        """Watches live (C60): made since, with a bench, watching together."""
+        return self.live and self.bench and self.together
 
     @property
     def moves(self) -> list[int]:
@@ -159,15 +179,21 @@ def seat_palette(seat: int) -> dict[str, str]:
     return palette(colour, colour)
 
 
-def human_side(seat: Seat, session: Session) -> Side:
+def human_side(seat: Seat, session: Session, live: bool = False) -> Side:
     """A seat's finished draft as a tournament side, in its seat's colours: its eleven,
-    and in a bench room its bench and plan."""
+    and in a bench room its bench and plan; in a live room (``live``), the changes it made
+    itself, if it makes them."""
     f = session.formation
     subs = session.subs()
+    plans = None
+    if live and seat.live is not None:
+        squad = [*session.xi, *session.bench]
+        plans = {k: MatchPlan(tuple((m, on, squad[off].id) for m, on, off in e.changes), e.auto_from)
+                 for k, e in decode_live(seat.live).items()}
     return Side(f"P{seat.seat}", seat.username, seat.username[:3].upper(), f, session.xi,
                 owner=seat.account_id, club_name=seat.username, label=f.label,
                 bench=session.bench, plan=auto_plan(session.bench) if subs is None else subs,
-                **seat_palette(seat.seat))
+                live=plans, **seat_palette(seat.seat))
 
 
 def seat_session(deck: Deck, room: Room, seat: Seat, d: shared.SharedDraft | None = None) -> Session:
@@ -195,8 +221,8 @@ def seat_session(deck: Deck, room: Room, seat: Seat, d: shared.SharedDraft | Non
 
 ROOM_COLUMNS = ("r.code, r.size, r.seed, r.host_id, r.status, r.version, r.memory, r.style, r.timer_seconds,"
                 " r.moves, r.turn_started_at, r.failure_reason, r.bench, r.together, r.watch_started_at,"
-                " r.completed_at, r.watch_pace")
-SEAT_COLUMNS = "s.account_id, a.username, s.seat, s.formation, s.state, s.plan, s.sheet"
+                " r.completed_at, r.watch_pace, r.live, r.watch_paused_at, r.watch_paused_by")
+SEAT_COLUMNS = "s.account_id, a.username, s.seat, s.formation, s.state, s.plan, s.sheet, s.live, s.idle_pauses"
 
 
 ROOM_FROM = ("  from rooms r left join room_seats s on s.room_code = r.code"
@@ -290,7 +316,7 @@ def create_room(conn, account: Account, size: int, formation: str = DEFAULT,
     for _ in range(20):
         code = "".join(secrets.choice(CODE_ALPHABET) for _ in range(CODE_LENGTH))
         row = conn.execute("insert into rooms (code, size, seed, host_id, memory, style, timer_seconds, bench,"
-                           " together, watch_pace) values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+                           " together, watch_pace, live) values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, true)"
                            " on conflict (code) do nothing returning code",
                            (code, size, seed, account.account_id, memory, style, timer, bench,
                             together, watch.DEFAULT_PACE)).fetchone()
@@ -502,7 +528,7 @@ def set_plan(conn, deck: Deck, account: Account, code: str, plan: tuple[Change, 
 
 
 def replace_plan(seat: Seat, plan: str | None) -> Seat:
-    return Seat(seat.account_id, seat.username, seat.seat, seat.formation, seat.state, plan, seat.sheet)
+    return replace(seat, plan=plan)
 
 
 def set_sheet(conn, deck: Deck, account: Account, code: str, choose) -> None:
@@ -523,8 +549,7 @@ def set_sheet(conn, deck: Deck, account: Account, code: str, choose) -> None:
         raise Conflict("finish your picks first")
     sheet = choose(before)                            # raises IllegalMove
     text = None if sheet is None else encode_sheet(sheet)
-    after = seat_session(deck, room, Seat(seat.account_id, seat.username, seat.seat, seat.formation,
-                                          seat.state, None, text))
+    after = seat_session(deck, room, replace(seat, plan=None, sheet=text))
     plan = carry_plan(before, after, before.plan)
     seat.sheet, seat.plan = text, None if plan is None else encode_plan(plan)
     conn.execute("update room_seats set sheet = %s, plan = %s where room_code = %s and account_id = %s",
@@ -604,13 +629,33 @@ def _plan_the_rest(conn, deck: Deck, room: Room, d: shared.SharedDraft | None = 
 def sides(deck: Deck, room: Room) -> list[Side]:
     """Every seat's eleven as a side, in seat order. The room must be complete."""
     d = shared_of(deck, room) if room.turns else None
-    return [human_side(seat, seat_session(deck, room, seat, d)) for seat in room.seats]
+    return [human_side(seat, seat_session(deck, room, seat, d), room.live_watch) for seat in room.seats]
 
 
-def engine(room: Room) -> int:
+def engine(room: Room) -> int | Live:
     """A bench room plays engine 2 (C39); a room without one, engine 1, as every room
-    made before benches did."""
+    made before benches did; a live room (C60) engine 2 with every match on a stream of
+    its own. A new Live each time: it counts the matches as they are played."""
+    if room.live_watch:
+        return Live(str(room.seed))
     return 2 if room.bench else 1
+
+
+def set_manual(conn, account: Account, code: str, manual: bool) -> None:
+    """Whether a seat makes its own changes during its matches (C60): its call, in a live
+    room, until the room completes. Its plan is still sent, and says it is ready: the plan
+    makes the changes in a match the host skips, if the host says so."""
+    room = load_room(conn, code, lock=True)
+    seat = room.seat_of(account.account_id)
+    if seat is None:
+        raise Forbidden("you are not in this room")
+    if not room.live_watch:
+        raise RoomError("in this room the plans make every change")
+    if room.status not in ("lobby", "drafting"):
+        raise Conflict("that is settled once the tournament opens")
+    conn.execute("update room_seats set live = %s where room_code = %s and account_id = %s",
+                 ("m" if manual else None, room.code, account.account_id))
+    _touch(conn, room)
 
 
 
@@ -619,8 +664,23 @@ def engine(room: Room) -> int:
 def watched_for(room: Room, now: float) -> float:
     """How far into its watch a room is: seconds since kick-off, read a microsecond late,
     so a skip that lands exactly on a moment (now - target, in floats around 1e9) has
-    reached it rather than falling a rounding error short."""
+    reached it rather than falling a rounding error short. A pause (C60) holds it where it
+    was until it ends or runs out."""
+    if room.watch_paused_at is not None:
+        return (room.watch_paused_at - room.watch_started_at
+                + max(0.0, now - room.watch_paused_at - watch.PAUSE_S) + 1e-6)
     return now - room.watch_started_at + 1e-6
+
+
+def _unpause(conn, room: Room, now: float) -> None:
+    """End a pause, moving the start on by the time it held the clock."""
+    if room.watch_paused_at is None:
+        return
+    held = min(now - room.watch_paused_at, watch.PAUSE_S)
+    room.watch_started_at += held
+    room.watch_paused_at = room.watch_paused_by = None
+    conn.execute("update rooms set watch_started_at = %s, watch_paused_at = null, watch_paused_by = null,"
+                 " updated_at = now() where code = %s", (room.watch_started_at, room.code))
 
 
 def host_waited(room: Room, now: float) -> bool:
@@ -647,10 +707,15 @@ def start_watch(conn, account: Account, code: str) -> None:
                  (clock(), room.code))
 
 
-def skip_watch(conn, account: Account, code: str, rounds_of, to: str, expect: int) -> None:
+def skip_watch(conn, account: Account, code: str, rounds_of, to: str, expect: int,
+               watched=None, auto: bool = False) -> None:
     """The host's skip: the watch's start moves earlier so every screen lands on the same
     later moment. Never backwards: a skip to somewhere already passed changes nothing.
-    ``rounds_of(room)`` is the room's watch (game.watch.rounds of its tournament)."""
+    ``rounds_of(room)`` is the room's watch (game.watch.rounds of its tournament).
+
+    In a live room (C60), ``auto`` hands every match skipped by a seat that makes its own
+    changes to that seat's plan (from the first break not yet sent, in a match under way);
+    without it they are played with no changes. ``watched(room)`` is (tournament, rounds)."""
     room = load_room(conn, code, lock=True)
     if room.host_id != account.account_id:
         raise Forbidden("only the host can skip ahead")
@@ -661,9 +726,148 @@ def skip_watch(conn, account: Account, code: str, rounds_of, to: str, expect: in
     except ValueError as e:
         raise RoomError(str(e)) from None
     now = clock()
-    if target > watched_for(room, now):
-        conn.execute("update rooms set watch_started_at = %s, updated_at = now() where code = %s",
-                     (now - target, room.code))
+    _unpause(conn, room, now)
+    if target <= watched_for(room, now):
+        return
+    if auto and room.live_watch and watched is not None and any(x.live is not None for x in room.seats):
+        _plans_take_over(conn, room, watched, watched_for(room, now), target, to == "end")
+        # The plans may change how far a friend goes, and so where the end is.
+        target = watch.skip_target(watched(room)[1], to, expect)
+    conn.execute("update rooms set watch_started_at = %s, updated_at = now() where code = %s",
+                 (now - target, room.code))
+
+
+def change_point(r: watch.Round, p: float) -> int:
+    """The first break a change can come at in round ``r`` at moment ``p`` (C60): after every
+    minute a live room has let out, which runs LEAD_S ahead of the clock. 0 before any has."""
+    m = r.minute_at(p + watch.LEAD_S)
+    return max(BLOCK, BLOCK * math.ceil(m / BLOCK)) if m > 0 else 0
+
+
+def seat_match(t: Tournament, r: watch.Round, account_id: int):
+    """(fixture, side index, side, its match number) of a seat's match in round ``r``, or None."""
+    for f in r.fixtures:
+        for s, side in enumerate((f.home, f.away)):
+            if side.owner == account_id:
+                k = sum(1 for g in t.fixtures[:t.fixtures.index(f)] if side in (g.home, g.away))
+                return f, s, side, k
+    return None
+
+
+def _plans_take_over(conn, room: Room, watched, p: float, target: float, rest: bool) -> None:
+    """The host skips from ``p`` to ``target`` and says the plans should make the changes:
+    every skipped match of every seat that makes its own is given its plan from the first
+    break not yet let out (from kick-off in one not begun). ``rest`` (a skip to the end)
+    covers too the matches a seat might only reach once its plan has played."""
+    t, rs = watched(room)
+    by_key = {r.key: r for r in rs}
+    keys: dict[tuple[str, str], int] = {}
+    for f in t.fixtures:
+        keys.setdefault((f.stage, f.label), len(keys))
+    for seat in room.seats:
+        if seat.live is None:
+            continue
+        entries = decode_live(seat.live)
+        mine = [f for f in t.fixtures if any(x.owner == seat.account_id for x in (f.home, f.away))]
+        for k, f in enumerate(mine):
+            r = by_key.get(keys[(f.stage, f.label)])
+            if r is None or r.whistle <= p or r.kick >= target:
+                continue
+            e = entries.get(k, LiveEntry())
+            if e.auto_from is None:
+                start = max(change_point(r, p), e.changes[-1][0] if e.changes else 0)
+                entries[k] = LiveEntry(e.changes, min(start, 115))
+        if rest:
+            for k in range(len(mine), MAX_MATCHES):
+                entries.setdefault(k, LiveEntry((), 0))
+        seat.live = encode_live(entries)
+        conn.execute("update room_seats set live = %s where room_code = %s and account_id = %s",
+                     (seat.live, room.code, seat.account_id))
+
+
+MAX_MATCHES = 17   # the most matches a side can play (eight in the league phase, then two-legged rounds and a final)
+MAX_IDLE_PAUSES = 5
+
+
+def pause_watch(conn, account: Account, code: str, watched):
+    """A seat that makes its own changes stops everyone's clock to make one (C60). Only
+    while its own match is being played, with a change it can still make. Returns (room,
+    fixture, side index, side, the break the change would come at)."""
+    room = load_room(conn, code, lock=True)
+    seat = room.seat_of(account.account_id)
+    if seat is None:
+        raise Forbidden("you are not in this room")
+    if not room.live_watch or seat.live is None:
+        raise RoomError("your plan makes your changes in this room")
+    if room.status != "complete" or room.watch_started_at is None:
+        raise Conflict("the watch hasn't kicked off")
+    now = clock()
+    if room.watch_paused_at is not None:
+        if now - room.watch_paused_at < watch.PAUSE_S:
+            raise Conflict("the match is already paused")
+        _unpause(conn, room, now)
+    if seat.idle_pauses >= MAX_IDLE_PAUSES:
+        raise Conflict("you've stopped the room enough times without making a change")
+    t, rs = watched(room)
+    p = watched_for(room, now)
+    i = watch.current(rs, p)
+    r = rs[i] if i >= 0 else None
+    mine = seat_match(t, r, seat.account_id) if r is not None else None
+    if r is None or mine is None or p + watch.LEAD_S < r.kick or p >= r.whistle:
+        raise Conflict("changes are made while your match is being played")
+    f, s, side, _ = mine
+    at = change_point(r, p)
+    if not bench_options(side, f.result, s, at):
+        raise Conflict("no change can be made now")
+    conn.execute("update rooms set watch_paused_at = %s, watch_paused_by = %s, updated_at = now() where code = %s",
+                 (now, seat.seat, room.code))
+    room.watch_paused_at, room.watch_paused_by = now, seat.seat
+    return room, f, s, side, at
+
+
+def sub_watch(conn, account: Account, code: str, watched, on: int, off: str) -> None:
+    """The change, made by the seat that paused, at the break the pause found (C60); then
+    everyone's clock goes on. Refused unless the engine makes exactly that change there."""
+    room = load_room(conn, code, lock=True)
+    seat = room.seat_of(account.account_id)
+    now = clock()
+    if seat is None or room.watch_paused_at is None or room.watch_paused_by != seat.seat:
+        raise Conflict("the match isn't paused for you")
+    if now - room.watch_paused_at >= watch.PAUSE_S:
+        raise Conflict("the pause ran out")
+    t, rs = watched(room)
+    p = watched_for(room, now)
+    r = rs[watch.current(rs, p)]
+    f, s, side, k = seat_match(t, r, seat.account_id)
+    at = change_point(r, p)
+    if off not in bench_options(side, f.result, s, at).get(on, []):
+        raise RoomError("that change can't be made now")
+    entries = decode_live(seat.live or "m")
+    e = entries.get(k, LiveEntry())
+    squad = [c.id for c in [*side.xi, *side.bench]]
+    entries[k] = LiveEntry((*e.changes, (at, on, squad.index(off))), e.auto_from)
+    text = encode_live(entries)
+    t2, _ = watched(replace(room, seats=[replace(x, live=text) if x is seat else x for x in room.seats]))
+    f2 = [g for g in t2.fixtures if any(x.owner == seat.account_id for x in (g.home, g.away))][k]
+    if not change_made(f2.result, 0 if f2.home.owner == seat.account_id else 1, at, side.bench[on], off):
+        raise RoomError("that change can't be made now")
+    conn.execute("update room_seats set live = %s where room_code = %s and account_id = %s",
+                 (text, room.code, seat.account_id))
+    _unpause(conn, room, now)
+
+
+def resume_watch(conn, account: Account, code: str) -> None:
+    """Carry on without a change: the seat that paused, or the host. It counts against the
+    seat that paused (MAX_IDLE_PAUSES)."""
+    room = load_room(conn, code, lock=True)
+    if room.watch_paused_at is None:
+        return
+    seat = room.seat_of(account.account_id)
+    if room.host_id != account.account_id and (seat is None or seat.seat != room.watch_paused_by):
+        raise Forbidden("only the friend who paused, or the host, can carry on")
+    conn.execute("update room_seats set idle_pauses = idle_pauses + 1 where room_code = %s and seat = %s",
+                 (room.code, room.watch_paused_by))
+    _unpause(conn, room, clock())
 
 
 def set_watch_pace(conn, account: Account, code: str, rounds_of, pace: str) -> None:
@@ -686,6 +890,12 @@ def set_watch_pace(conn, account: Account, code: str, rounds_of, pace: str) -> N
         p = watched_for(room, now)
         if p >= watch.end_at(old):
             raise Conflict("the watch is over")
+        if room.live_watch:
+            # A live room has let its matches out some minutes ahead at this pace; at a
+            # slower one, a change could then come inside what was already sent (C60).
+            i = watch.current(old, p)
+            if room.watch_paused_at is not None or (i >= 0 and old[i].kick - watch.LEAD_S <= p < old[i].whistle):
+                raise Conflict("in this room the pace changes between matches")
         start = now - watch.retime(old, rounds_of(room, watch.minute_s(pace)), p)
     conn.execute("update rooms set watch_pace = %s, watch_started_at = %s, updated_at = now() where code = %s",
                  (pace, start, room.code))

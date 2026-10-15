@@ -58,12 +58,15 @@ function renderHero() {
   const placed = leaguePlace();
   if (!done) {
     const next = CUP.your_matches[CUP.revealed];
-    $("hero").innerHTML = `${kicker}<h1>Your campaign</h1><p>${placed ? `${placed} · ` : ""}Next: ${esc(stageLabel(next))}</p>${squadLink}`;
+    const manual = CUP.you.manual ? `<p class="note">You make your own changes: <b>Make a sub</b> pauses a match.</p>` : "";
+    $("hero").innerHTML = `${kicker}<h1>Your campaign</h1><p>${placed ? `${placed} · ` : ""}Next: ${esc(stageLabel(next))}</p>${manual}${squadLink}`;
     $("actions").innerHTML = `<button class="btn primary" id="play">Play the match</button>${skipButtons(next, "Skip this match")}`;
     $("play").onclick = playNext;
-    wireSkips((n) => {
+    wireSkips(async (kind) => {
+      if (!(await skipping(kind, 0))) return;
+      const n = skipTarget(kind);
       // Skipping one match unwatched still says how it went.
-      if (n === CUP.revealed + 1) toast(`${resultLine(next)}`);
+      if (n === CUP.revealed + 1) toast(`${resultLine(CUP.your_matches[CUP.revealed])}`);
       reveal(n);
     });
     showPreview(next);
@@ -164,9 +167,60 @@ function firstRoundEnd() {
 }
 
 function wireSkips(go) {
-  $("skipone").onclick = () => go(CUP.revealed + 1);
-  if ($("skipgroups")) $("skipgroups").onclick = () => go(firstRoundEnd());
-  $("skipall").onclick = () => go(CUP.your_matches.length);
+  $("skipone").onclick = () => go("one");
+  if ($("skipgroups")) $("skipgroups").onclick = () => go("first");
+  $("skipall").onclick = () => go("all");
+}
+
+// How many of your matches are revealed after a skip, in the tournament as it now stands.
+function skipTarget(kind) {
+  return kind === "one" ? CUP.revealed + 1 : kind === "first" ? firstRoundEnd() : CUP.your_matches.length;
+}
+
+/* Before a skip, a side that makes its own changes (C60) is asked whether its plan should
+   make them in what is skipped; yes is written into the link, and the tournament that
+   comes back is the one to show. Resolves false if the skip was called off. */
+async function skipping(kind, minute) {
+  if (!CUP.you || !CUP.you.manual) return true;
+  const what = kind === "one" ? (minute ? "The rest of this match is skipped." : "This match is skipped.")
+    : kind === "first" ? `The rest of the ${CUP.your_matches[CUP.revealed].stage.toLowerCase()} is skipped.` : "Every match left is skipped.";
+  const auto = await askAutoPlan(what);
+  if (auto == null) return false;
+  if (!auto) return true;
+  const through = kind === "one" ? CUP.revealed + 1 : kind === "first" ? firstRoundEnd() : 99;
+  try {
+    const r = await api(`/api/tournament/${CUP.state}/skip`, { method: "POST",
+      body: JSON.stringify({ match_no: CUP.revealed, minute, through, auto: true }) });
+    setState(r.state, r.tournament);
+  } catch (e) { toast(e.message); return false; }
+  return true;
+}
+
+/* A change, or a skip with the plan (C60), makes a new link with its own tournament, the
+   same in everything already watched. The page moves onto it, and its mark of how far
+   you've watched moves with it, so the profile never offers the old link (C46). */
+function setState(state, t) {
+  const revealed = CUP.revealed;
+  store.del(`cup:${CUP.state}`);
+  CUP = { ...t, state, revealed };
+  store.set(`cup:${state}`, revealed);
+  history.replaceState(null, "", `/cup#${state}`);
+}
+
+/* "Make a sub" (C60): the changes the server says can be made at this break, the dialog,
+   and the new link. Resolves with your match as it now goes, or null. */
+async function openSub(k, minute) {
+  const o = await api(`/api/tournament/${CUP.state}/bench?match_no=${k}&minute=${minute}`);
+  if (o.too_late) { toast("Too late for a change: the match is all but over"); return null; }
+  if (!o.left) { toast("You've made all three changes"); return null; }
+  if (!o.bench.some((c) => !c.used && c.can_replace.length)) { toast("Nobody on the bench can come on now"); return null; }
+  const pick = await subDialog(o);
+  if (!pick) return null;
+  const r = await api(`/api/tournament/${CUP.state}/sub`, { method: "POST",
+    body: JSON.stringify({ match_no: k, minute, on: pick.on, off: pick.off }) });
+  setState(r.state, r.tournament);
+  toast(`${o.bench.find((c) => c.i === pick.on).name} comes on at ${minute}'`);
+  return CUP.your_matches[k];
 }
 
 function resultLine(f) {
@@ -250,8 +304,9 @@ function showPreview(f) {
 }
 
 function playNext() {
-  const f = CUP.your_matches[CUP.revealed];
+  const k = CUP.revealed, f = CUP.your_matches[k];
   $("actions").innerHTML = skipButtons(f, "Skip to full time");
+  const live = CUP.you.manual ? { open: (minute) => openSub(k, minute) } : null;
   const finish = playMatch($("match"), f, CUP_LOOK, () => {
     CUP.revealed += 1;
     store.set(`cup:${CUP.state}`, CUP.revealed);
@@ -260,10 +315,18 @@ function playNext() {
       : `<button class="btn primary" id="cont">See how it ended</button>`;
     $("cont").onclick = () => { renderHero(); renderBody(); };
     renderBody();
-  });
+  }, { live });
   $("match").scrollIntoView({ behavior: "smooth", block: "center" });
-  // "Skip to full time" shows this match's result; the others finish it and move on.
-  wireSkips((n) => { finish(); if (n > CUP.revealed) reveal(n); });
+  // "Skip to full time" shows this match's result; the others finish it and move on. With
+  // your own changes, the match waits while you're asked about the plan.
+  wireSkips(async (kind) => {
+    finish.hold();
+    if (!(await skipping(kind, finish.run.minute))) { finish.go(); return; }
+    finish.run.update(CUP.your_matches[k]);
+    finish();
+    const n = skipTarget(kind);
+    if (n > CUP.revealed) reveal(n);
+  });
 }
 
 // --------------------------------------------------------------- the body

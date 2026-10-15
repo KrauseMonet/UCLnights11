@@ -182,6 +182,17 @@ generated (`etl.deck`) and committed; `etl.deck --check` fails if it is stale.
   applies, so a link from before plans plays as it did. A new plan is a new link and a
   new tournament, and the tournament page offers to change it only before your first
   match is watched.
+- **Changes made during the match (C60).** On the plan screen a drafter may choose to make
+  the changes themselves. "Make a sub" then stops the match and shows the eleven on the
+  pitch, the bench and whom each substitute could replace (a substitute not yet on, at most
+  three changes, never the keeper, the formation still filled); the change comes at the next
+  break. Nobody comes on otherwise. Any skip asks whether the plan should make the changes
+  in what is skipped (from the next break in a match under way) or none be made. The link
+  carries it all, so the tournament stays its function: `-m`, then per match with any, its
+  number among your own, `a` and a break if the plan took over, and `c` with three
+  characters per change (the break in fives, the substitute, the man off as a squad index:
+  0-10 the eleven in slot order, 11-13 the bench), in base 36 (`m2c814.4ac`). A change is
+  refused unless the engine makes exactly it there. Such a link plays the live engine (§6).
 - **On the match card** a change shows in the feed with its minute; the man coming on
   takes the disc of the man going off, and anyone moved to make room slides to his new
   place. A bench draft's state starts with `b`
@@ -249,7 +260,10 @@ validator prints what they produce with no "real" column.
   match and possession drifts round its final figure until the whistle, since the
   engine keeps their totals, not their moments; at full time every number is the real
   one. A goal stops the clock for 1.7 s while the card fills with the scorer's colours.
-  Only your own matches carry the timeline.
+  Only your own matches carry the timeline. Since C60 the clock also stops 2.6 s at
+  half-time (1.5 s before extra time) with the score and every statistic so far on the card,
+  and a match has sound, synthesized in the page (no recording): a whistle at kick-off,
+  half-time and full time, the crowd, a roar for a goal; on unless muted.
 - **Both elevens** (C38): the match card draws both sides on one pitch, side on, home in
   the left half attacking right and away in the right half attacking left (upright on a
   phone, home at the bottom), each in its club's colours and its formation's slots. A
@@ -297,6 +311,17 @@ and days with a bench play it (§5, §7b, §8; C40, C42).
   Each player line carries his minutes; a side's add up to eleven men for the whole match.
 - **Scorers and assisters** are drawn from the men on the pitch at the goal's minute; a
   shoot-out's takers are the eleven on the pitch at the end.
+
+- **Live matches (C60)**: `game.tournament.Live`, engine 2 for a tournament someone changes
+  while it plays. Every match draws from a stream of its own, named by the tournament's seed
+  and its place in the order of play, and its statistics are drawn block by block (each
+  block's shots from a stream of the block's own, possession from the men on the pitch in
+  each block with one noise for the match, each man's pass spread and accuracy from a stream
+  of his own). Everything up to a break is then the same whatever comes after it, and a
+  change in one match moves no other match played before it or on the same matchday. The
+  formulas are engine 2's: over 20 league tournaments, shots 13.36 a side (engine 2 13.29),
+  passes 482 (483), possession sd 0.073 (0.075). A live match also records its running passes
+  and possession at every break (`flow`).
 
 Engine 2 against the real results, 20,000 matches between club sides with benches:
 home goals 1.767 (real 1.719), away 1.360 (1.327), total SD 1.801 (1.783), home win
@@ -415,6 +440,15 @@ phase articles state them; where this game departs from them it says so.
   not shown, since bringing the best-rated man on first would rank the substitutes; each
   shows "Automatic" until the drafter chooses, and the untouched ones then come on at
   60', 70', 80' in bench order.
+- **Making the changes during the match (C60)**, on a bench day. Practice sends every change
+  with each request. A ranked match is held on the server (`daily_live`) and let out five
+  minutes at a time as the page plays it; a change comes at the break it has been let out
+  to, so nobody can see the rest of the match before choosing. It is ranked only once all of
+  it is out (or the rest is skipped, with or without the plan), with its changes stored so
+  it replays; one left half-way is finished, with no more changes, after 30 minutes or once
+  the day is over.
+- **After the ranked match**, the page shows your squad with the ratings the draft hid and
+  its averages by line (as §5's squad page does).
 
 ## 8. Accounts and rooms (playing with friends)
 
@@ -480,11 +514,24 @@ phase articles state them; where this game departs from them it says so.
   moves the start earlier so every screen lands on the same moment, and one naming a
   round already passed changes nothing. A run to the final watches in about six and a half
   minutes. A room without it, and every room made before it, lets each friend watch alone.
+- **A live room (C60)**, every room made since that drafts a bench and watches together:
+  its matches stop for half-time (3 s) and before extra time (2 s) on every screen, and a
+  seat may make its own changes (its choice while planning). Each match of the round being
+  played is let out only as far as the clock has gone plus 1.2 s, and its result at the
+  round's whistle. "Make a sub" stops everyone's clock (at most 30 s; the seat or the host
+  carries on; five pauses without a change each) and the change comes at the first break
+  after everything sent: at Normal 9 to 14 match minutes after the click, at Slow 4 to 9, at
+  Fast 22 to 27. The host's skip asks whether those seats' plans make the changes in what is
+  skipped. The pace changes only between matches. Its tournament plays the live engine (§6),
+  and a live room of one in 36 is the solo tournament of a link that makes its own changes.
+  A room watching alone keeps the plans: each friend is at a different point of one shared
+  tournament, and a change would rewrite what another had already seen.
 - **Stored:** `accounts`, `rooms` (code, size, seed, host, status, memory, style, pick
   clock, whether it drafts a bench, the room's moves and when the current turn began,
   whether it watches together, when it completed and when its watch began, a
-  version that rises on every write) and `room_seats` (who, seat, formation, draft state
-  string, and in a bench room its plan once ready).
+  version that rises on every write; whether it is live and a pause) and `room_seats` (who,
+  seat, formation, draft state string, in a bench room its plan once ready, and in a live
+  room its own changes and its pauses without one).
   Lobbies nobody started are swept after three days.
 - **A dropped connection is not the end of a room.** The page polls; only a 404 means
   the room is gone. Any other failure keeps the screen, says it is reconnecting and tries

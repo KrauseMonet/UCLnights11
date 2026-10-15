@@ -47,7 +47,9 @@ no tournament state at all.
 
 ``engine`` picks the match engine (game.match): 1, the original, which every existing
 link and room replays with; or 2, with tiredness and substitutes (C39), where each club
-side brings on its bench (club_bench) by match.AUTO_PLAN.
+side brings on its bench (club_bench) by match.AUTO_PLAN; or a ``Live`` (C60), engine 2
+with every match on a stream of its own, for a tournament in which someone makes their
+changes while the matches play.
 """
 
 from __future__ import annotations
@@ -55,6 +57,7 @@ from __future__ import annotations
 import random
 from collections import defaultdict
 from dataclasses import dataclass, field
+from typing import Mapping
 
 from game import league_phase, match
 from game.deck import Card, ClubSeason, Deck
@@ -108,6 +111,9 @@ class Side:
     ink: str = "#ffe08e"
     bench: list[Card] = field(default_factory=list)     # engine 2 only
     plan: tuple[match.Sub, ...] = ()
+    # A side whose changes are made during each match (C60), by its own match number
+    # (0 = its first): None follows ``plan`` in every match, as every side before did.
+    live: Mapping[int, "MatchPlan"] | None = None
 
     def __post_init__(self) -> None:
         # Every side plays with each man in a slot of its formation, carrying the slot's
@@ -171,13 +177,103 @@ def club_side(cs: ClubSeason) -> Side:
                 bench=bench, plan=auto_plan(bench))
 
 
-def teamsheet(side: Side) -> match.Teamsheet:
-    return match.Teamsheet(side.formation.slots, tuple(side.xi), tuple(side.bench), side.plan)
+def teamsheet(side: Side, plan: tuple[match.Sub, ...] | None = None) -> match.Teamsheet:
+    return match.Teamsheet(side.formation.slots, tuple(side.xi), tuple(side.bench),
+                           side.plan if plan is None else plan)
 
 
-def play_match(rng: random.Random, home: Side, away: Side, league: match.League, engine: int = 1,
+@dataclass(frozen=True)
+class MatchPlan:
+    """What a side that makes its changes during the match (C60) did in one of them:
+    ``changes`` are (minute, bench index, the person he replaced), each made at the break
+    after that many minutes; ``auto_from`` is set when the rest of the match was skipped
+    with the side's plan, which then applies from that minute (a line due earlier comes
+    at the first break from it). A match with no entry has no changes at all."""
+
+    changes: tuple[tuple[int, int, str], ...] = ()
+    auto_from: int | None = None
+
+
+def live_subs(side: Side, number: int) -> tuple[match.Sub, ...]:
+    """The plan side ``side`` plays its match ``number`` with: its own plan for a side
+    without live changes, otherwise the changes made in it and, after a skip, its plan."""
+    if side.live is None:
+        return side.plan
+    mp = side.live.get(number)
+    if mp is None:
+        return ()
+    out = [match.Sub(on, minute, "any", off) for minute, on, off in mp.changes]
+    if mp.auto_from is not None:
+        out += [match.Sub(x.on, max(x.minute, mp.auto_from), x.when, x.off) for x in side.plan]
+    return tuple(out)
+
+
+def pitch_at(side: Side, r: match.Result, s: int, minute: int) -> tuple[list[Card], set[str], int]:
+    """Side ``s`` of a match (``side`` is that side) at the break after ``minute`` minutes,
+    with every change made at it so far: the eleven on the pitch in slot order, everyone who
+    has been on, and how many changes it has made."""
+    xi, entered, made = list(side.xi), {c.id for c in side.xi}, 0
+    for x in r.subs:
+        if x.side == s and x.minute <= minute:
+            xi, made = list(x.xi), made + 1
+            entered.add(x.on.id)
+    return xi, entered, made
+
+
+def bench_options(side: Side, r: match.Result, s: int, minute: int) -> dict[int, list[str]]:
+    """The changes side ``s`` could make at the break after ``minute`` minutes (C60): for
+    each substitute who hasn't been on, the men on the pitch he could replace, the eleven
+    still filling the formation and the keeper staying on, as engine 2 allows. Empty once
+    its three changes are made, and too late once the match is over."""
+    if minute <= 0 or minute % match.BLOCK or minute >= (120 if r.extra_time else 90):
+        return {}
+    xi, entered, made = pitch_at(side, r, s, minute)
+    if made >= match.MAX_SUBS:
+        return {}
+    slots = side.formation.slots
+    return {i: [c.id for c in xi if c.slot != "GK" and fits(slots, [*(x for x in xi if x is not c), man])]
+            for i, man in enumerate(side.bench) if man.id not in entered}
+
+
+def change_made(r: match.Result, s: int, minute: int, on: Card, off: str) -> bool:
+    """Whether side ``s`` brought ``on`` on for person ``off`` at the break after ``minute``."""
+    return any(x.side == s and x.minute == minute and x.on.id == on.id and x.off.id == off for x in r.subs)
+
+
+@dataclass
+class Live:
+    """Engine 2 for a tournament someone may change while it plays (C60). Every match
+    draws from a stream of its own, named by the tournament and its place in the order of
+    play (``key``), so a change in one match moves nothing in any other already played or
+    being played at the same moment; a shared stream would hand every later match other
+    numbers. Its statistics are a live match's (game.match.play_v2's ``stats_key``). A
+    side's match number counts its own matches. ``single`` is for one match on its own (the
+    daily), which draws from the stream it is handed."""
+
+    seed: str
+    single: bool = False
+    played: int = 0
+    numbers: dict[int, int] = field(default_factory=dict)
+
+    def key(self, n: int) -> str:
+        return f"{self.seed}|{n}"
+
+    def number(self, side: Side) -> int:
+        k = self.numbers.get(id(side), 0)
+        self.numbers[id(side)] = k + 1
+        return k
+
+
+def play_match(rng: random.Random, home: Side, away: Side, league: match.League, engine: int | Live = 1,
                **kw) -> match.Result:
     """One match between two sides, by the chosen engine."""
+    if isinstance(engine, Live):
+        n = engine.played
+        engine.played += 1
+        key = engine.key(n)
+        own = rng if engine.single else random.Random(f"live match|{key}")
+        return match.play_v2(own, teamsheet(home, live_subs(home, engine.number(home))),
+                             teamsheet(away, live_subs(away, engine.number(away))), league, stats_key=key, **kw)
     if engine == 1:
         return match.play(rng, home.xi, away.xi, league, **kw)
     if engine == 2:
@@ -318,7 +414,7 @@ def _pairings(rng: random.Random, winners: list[Side], runners: list[Side],
 
 
 def _two_legs(rng: random.Random, stage: str, a: Side, b: Side, league: match.League,
-              engine: int, half: int | None = None) -> Tie:
+              engine: int | Live, half: int | None = None) -> Tie:
     first = play_match(rng, a, b, league, engine)
     second = play_match(rng, b, a, league, engine, extra_time_if_level=True,
                         level_on=(first.away_goals, first.home_goals))
@@ -356,7 +452,7 @@ def draw_opposition(rng: random.Random, deck: Deck, n: int = TEAMS - 1) -> list[
 
 
 def _knockout(rng: random.Random, t: Tournament, alive: list[Side], stages: list[str],
-              league: match.League, engine: int) -> None:
+              league: match.League, engine: int | Live) -> None:
     """Open-draw two-legged rounds, then a one-match final at a neutral ground."""
     for stage in stages[:-1]:
         rng.shuffle(alive)
@@ -371,7 +467,7 @@ def _knockout(rng: random.Random, t: Tournament, alive: list[Side], stages: list
     _final(rng, t, *alive, league, engine)
 
 
-def _final(rng: random.Random, t: Tournament, a: Side, b: Side, league: match.League, engine: int) -> None:
+def _final(rng: random.Random, t: Tournament, a: Side, b: Side, league: match.League, engine: int | Live) -> None:
     """One match at a neutral ground, ``a`` listed first."""
     final = play_match(rng, a, b, league, engine, neutral=True, extra_time_if_level=True)
     fx = Fixture("Final", a, b, final, "Final")
@@ -381,7 +477,7 @@ def _final(rng: random.Random, t: Tournament, a: Side, b: Side, league: match.Le
 
 
 def play_tournament(deck: Deck, league: match.League, seed: int, you: Side,
-                    engine: int = 1, fmt: str = "groups") -> Tournament:
+                    engine: int | Live = 1, fmt: str = "groups") -> Tournament:
     """Your eleven against the real sides: the solo game. ``fmt`` is "league" (35 sides,
     every draft since C50) or "groups" (31, every link made before)."""
     if fmt == "league":
@@ -392,7 +488,7 @@ def play_tournament(deck: Deck, league: match.League, seed: int, you: Side,
 
 
 def play_room(deck: Deck, league: match.League, seed: int, humans: list[Side],
-              size: int, engine: int = 1) -> Tournament:
+              size: int, engine: int | Live = 1) -> Tournament:
     """A room's tournament: every human eleven, and real sides filling the other places.
 
     ``size`` is one of PLAYABLE_SIZES. 36 plays the league phase and 32 the group format,
@@ -414,7 +510,7 @@ def play_room(deck: Deck, league: match.League, seed: int, humans: list[Side],
 
 
 def _group_tournament(deck: Deck, league: match.League, seed: int,
-                      humans: list[Side], engine: int) -> Tournament:
+                      humans: list[Side], engine: int | Live) -> Tournament:
     rng = random.Random(f"{seed}:cup")
     sides = list(humans) + [club_side(cs) for cs in draw_opposition(rng, deck, TEAMS - len(humans))]
     groups = _draw_groups(rng, sides)
@@ -495,7 +591,7 @@ def league_table(sides: list[Side], fixtures: list[Fixture], rng: random.Random)
 
 
 def _league_tournament(deck: Deck, league: match.League, seed: int,
-                       humans: list[Side], engine: int) -> Tournament:
+                       humans: list[Side], engine: int | Live) -> Tournament:
     # Two streams: one for the opposition and every match, one for the draws (pots, the
     # league phase, the fixture list, the knockout draws and the table's lots), so a
     # change in how the draw searches never moves a match's result.

@@ -29,14 +29,15 @@ from pydantic import BaseModel
 from game import analysis as analyses, daily as daily_rules, journey as journeys, match, squad_ratings
 from game import watch
 from game.deck import Card, ClubSeason, load_deck
-from game.draft import (Change, IllegalMove, Pick, Reroll, Session, can_replace, carry_plan, check_sheet, decode,
-                        decode_solo, decode_state, default_sheet, encode, is_league, move as move_man, replay,
-                        targets, why_not)
+from game.draft import (Change, IllegalMove, LiveEntry, Pick, Reroll, Session, can_replace, carry_plan,
+                        check_sheet, decode, decode_live, decode_solo, decode_state, default_sheet, encode,
+                        encode_live, is_league, move as move_man, replay, split_live, targets, why_not)
 from game.formations import DEFAULT, FORMATIONS
 from game.positions import arrange
 from game.shared_draft import Stranded
-from game.tournament import (CUP_STAGES, FINISHES, LEAGUE_STAGES, LEAGUE_TEAMS, STAGES, Fixture, Side,
-                             Tournament, auto_plan, club_side, leaders, league_of, play_room, play_tournament)
+from game.tournament import (CUP_STAGES, FINISHES, LEAGUE_STAGES, LEAGUE_TEAMS, STAGES, Fixture, Live, MatchPlan,
+                             Side, Tournament, auto_plan, bench_options, change_made, club_side, leaders, league_of,
+                             pitch_at, play_room, play_tournament)
 from web import accounts, admin, auth, daily, db, failures, results, rooms
 from web.env import load_dotenv
 
@@ -163,6 +164,8 @@ def session_out(state: str, s: Session, memory: bool = False) -> dict:
     }
     if s.complete and s.bench_size:
         plan_fields(s, bench, out, memory)
+        # Whether its changes are made during each match rather than by the plan (C60).
+        out["manual"] = split_live(state)[1] is not None
     return out
 
 
@@ -227,6 +230,33 @@ def fixture_out(f: Fixture, timeline: bool = False) -> dict:
         # Engine 2's changes (C39), each with the eleven after it; none in engine 1.
         out["subs"] = [{"minute": x.minute, "side": x.side, "off": x.off.name, "on": x.on.name,
                         "xi": [{"name": c.name, "slot": c.slot} for c in x.xi]} for x in r.subs]
+        if r.flow:
+            # A live match's running passes and possession, block by block (C60).
+            out["flow"] = [list(x) for x in r.flow]
+    return out
+
+
+def fixture_upto(f: Fixture, upto: float) -> dict:
+    """A live match (C60) as far as minute ``upto`` and no further: its goals, shots, changes
+    and running numbers so far, and nothing that says how it ends (no final statistics, no
+    score but the score so far; extra time only once it has begun). ``done`` once the
+    whole match is out, which it then is."""
+    out = fixture_out(f, timeline=True)
+    r = f.result
+    end = 120 if r.extra_time else 90
+    if upto >= end:
+        return {**out, "upto": end, "done": True}
+    upto = int(upto)
+    goals = [g for g in r.goals if g.minute <= upto]
+    out.update(
+        hg=sum(g.side == 0 for g in goals), ag=sum(g.side == 1 for g in goals),
+        extra_time=r.extra_time and upto >= 90, pens=None, stats=None,
+        goals=[g for g in out["goals"] if g["minute"] <= upto],
+        shots=[x for x in out["shots"] if x[0] <= upto],
+        subs=[x for x in out["subs"] if x["minute"] <= upto],
+        # A block's passes say nothing of its goals, and no change can come inside it.
+        flow=[e for e in out.get("flow", []) if e[0] - match.BLOCK < upto],
+        upto=upto, done=False)
     return out
 
 
@@ -386,7 +416,8 @@ def tournament_out(t: Tournament) -> dict:
         "you": None if you is None else {
             **side_out(you), "formation": you.formation.label, "code": you.formation.code,
             "slots": list(you.formation.slots), "xi": [card_out(c) for c in you.xi],
-            "bench": [card_out(c) for c in you.bench], "plan": plan_out(you)},
+            "bench": [card_out(c) for c in you.bench], "plan": plan_out(you),
+            "manual": you.live is not None},
         "your_matches": [fixture_out(f, timeline=True) for f in t.fixtures if you in (f.home, f.away)],
         "groups": groups, "knockout": knockout,
         "champion": side_out(t.champion), "reached": t.reached(you) if you else None,
@@ -407,11 +438,19 @@ def plan_out(side: Side) -> list[dict]:
 # -- routes -----------------------------------------------------------------
 
 def _decode(state: str):
-    """A solo draft's (seed, formation, moves, bench, plan, sheet): either kind of state."""
+    """A solo draft's (seed, formation, moves, bench, plan, sheet): either kind of state.
+    A live part (C60) is left out here; ``_live_part`` reads it."""
     try:
-        return decode_solo(state)
+        return decode_solo(split_live(state)[0])
     except IllegalMove as e:
         raise HTTPException(400, str(e)) from None
+
+
+def _manual_suffix(state: str) -> str:
+    """What a new plan or team sheet keeps of a link's live part: that its changes are made
+    during the matches, never the changes themselves, which belong to a tournament the new
+    plan or sheet replaces."""
+    return "" if split_live(state)[1] is None else "-m"
 
 
 def _replay(state: str) -> Session:
@@ -549,9 +588,25 @@ def set_plan(state: str, body: PlanIn, memory: bool = False) -> dict:
     seed, formation, moves, bench, _, sheet = _decode(state)
     plan = None if body.changes is None else tuple(Change(c.on, c.minute, c.when, c.off) for c in body.changes)
     try:
-        new = encode(seed, formation, moves, bench, plan, sheet, league=is_league(state))
+        new = encode(seed, formation, moves, bench, plan, sheet, league=is_league(state)) + _manual_suffix(state)
     except KeyError:
         raise HTTPException(400, "a change comes on a score the plan knows") from None
+    return session_out(new, _replay(new), memory)
+
+
+class ModeIn(BaseModel):
+    manual: bool
+
+
+@app.post("/api/draft/{state}/mode")
+def set_mode(state: str, body: ModeIn, memory: bool = False) -> dict:
+    """How a finished bench draft makes its changes (C60): by its plan, or by the drafter
+    during each match, the plan then used only in a match skipped. Part of the link, like
+    the plan."""
+    s = _replay(state)
+    if not (s.complete and s.bench_size):
+        raise HTTPException(409, "finish the squad first")
+    new = split_live(state)[0] + ("-m" if body.manual else "")
     return session_out(new, _replay(new), memory)
 
 
@@ -589,19 +644,38 @@ def set_sheet(state: str, body: SheetIn, memory: bool = False) -> dict:
     except IllegalMove as e:
         raise HTTPException(400, str(e)) from None
     new = encode(seed, formation, moves, bench, carry_plan(before, after, before.plan), sheet,
-                 league=is_league(state))
+                 league=is_league(state)) + _manual_suffix(state)
     return session_out(new, _replay(new), memory)
 
 
 def _solo_side(state: str) -> tuple[Session, Side]:
     """A finished solo draft as the side it plays as: its eleven placed, its bench and
-    its plan (the automatic one unless another was chosen)."""
+    its plan (the automatic one unless another was chosen), and the changes made during
+    its matches when it makes them itself (C60)."""
     s = _replay(state)
     if not s.complete:
         raise HTTPException(409, "the squad is not complete yet" if s.bench_size else "the eleven is not complete yet")
     subs = s.subs()
+    live_text = split_live(state)[1]
+    live = None
+    if live_text is not None:
+        try:
+            live = live_plans(decode_live(live_text), s.xi, s.bench)
+        except IllegalMove as e:
+            raise HTTPException(400, str(e)) from None
     return s, Side("YOU", "Your XI", "YOU", s.formation, s.xi, you=True,
-                   bench=s.bench, plan=auto_plan(s.bench) if subs is None else subs)
+                   bench=s.bench, plan=auto_plan(s.bench) if subs is None else subs, live=live)
+
+
+def live_plans(entries: dict[int, LiveEntry], xi: list[Card], bench: list[Card]) -> dict[int, MatchPlan]:
+    """A link's live entries (squad indices) as the engine reads them (persons)."""
+    squad = [*xi, *bench]
+    out = {}
+    for k, e in entries.items():
+        if any(not 0 <= on < len(bench) or not 0 <= off < len(squad) for _, on, off in e.changes):
+            raise IllegalMove("a change names a man the squad hasn't got")
+        out[k] = MatchPlan(tuple((m, on, squad[off].id) for m, on, off in e.changes), e.auto_from)
+    return out
 
 
 @lru_cache(maxsize=16)
@@ -614,7 +688,8 @@ def _solo_tournament(state: str) -> Tournament:
     same tournament, and playing one costs ~100 ms. Callers only read it. A refusal
     (an unfinished draft) raises, and lru_cache keeps no exception."""
     s, you = _solo_side(state)
-    return play_tournament(load_deck(), league(), s.seed, you, engine=2 if s.bench_size else 1,
+    engine = Live(str(s.seed)) if you.live is not None else 2 if s.bench_size else 1
+    return play_tournament(load_deck(), league(), s.seed, you, engine=engine,
                            fmt="league" if is_league(state) else "groups")
 
 
@@ -647,6 +722,115 @@ def tournament(state: str, response: Response) -> dict:
     out = tournament_out(_solo_tournament(state))
     pure(response)
     return out
+
+
+# -- changes made during a match (C60) --------------------------------------------
+
+def options_out(side: Side, r: match.Result, s: int, minute: int, ratings: bool = True) -> dict:
+    """The changes a side can make at a break, for the screen that pauses a match: who is
+    on the pitch (in slot order), who is left on the bench and whom each could replace.
+    ``ratings`` False keeps a blind daily blind (C33)."""
+    xi, entered, made = pitch_at(side, r, s, minute)
+    can = bench_options(side, r, s, minute)
+    end = 120 if r.extra_time else 90
+
+    def man(c: Card) -> dict:
+        return {"id": c.id, "name": c.name, "slot": c.slot, "positions": list(c.positions),
+                "rating": c.rating if ratings else None, "club": c.club_name, "short": c.short, "season": c.label,
+                "crest": crest_url(c.crest)}
+    return {"minute": minute, "made": made, "left": max(0, match.MAX_SUBS - made), "too_late": minute >= end,
+            "formation": side.formation.label, "slots": list(side.formation.slots),
+            "pitch": [man(c) for c in xi],
+            "bench": [{**man(c), "i": i, "used": c.id in entered, "can_replace": can.get(i, [])}
+                      for i, c in enumerate(side.bench)]}
+
+
+def _your_match(t: Tournament, k: int) -> tuple[Fixture, int]:
+    you = t.you()
+    mine = [f for f in t.fixtures if you in (f.home, f.away)]
+    if not 0 <= k < len(mine):
+        raise HTTPException(400, "you have no such match")
+    return mine[k], 0 if mine[k].home is you else 1
+
+
+def _live_entries(state: str) -> dict[int, LiveEntry]:
+    text = split_live(state)[1]
+    if text is None:
+        raise HTTPException(409, "this draft makes its changes by its plan")
+    return decode_live(text)
+
+
+@app.get("/api/tournament/{state}/bench")
+def tournament_bench(state: str, response: Response, match_no: int = 0, minute: int = 0) -> dict:
+    """The changes you can make in your match ``match_no`` at the break after ``minute``."""
+    _live_entries(state)
+    t = _solo_tournament(state)
+    f, side = _your_match(t, match_no)
+    pure(response)
+    return options_out(t.you(), f.result, side, minute)
+
+
+class SubIn(BaseModel):
+    match_no: int
+    minute: int
+    on: int            # bench index
+    off: str           # the person he replaces
+
+
+@app.post("/api/tournament/{state}/sub")
+def tournament_sub(state: str, body: SubIn) -> dict:
+    """A change made during your match ``match_no``, at the break after ``minute`` (C60): a
+    new link, and its tournament, the same in everything up to that break. Refused unless
+    it is one the engine makes there."""
+    entries = _live_entries(state)
+    t = _solo_tournament(state)
+    f, side = _your_match(t, body.match_no)
+    you = t.you()
+    if body.off not in bench_options(you, f.result, side, body.minute).get(body.on, []):
+        raise HTTPException(400, "that change can't be made then")
+    squad = [c.id for c in [*you.xi, *you.bench]]
+    old = entries.get(body.match_no, LiveEntry())
+    if old.auto_from is not None or (old.changes and old.changes[-1][0] > body.minute):
+        raise HTTPException(409, "that part of the match has been played")
+    entries[body.match_no] = LiveEntry((*old.changes, (body.minute, body.on, squad.index(body.off))))
+    new = split_live(state)[0] + "-" + encode_live(entries)
+    t2 = _solo_tournament(new)
+    f2, _ = _your_match(t2, body.match_no)
+    if not change_made(f2.result, side, body.minute, you.bench[body.on], body.off):
+        raise HTTPException(400, "that change can't be made then")
+    return {"state": new, "tournament": tournament_out(t2)}
+
+
+MAX_MATCHES = 17      # the most a side can play: eight in the league phase and four two-legged rounds and a final
+
+
+class SkipLiveIn(BaseModel):
+    match_no: int        # the first match skipped (the one on the card, if one is)
+    minute: int = 0      # how far into it the screen was
+    through: int         # the first match not skipped
+    auto: bool           # use the plan in what is skipped; False makes no changes there
+
+
+@app.post("/api/tournament/{state}/skip")
+def tournament_skip(state: str, body: SkipLiveIn) -> dict:
+    """Matches skipped by a drafter who makes their own changes (C60): with ``auto``, the
+    plan takes over in each, from the next break in the one on the card; without it, no
+    change is made in them. The link says which, so the tournament stays its function."""
+    entries = _live_entries(state)
+    if not body.auto:
+        return {"state": state, "tournament": tournament_out(_solo_tournament(state))}
+    if not 0 <= body.match_no < body.through:
+        raise HTTPException(400, "nothing to skip")
+    # The plan may change how far you go, so "the rest" names every match you could still
+    # play, not just the ones the tournament holds now.
+    for k in range(body.match_no, min(body.through, MAX_MATCHES)):
+        old = entries.get(k, LiveEntry())
+        start = 0 if k > body.match_no else -(-max(0, body.minute) // match.BLOCK) * match.BLOCK
+        if old.changes and old.changes[-1][0] > start:
+            start = old.changes[-1][0]
+        entries[k] = LiveEntry(old.changes, min(start, 115) if old.auto_from is None else old.auto_from)
+    new = split_live(state)[0] + "-" + encode_live(entries)
+    return {"state": new, "tournament": tournament_out(_solo_tournament(new))}
 
 
 @app.get("/api/tournament/{state}/analysis")
@@ -824,10 +1008,12 @@ def room_out(room: rooms.Room, me_id: int | None) -> dict:
             raise HTTPException(400, str(e)) from None
     if draft is not None:
         draft["ready"] = mine.plan is not None
+        draft["manual"] = mine.live is not None
     return {
         "code": room.code, "size": room.size, "format": ROOM_FORMATS[room.size],
         "memory": room.memory, "style": room.style, "timer": room.timer_seconds, "bench": room.bench,
         "together": room.together, "picks_each": each,
+        "live": room.live_watch,
         "stages": CUP_STAGES.get(room.size, LEAGUE_STAGES if room.size == LEAGUE_TEAMS else STAGES),
         "status": room.status, "version": room.version, "failure_reason": room.failure_reason,
         "is_host": me_id is not None and room.host_id == me_id,
@@ -1018,6 +1204,14 @@ def room_plan(code: str, body: PlanIn, request: Request) -> dict:
         return _room_reply(conn, request, code)
 
 
+@app.post("/api/rooms/{code}/manual")
+def room_manual(code: str, body: ModeIn, request: Request) -> dict:
+    """Whether this seat makes its own changes during its matches (C60), in a live room."""
+    with db.connection() as conn:
+        rooms.set_manual(conn, _signed_in(conn, request), code, body.manual)
+        return _room_reply(conn, request, code)
+
+
 @app.post("/api/rooms/{code}/sheet")
 def room_sheet(code: str, body: SheetIn, request: Request) -> dict:
     """A seat's team sheet (C44): who starts where and who sits on the bench, once its
@@ -1159,13 +1353,13 @@ def _watched(room: rooms.Room) -> tuple[Tournament, list[watch.Round]]:
     afresh (well under a millisecond), since the host can change the pace. Its sides are
     never marked as anyone's (``you`` stays False): callers mark their copy of the reply."""
     t = _watched_tournament(room)
-    return t, watch.rounds(t, watch.minute_s(room.watch_pace))
+    return t, watch.rounds(t, watch.minute_s(room.watch_pace), room.live_watch)
 
 
 def _watched_tournament(room: rooms.Room) -> Tournament:
     deck = load_deck()
-    key = (id(deck), room.code, room.seed, room.size, room.bench, room.moves_text,
-           tuple((s.account_id, s.formation, s.state, s.plan, s.sheet) for s in room.seats))
+    key = (id(deck), room.code, room.seed, room.size, room.bench, room.moves_text, room.live_watch,
+           tuple((s.account_id, s.formation, s.state, s.plan, s.sheet, s.live) for s in room.seats))
     with _watch_lock:
         hit = _watch_cache.get(key)
         if hit is not None and hit[0] is deck:
@@ -1212,6 +1406,7 @@ def _part_out(t: Tournament, rs: list[watch.Round], j: int) -> dict:
     out = {"n": j, "round": i, "kind": watch.PARTS[kind]}
     if kind == 0:
         out.update(stage=r.stage, label=r.label, start=r.start, kick=r.kick, end=r.end, minutes=r.minutes,
+                   whistle=r.whistle, segments=[list(x) for x in r.segments()],
                    pairs=[{"home": side_out(f.home), "away": side_out(f.away)} for f in r.fixtures])
     elif kind == 1:
         out["fixtures"] = [fixture_out(f, timeline=True) for f in r.fixtures]
@@ -1247,9 +1442,14 @@ def watch_out(room: rooms.Room, me_id: int | None, have: int = 0, t0: float | No
     p = None if room.watch_started_at is None else rooms.watched_for(room, now)
     n = 0 if p is None else watch.known(rs, p)
     ended = p is not None and p >= watch.end_at(rs)
+    if room.live_watch:
+        base.update(live_room=True, manual=mine is not None and mine.live is not None,
+                    any_manual=any(x.live is not None for x in room.seats),
+                    paused=_pause_out(room, now), **_live_round(rs, p, ended))
     if (p is not None and not ended and n == have and t0 is not None
             and abs(t0 - room.watch_started_at) < 1e-6):
-        return {**base, "unchanged": True, "have": n, "ended": False}
+        return _mark_you({**base, "unchanged": True, "have": n, "ended": False},
+                         f"P{mine.seat}" if mine is not None else None)
     host = next((s for s in room.seats if s.account_id == room.host_id), None)
     out = {
         **base, "ended": ended, "have": n,
@@ -1267,11 +1467,37 @@ def watch_out(room: rooms.Room, me_id: int | None, have: int = 0, t0: float | No
     return _mark_you(out, out["you"])
 
 
+def _pause_out(room: rooms.Room, now: float) -> dict | None:
+    """A live room's pause (C60): who asked, where the clock stopped (``p``) and when it
+    goes again by itself (server time); None once it is over or has run out."""
+    if room.watch_paused_at is None or now - room.watch_paused_at >= watch.PAUSE_S:
+        return None
+    seat = next((s for s in room.seats if s.seat == room.watch_paused_by), None)
+    return {"seat": room.watch_paused_by, "by": seat.username if seat else None,
+            "p": room.watch_paused_at - room.watch_started_at, "until": room.watch_paused_at + watch.PAUSE_S}
+
+
+def _live_round(rs: list[watch.Round], p: float | None, ended: bool) -> dict:
+    """The round being played in a live room (C60), its matches as far as the clock has gone
+    and LEAD_S beyond, since a change can still alter the rest until its whistle."""
+    if p is None or ended:
+        return {"live_round": None}
+    i = watch.current(rs, p)
+    if i < 0:
+        return {"live_round": None}
+    r = rs[i]
+    if p + watch.LEAD_S < r.kick or p >= r.whistle:
+        return {"live_round": None}
+    upto = r.minute_at(p + watch.LEAD_S)
+    return {"live_round": {"round": i, "upto": upto, "fixtures": [fixture_upto(f, upto) for f in r.fixtures]}}
+
+
 class SkipIn(BaseModel):
     to: str
     round: int = -1
     have: int = 0
     pace: str | None = None
+    auto: bool = False                  # a live room's: the plans make the skipped changes (C60)
 
 
 class PaceIn(BaseModel):
@@ -1301,9 +1527,44 @@ def skip_watch(code: str, body: SkipIn, request: Request) -> dict:
     """The host's skip (only the host's): to this round's kick-off or full time, past the
     league phase, or to the end."""
     with db.connection() as conn:
-        rooms.skip_watch(conn, _signed_in(conn, request), code, lambda r: _watched(r)[1], body.to, body.round)
+        rooms.skip_watch(conn, _signed_in(conn, request), code, lambda r: _watched(r)[1], body.to, body.round,
+                         watched=_watched, auto=body.auto)
         room = rooms.load_room(conn, code)
     return watch_out(room, _viewer_id(request), body.have, pace=body.pace)
+
+
+class WatchSubIn(BaseModel):
+    on: int
+    off: str
+
+
+@app.post("/api/rooms/{code}/watch/pause")
+def pause_room_watch(code: str, request: Request) -> dict:
+    """Stop everyone's clock to make a change (C60). The reply carries the changes this
+    seat can make, at the first break after everything already let out."""
+    with db.connection() as conn:
+        room, f, s, side, at = rooms.pause_watch(conn, _signed_in(conn, request), code, _watched)
+        out = watch_out(rooms.load_room(conn, code), _viewer_id(request))
+    return {**out, "options": options_out(side, f.result, s, at)}
+
+
+@app.post("/api/rooms/{code}/watch/sub")
+def sub_room_watch(code: str, body: WatchSubIn, request: Request) -> dict:
+    with db.connection() as conn:
+        try:
+            rooms.sub_watch(conn, _signed_in(conn, request), code, _watched, body.on, body.off)
+        except IllegalMove as e:
+            raise HTTPException(400, str(e)) from None
+        room = rooms.load_room(conn, code)
+    return watch_out(room, _viewer_id(request))
+
+
+@app.post("/api/rooms/{code}/watch/resume")
+def resume_room_watch(code: str, request: Request) -> dict:
+    with db.connection() as conn:
+        rooms.resume_watch(conn, _signed_in(conn, request), code)
+        room = rooms.load_room(conn, code)
+    return watch_out(room, _viewer_id(request))
 
 
 @app.post("/api/rooms/{code}/watch/pace")
@@ -1359,6 +1620,7 @@ def result_saved(source: str, key: str, request: Request) -> dict:
 
 
 MAX_UNSAVED_KEYS = 200
+MAX_KEY = 600          # results.natural_key's limit (migration 014): a live link carries its changes
 
 
 class UnsavedIn(BaseModel):
@@ -1370,7 +1632,7 @@ def unsaved_results(body: UnsavedIn, request: Request) -> dict:
     """What this account could still save (C46): the finished solo drafts among the links
     a browser names, and the completed rooms it sat in, less what it has saved already.
     Saving each is still a POST to /api/results, which replays it."""
-    keys = list(dict.fromkeys(k for k in body.keys if 0 < len(k) <= 200))[:MAX_UNSAVED_KEYS]
+    keys = list(dict.fromkeys(k for k in body.keys if 0 < len(k) <= MAX_KEY))[:MAX_UNSAVED_KEYS]
     with db.connection() as conn:
         me = _signed_in(conn, request)
         saved = set(conn.execute("select source, natural_key from results where account_id = %s",
@@ -1408,11 +1670,20 @@ def _plan_refused(e: Exception) -> HTTPException:
     return HTTPException(400, str(e) if isinstance(e, IllegalMove) else "a change comes on a score the plan knows")
 
 
+class LiveChangeIn(BaseModel):
+    minute: int
+    on: int            # bench index
+    off: str           # the person he replaced
+
+
 class DailyIn(BaseModel):
     moves: str = ""
     changes: list[ChangeIn] | None = None     # a bench day's plan (C42); None: automatic
     sheet: list[int] | None = None            # a bench day's team sheet (C44, C55); None: as drafted
     edition: int | None = None                # the edition of the day it was drafted in (C55)
+    manual: bool = False                      # changes made during the match (C60)
+    live: list[LiveChangeIn] = []             # a practice match's changes so far (C60)
+    auto_from: int | None = None              # a practice match skipped from here with the plan
 
 
 def _daily_plan(body: DailyIn):
@@ -1443,13 +1714,25 @@ def challenge_out(ch: daily_rules.Challenge, reveal: bool) -> dict:
 
 def daily_result_out(ch, fx, j, met: bool, ranked: bool) -> dict:
     """A practice result shows no ratings: otherwise practising would tell you your
-    eleven's ratings, and you could draft again knowing them before the ranked match."""
+    eleven's ratings, and you could draft again knowing them before the ranked match.
+    Once the ranked match is played, your squad comes with its ratings (``squad``), as the
+    squad page shows a finished draft's."""
     r = fx.result
     journey = journey_out(j)
     if not ranked:
         hide_ratings(journey["players"])
-    return {"met": met, "ranked": ranked, "fixture": fixture_out(fx, timeline=True), "journey": journey,
-            "gf": r.home_goals, "ga": r.away_goals, "opponent": challenge_out(ch, ranked)["opponent"]}
+    out = {"met": met, "ranked": ranked, "fixture": fixture_out(fx, timeline=True), "journey": journey,
+           "gf": r.home_goals, "ga": r.away_goals, "opponent": challenge_out(ch, ranked)["opponent"]}
+    if ranked:
+        out["squad"] = squad_out(fx.home)
+    return out
+
+
+def daily_live_out(ch, fx, revealed: int) -> dict:
+    """A ranked match being played with changes made as it goes (C60), as far as it has
+    been let out. Blind like the draft until it ends: no ratings."""
+    return {"live": True, "ranked": True, "fixture": fixture_upto(fx, revealed), "revealed": revealed,
+            "opponent": challenge_out(ch, False)["opponent"]}
 
 
 @app.get("/api/daily")
@@ -1458,13 +1741,20 @@ def daily_today(request: Request, day: str | None = None) -> dict:
     with db.connection() as conn:
         ch = daily.get_challenge(conn, load_deck(), league(), d)
         me = _account(conn, request) if request.cookies.get(auth.COOKIE_NAME) else None
-        mine = None
+        mine = live = None
+        daily.finish_stale(conn, load_deck(), league(), d)
         if me is not None:
             row = daily.result_of(conn, d, me.account_id)
+            held = daily.live_of(conn, d, me.account_id) if row is None else None
+            if held is not None:
+                # A ranked match under way (C60): it carries on from where it was let out to.
+                fx, _ = daily.replay_live(load_deck(), league(), ch, held, me.account_id)
+                live = daily_live_out(ch, fx, held[4])
             if row is not None:
                 try:
                     fx, j = daily.play(load_deck(), league(), ch, daily.moves_of(ch, row[0]), "ranked",
-                                       daily.plan_of(ch, row[6]), daily.sheet_of(ch, row[7]), me.account_id)
+                                       daily.plan_of(ch, row[6]), daily.sheet_of(ch, row[7]), me.account_id,
+                                       daily.live_entry(row[8]))
                     mine = daily_result_out(ch, fx, j, row[1], True)
                 except (IllegalMove, ValueError):
                     # The picks no longer replay (the deck changed since that day): the
@@ -1475,7 +1765,7 @@ def daily_today(request: Request, day: str | None = None) -> dict:
         streak = results.streaks(daily.days_played(conn, me.account_id), daily.today()) if me else None
     return {"challenge": challenge_out(ch, reveal=mine is not None or d != daily.today()),
             "today": d == daily.today(), "signed_in": me is not None,
-            "mine": mine, "board": board, "streak": None if streak is None else {"current": streak[0], "best": streak[1]}}
+            "mine": mine, "live": live, "board": board, "streak": None if streak is None else {"current": streak[0], "best": streak[1]}}
 
 
 @app.post("/api/daily/prepare")
@@ -1536,6 +1826,16 @@ def daily_sheet(body: DailySheetIn) -> dict:
 
 @app.post("/api/daily/submit")
 def daily_submit(body: DailyIn, request: Request) -> dict:
+    if body.manual:
+        # Changes made during the match (C60): it is held on the server and let out as it plays.
+        with db.connection() as conn:
+            me = _signed_in(conn, request)
+            try:
+                ch, fx, _, revealed = daily.start_live(conn, load_deck(), league(), me, daily.today(), body.moves,
+                                                       _daily_plan(body), body.sheet, body.edition)
+            except (IllegalMove, KeyError) as e:
+                raise _plan_refused(e) from None
+        return daily_live_out(ch, fx, revealed)
     with db.connection() as conn:
         me = _signed_in(conn, request)
         try:
@@ -1549,21 +1849,83 @@ def daily_submit(body: DailyIn, request: Request) -> dict:
     return {**out, "board": board, "streak": {"current": streak[0], "best": streak[1]}}
 
 
-@app.post("/api/daily/practice")
-def daily_practice(body: DailyIn) -> dict:
-    """Signed out: the same draft, played against a PRACTICE seed, kept nowhere, so it
-    says nothing about how the ranked match would go."""
+class DailyLiveIn(BaseModel):
+    action: str                 # "more", "options", "sub" or "finish"
+    on: int | None = None
+    off: str | None = None
+    auto: bool = False
+
+
+@app.post("/api/daily/live")
+def daily_live(body: DailyLiveIn, request: Request) -> dict:
+    """A step of today's ranked match being played with changes made as it goes (C60):
+    the next minutes, the changes possible at the break it has been let out to, a change
+    there, or the rest of it (with the plan, or with no more changes). Once it is all out
+    it is the day's attempt, and the reply is the finished result, as a submit's is."""
+    with db.connection() as conn:
+        me = _signed_in(conn, request)
+        try:
+            ch, fx, j, revealed, finished, at = daily.live_step(conn, load_deck(), league(), me, daily.today(),
+                                                                body.action, body.on, body.off, body.auto)
+        except IllegalMove as e:
+            raise HTTPException(400, str(e)) from None
+        if finished:
+            r = fx.result
+            out = daily_result_out(ch, fx, j, daily_rules.met(ch.kind, ch.target, r.home_goals, r.away_goals), True)
+            board = daily.board(conn, daily.today(), me)
+            streak = results.streaks(daily.days_played(conn, me.account_id), daily.today())
+            return {**out, "finished": True, "board": board, "streak": {"current": streak[0], "best": streak[1]}}
+    out = {**daily_live_out(ch, fx, revealed), "finished": False}
+    if at is not None:
+        out["options"] = options_out(fx.home, fx.result, 0, at, ratings=False)
+    return out
+
+
+def _practice_match(body: DailyIn, extra: LiveChangeIn | None = None):
+    """A practice match (signed out), and with changes made during it (C60) the page sends
+    them all each time, since nothing is kept here."""
     d = daily.today()
     with db.connection() as conn:
         ch = daily.get_challenge(conn, load_deck(), league(), d)
     daily.check_edition(ch, body.edition)
+    args = (load_deck(), league(), ch, daily.moves_of(ch, body.moves), "practice",
+            daily.plan_of(ch, _daily_plan(body)), daily.sheet_of(ch, body.sheet))
     try:
-        fx, j = daily.play(load_deck(), league(), ch, daily.moves_of(ch, body.moves), "practice",
-                           daily.plan_of(ch, _daily_plan(body)), daily.sheet_of(ch, body.sheet))
+        fx, j = daily.play(*args)
+        if not body.manual:
+            return ch, fx, j
+        squad = [c.id for c in [*fx.home.xi, *fx.home.bench]]
+        changes = [*body.live, *([extra] if extra else [])]
+        if any(c.off not in squad for c in changes):
+            raise IllegalMove("a change names a man the squad hasn't got")
+        entry = LiveEntry(tuple((c.minute, c.on, squad.index(c.off)) for c in changes), body.auto_from)
+        fx, j = daily.play(*args, live=entry)
     except (IllegalMove, KeyError) as e:
         raise _plan_refused(e) from None
+    for c in changes:
+        if not change_made(fx.result, 0, c.minute, fx.home.bench[c.on], c.off):
+            raise HTTPException(400, f"the change at {c.minute}' can't be made then")
+    return ch, fx, j
+
+
+@app.post("/api/daily/practice")
+def daily_practice(body: DailyIn) -> dict:
+    """Signed out: the same draft, played against a PRACTICE seed, kept nowhere, so it
+    says nothing about how the ranked match would go."""
+    ch, fx, j = _practice_match(body)
     r = fx.result
     return daily_result_out(ch, fx, j, daily_rules.met(ch.kind, ch.target, r.home_goals, r.away_goals), False)
+
+
+class PracticeBenchIn(DailyIn):
+    minute: int
+
+
+@app.post("/api/daily/practice/bench")
+def daily_practice_bench(body: PracticeBenchIn) -> dict:
+    """The changes a practice match can make at the break after ``minute`` (C60)."""
+    _, fx, _ = _practice_match(body)
+    return options_out(fx.home, fx.result, 0, body.minute, ratings=False)
 
 
 # An admin's controls for the daily (C55): see a day, let one account play it again,

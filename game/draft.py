@@ -421,6 +421,69 @@ def decode_sheet(text: str) -> tuple[int, ...]:
     return tuple(SHEET_DIGITS.index(ch) for ch in text[1:])
 
 
+# -- live changes (C60): a finished bench draft whose changes are made during each match
+# ends in "-m", then an entry per match that has any, joined by ".": the match's number
+# among your own (one base-36 character), "a" and a break if the rest of it was skipped
+# with the plan, then "c" and three characters per change made: the break (minutes / 5 in
+# base 36), the substitute (0-2) and the man he replaced (base 36: 0-10 the eleven in slot
+# order, 11-13 the bench). "b5-433-...-p...-m2c814.4ac" is: in your third match, bench man 1
+# on at 40' for the man in slot 4; in your fifth, the plan from 50' after a skip. A match
+# with no entry has no changes at all; "m" alone is a draft that makes them but hasn't yet.
+
+LIVE_ENTRY = re.compile(r"([0-9a-z])(?:a([0-9a-n]))?((?:c[0-9a-n][0-2][0-9a-d])*)")
+LIVE_MATCHES = 36                 # one base-36 character
+BREAKS = 24                       # 0' to 115', every five minutes
+
+
+@dataclass(frozen=True)
+class LiveEntry:
+    """One match's live changes: (minute, bench index, squad index of the man off), and
+    the minute the plan took over from after a skip, if it did."""
+
+    changes: tuple[tuple[int, int, int], ...] = ()
+    auto_from: int | None = None
+
+
+def encode_live(live: dict[int, LiveEntry]) -> str:
+    out = []
+    for k in sorted(live):
+        e = live[k]
+        if not e.changes and e.auto_from is None:
+            continue
+        tok = SHEET_DIGITS[k] + ("" if e.auto_from is None else "a" + SHEET_DIGITS[e.auto_from // 5])
+        tok += "".join(f"c{SHEET_DIGITS[m // 5]}{on}{SHEET_DIGITS[off]}" for m, on, off in e.changes)
+        out.append(tok)
+    return "m" + ".".join(out)
+
+
+def decode_live(text: str) -> dict[int, LiveEntry]:
+    if not text.startswith("m"):
+        raise IllegalMove(f"not a live part: {text!r}")
+    out: dict[int, LiveEntry] = {}
+    for tok in filter(None, text[1:].split(".")):
+        m = LIVE_ENTRY.fullmatch(tok)
+        if m is None:
+            raise IllegalMove(f"bad live entry {tok!r}")
+        k, auto, changes = m.groups()
+        cs = tuple((SHEET_DIGITS.index(c[1]) * 5, int(c[2]), SHEET_DIGITS.index(c[3]))
+                   for c in (changes[i:i + 4] for i in range(0, len(changes), 4)))
+        if len(cs) > BENCH or any(a[0] > b[0] for a, b in zip(cs, cs[1:])) or any(c[0] == 0 for c in cs):
+            raise IllegalMove(f"bad live entry {tok!r}")
+        key = SHEET_DIGITS.index(k)
+        if key in out:
+            raise IllegalMove(f"two entries for match {key}")
+        out[key] = LiveEntry(cs, None if auto is None else SHEET_DIGITS.index(auto) * 5)
+    return out
+
+
+def split_live(state: str) -> tuple[str, str | None]:
+    """A solo link and its live part (C60), which only a finished bench draft can carry."""
+    head, _, tail = state.rpartition("-")
+    if head and state.startswith(("b", "l")) and tail.startswith("m"):
+        return head, tail
+    return state, None
+
+
 def encode(seed: int, formation: str, moves: list[Move], bench: bool = False,
            plan: tuple[Change, ...] | None = None, sheet: tuple[int, ...] | None = None,
            league: bool = False) -> str:

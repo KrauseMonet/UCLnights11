@@ -7,7 +7,12 @@
    server replays it on every request, as the solo draft does. /daily#YYYY-MM-DD shows
    a past day. A bench day's team sheet (C44, here since C55) is kept the same way, and
    so is everything else under a key naming the day's edition: an admin can make a day
-   again, and picks from the old edition would replay into other squads. */
+   again, and picks from the old edition would replay into other squads.
+
+   A bench day can be played making the changes yourself (C60): the ranked match is then
+   held on the server and let out a few minutes at a time as it plays, so a change comes at
+   the break it has been let out to; a practice match is sent whole with every change made
+   so far. Once the ranked match is over, your squad shows with its ratings. */
 
 shell("daily");
 const DAY_IN = /^\d{4}-\d{2}-\d{2}$/.test(location.hash.slice(1)) ? location.hash.slice(1) : null;
@@ -16,10 +21,12 @@ let MOVES = [];
 let S = null;            // the draft session
 let PLAN = null;         // a bench day's plan (C42), chosen here and sent with the match; null: automatic
 let SHEET = null;        // a bench day's team sheet (C55): pick indices, the eleven in slot order then the bench; null: as drafted
+let MANUAL = false;      // the changes made during the match (C60), not by the plan
 const dayKey = () => D.challenge.edition ? `${D.challenge.day}:${D.challenge.edition}` : D.challenge.day;
 const movesKey = () => `daily:${dayKey()}`;
 const planKey = () => `daily:plan:${dayKey()}`;
 const sheetKey = () => `daily:sheet:${dayKey()}`;
+const manualKey = () => `daily:manual:${dayKey()}`;
 const sheetText = () => SHEET ? "s" + SHEET.map((i) => i.toString(36)).join("") : "";
 function forget() {
   MOVES = []; PLAN = null; SHEET = null;
@@ -163,6 +170,7 @@ function renderPlanReady() {
   planPanel($("plan"), S, PLAN || S.plan, {
     tag: PLAN ? "your plan" : "automatic plan",
     onChange: (p) => { PLAN = p; store.set(planKey(), JSON.stringify(p)); renderPlanReady(); },
+    mode: { manual: MANUAL, onMode: (m) => { MANUAL = m; store.set(manualKey(), m ? "1" : ""); renderPlanReady(); } },
     foot: `${playButtons(signedIn)}
       <p class="label">${signedIn ? "One go, ranked. Once you play, today's attempt is used." :
         "Signed out, this is a practice match on a different seed, not ranked. Sign in before you play to be ranked."} ${AUTO_NOTE}</p>`,
@@ -208,28 +216,109 @@ function renderReady() {
 
 // ---------------------------------------------------------------- the match and after
 
+const matchBody = () => ({ moves: movesText(), changes: S.bench_size ? PLAN : null, sheet: S.bench_size ? SHEET : null,
+  edition: D.challenge.edition, manual: !!(S.bench_size && MANUAL) });
+
 async function play() {
   $("go").disabled = true;
   let out;
   try {
-    out = await api(ME ? "/api/daily/submit" : "/api/daily/practice", { method: "POST", body: JSON.stringify({
-      moves: movesText(), changes: S.bench_size ? PLAN : null, sheet: S.bench_size ? SHEET : null,
-      edition: D.challenge.edition }) });
+    out = await api(ME ? "/api/daily/submit" : "/api/daily/practice", { method: "POST", body: JSON.stringify(matchBody()) });
   } catch (e) {
     toast(e.message);
     if (e.status === 409) return boot();             // already played in another tab, or the day was made again
     $("go").disabled = false;
     return;
   }
-  $("dlbody").innerHTML = `<div id="match"></div><div class="cup-actions" id="dlact"><button class="btn ghost" id="fast">Skip to full time</button></div><div id="after"></div>`;
-  const finish = playMatch($("match"), out.fixture, DAILY_LOOK, () => {
-    $("dlact").innerHTML = "";
-    if (out.ranked) { D.mine = out; D.board = out.board; D.streak = out.streak; D.challenge.opponent = out.opponent; }
-    $("after").innerHTML = afterHtml(out);
-    wireAfter(out);
-  });
+  if (out.live) return playHeld(out);
+  if (matchBody().manual) return playPractice(out);
+  $("dlbody").innerHTML = matchHtml();
+  const finish = playMatch($("match"), out.fixture, DAILY_LOOK, () => ended(out));
   $("match").scrollIntoView({ behavior: "smooth", block: "center" });
   $("fast").onclick = finish;
+}
+
+const matchHtml = () => `<div id="match"></div><div class="cup-actions" id="dlact"><button class="btn ghost" id="fast">Skip to full time</button></div><div id="after"></div>`;
+
+function ended(out) {
+  $("dlact").innerHTML = "";
+  if (out.ranked) { D.mine = out; D.board = out.board; D.streak = out.streak; D.challenge.opponent = out.opponent; D.live = null; }
+  $("after").innerHTML = afterHtml(out);
+  wireAfter(out);
+}
+
+/* The ranked match with your own changes (C60): held on the server and let out a few
+   minutes at a time as the card plays, so a change comes at the break it has been let out
+   to. The last piece is the finished result. Also how a match under way carries on after
+   a reload. */
+function playHeld(start) {
+  let done = null;
+  const step = async (body) => {
+    const r = await api("/api/daily/live", { method: "POST", body: JSON.stringify(body) });
+    if (r.finished) done = r;
+    return r;
+  };
+  $("dlbody").innerHTML = matchHtml();
+  const finish = playMatch($("match"), start.fixture, DAILY_LOOK, () => ended(done || D.mine), {
+    feed: async () => (await step({ action: "more" })).fixture,
+    live: { open: async () => {
+      const r = await step({ action: "options" });
+      finish.run.update(r.fixture);
+      const o = r.options;
+      if (o.too_late) { toast("Too late for a change: the match is all but over"); return null; }
+      if (!o.left) { toast("You've made all three changes"); return null; }
+      const pick = await subDialog(o);
+      if (!pick) return null;
+      const after = await step({ action: "sub", on: pick.on, off: pick.off });
+      toast(`${o.bench.find((c) => c.i === pick.on).name} comes on at ${o.minute}'`);
+      return after.fixture;
+    } },
+  });
+  $("match").scrollIntoView({ behavior: "smooth", block: "center" });
+  $("fast").onclick = async () => {
+    finish.hold();
+    const auto = await askAutoPlan("The rest of this match is skipped.");
+    if (auto == null) return finish.go();
+    try {
+      const r = await step({ action: "finish", auto });
+      finish.run.update(r.fixture);
+      finish();
+    } catch (e) { toast(e.message); finish.go(); }
+  };
+}
+
+/* A practice match with your own changes (C60): nothing is kept, so every change made so
+   far goes with each request, and the whole match comes back. */
+function playPractice(out) {
+  const changes = [];
+  const again = async (extra) => {
+    const r = await api("/api/daily/practice", { method: "POST", body: JSON.stringify({ ...matchBody(), live: changes, ...extra }) });
+    out = r;
+    return r;
+  };
+  $("dlbody").innerHTML = matchHtml();
+  const finish = playMatch($("match"), out.fixture, DAILY_LOOK, () => ended(out), {
+    live: { open: async (minute) => {
+      const o = await api("/api/daily/practice/bench", { method: "POST", body: JSON.stringify({ ...matchBody(), live: changes, minute }) });
+      if (o.too_late) { toast("Too late for a change: the match is all but over"); return null; }
+      if (!o.left) { toast("You've made all three changes"); return null; }
+      const pick = await subDialog(o);
+      if (!pick) return null;
+      changes.push({ minute, on: pick.on, off: pick.off });
+      try { return (await again({})).fixture; } catch (e) { changes.pop(); throw e; }
+    } },
+  });
+  $("match").scrollIntoView({ behavior: "smooth", block: "center" });
+  $("fast").onclick = async () => {
+    finish.hold();
+    const auto = await askAutoPlan("The rest of this match is skipped.");
+    if (auto == null) return finish.go();
+    if (auto) {
+      try { finish.run.update((await again({ auto_from: Math.min(115, Math.ceil(finish.run.minute / 5) * 5) })).fixture); }
+      catch (e) { toast(e.message); return finish.go(); }
+    }
+    finish();
+  };
 }
 
 function shareLine(out) {
@@ -254,12 +343,29 @@ function afterHtml(out) {
         ${out.ranked ? `<a class="btn ghost" href="/profile">Profile</a>` : `<button class="btn ghost" id="sign2">Sign in for tomorrow</button>`}</div>
     </section>
     <div class="cup-grid">
-      <div class="cup-stack">${out.ranked ? boardHtml(D.board) : ""}</div>
+      <div class="cup-stack">${out.squad ? squadHtml(out.squad) : ""}${out.ranked ? boardHtml(D.board) : ""}</div>
       <div class="cup-stack">${out.journey ? playersPanel(out.journey) : ""}${opponentHtml()}</div>
     </div>`;
 }
 
+/* Your squad once the ranked match is played: the eleven where they stood and the bench,
+   with the ratings the draft hid, and the averages by line (as the squad page shows a
+   finished draft's, C43). */
+const SQUAD_FIGS = [["overall", "Overall"], ["attack", "Attack"], ["midfield", "Midfield"], ["defence", "Defence"],
+  ["goalkeeper", "Goalkeeper"], ["bench", "Bench"]];
+function squadHtml(q) {
+  const figs = SQUAD_FIGS.filter(([k]) => q.ratings[k] != null);
+  return `<section class="panel dl-squad"><div class="panel-h"><span class="label">Your squad · the ratings</span><span class="label">${esc(q.formation)}</span></div>
+    <div class="dl-sq-figs">${figs.map(([k, label]) => `<div><span class="label">${label}</span><b>${q.ratings[k].toFixed(1)}</b>
+      ${q.better_than && q.better_than[k] != null ? `<small>above ${q.better_than[k]}% of real sides</small>` : ""}</div>`).join("")}</div>
+    <div class="pitch" id="dlsqpitch"></div><div class="bench-row" id="dlsqbench"></div></section>`;
+}
+
 function wireAfter(out) {
+  if (out.squad && $("dlsqpitch")) {
+    renderPitch($("dlsqpitch"), out.squad.slots, out.squad.xi, null);
+    renderBench($("dlsqbench"), out.squad.bench, out.squad.bench.length);
+  }
   if ($("share")) $("share").onclick = () => {
     const text = shareLine(out);
     if (navigator.share && matchMedia("(pointer: coarse)").matches) navigator.share({ text }).catch(() => {});
@@ -311,6 +417,8 @@ async function boot() {
   MOVES = (store.get(movesKey()) || "").split(".").filter((x) => x !== "").map(Number);
   try { PLAN = JSON.parse(store.get(planKey()) || "null"); } catch { PLAN = null; }
   try { SHEET = JSON.parse(store.get(sheetKey()) || "null"); } catch { SHEET = null; }
+  MANUAL = store.get(manualKey()) === "1";
+  if (D.live) return playHeld(D.live);
   if (D.mine) return showPlayed();
   if (!D.today) return showPast();
   intro();

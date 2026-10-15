@@ -69,6 +69,7 @@ function renderPlan() {
   });
   planPanel($("deal"), S, S.plan, {
     tag: S.plan_chosen ? "your plan" : "automatic plan", onChange: postPlan,
+    mode: { manual: S.manual, onMode: postMode },
     foot: `<a class="btn primary" href="/squad#${S.state}">Done: see your squad</a>
       <button class="btn ghost" id="autoplan" ${S.plan_chosen ? "" : "disabled"}>Use the automatic plan</button>
       <p class="label">${AUTO_NOTE}</p>`,
@@ -87,6 +88,15 @@ async function postSheet(body) {
   busy = true;
   try {
     setSession(await api(`/api/draft/${S.state}/sheet${Q}`, { method: "POST", body: JSON.stringify(body) }), false);
+  } catch (e) { toast(e.message); render(false); } finally { busy = false; }
+}
+
+/* Changes made during each match instead of by the plan (C60): part of the link. */
+async function postMode(manual) {
+  if (busy) return;
+  busy = true;
+  try {
+    setSession(await api(`/api/draft/${S.state}/mode${Q}`, { method: "POST", body: JSON.stringify({ manual }) }), false);
   } catch (e) { toast(e.message); render(false); } finally { busy = false; }
 }
 

@@ -164,6 +164,10 @@ class Result:
     stats: tuple[SideStats, SideStats] | None = None
     shots: list[Shot] = field(default_factory=list)     # in minute order
     subs: list[Substitution] = field(default_factory=list)  # engine 2 only, in minute order
+    # A live match's running numbers (C60), one entry per block: (minute the block ends,
+    # home possession so far, home passes, away passes, home completed, away completed),
+    # the counts cumulative. Empty for every other match.
+    flow: list[tuple[int, float, float, float, float, float]] = field(default_factory=list)
 
     @property
     def winner(self) -> int | None:
@@ -627,10 +631,16 @@ def play_v2(
     neutral: bool = False,
     extra_time_if_level: bool = False,
     level_on: tuple[int, int] = (0, 0),
+    stats_key: str | None = None,
 ) -> Result:
     """Engine 2's match: engine 1's arguments, with teamsheets (bench and plan) for
     elevens. Draws from ``rng`` only the goals (and a shoot-out); the statistics come from
-    a stream of the match's own, as in engine 1."""
+    a stream of the match's own, as in engine 1.
+
+    ``stats_key`` makes it a LIVE match (C60), one a substitution made on the screen may
+    change at any break: its statistics are then drawn so that everything up to a break is
+    the same whatever happens after it (``_match_stats_live``), from streams named by the
+    key, which must name the match (never its result)."""
     bh, ba = (BASE_NEUTRAL, BASE_NEUTRAL) if neutral else (BASE_HOME, BASE_AWAY)
     sides = (_Side(home), _Side(away))
     r = Result()
@@ -663,7 +673,10 @@ def play_v2(
     r.home_goals, r.away_goals = score
     r.goals.sort(key=lambda g: (g.minute, g.side))
     end = 120 if r.extra_time else 90
-    r.stats, r.shots = _match_stats_v2(sides, blocks, r, neutral, end)
+    if stats_key is None:
+        r.stats, r.shots = _match_stats_v2(sides, blocks, r, neutral, end)
+    else:
+        r.stats, r.shots, r.flow = _match_stats_live(stats_key, sides, blocks, r, neutral, end)
     return r
 
 
@@ -745,3 +758,105 @@ def _match_stats_v2(sides: tuple[_Side, _Side], blocks: list[_Block], r: Result,
         keeper.saves = h.on_target - r.home_goals
     shots = sorted(h_shots + a_shots, key=lambda x: (x.minute, x.side, not x.goal))
     return (h, a), shots
+
+
+# -- live matches (C60) ---------------------------------------------------------
+# A match someone may change while it plays (a substitution made on the screen, or one
+# that will be) must never change what has already been shown. Its goals are safe as they
+# are: engine 2 draws them block by block, and a change at a break touches only the
+# blocks after it. Its statistics are drawn here instead of by _match_stats_v2, which
+# seeds one stream with the whole match and so moves every shot when anything changes:
+# each block's shots come from a stream of that block's own, possession is worked out
+# block by block from the men on the pitch then (its noise drawn once), and each man's
+# pass spread and accuracy from a stream of his own. Everything up to a break is then the
+# same whatever comes after it. The formulas are engine 2's; only the streams differ.
+
+def _block_possession(blocks: list[_Block], neutral: bool, noise: float) -> list[float]:
+    """The home side's share of the ball in each block."""
+    return [_clamp(0.5 + POSSESSION_K * (control(b.xi[0]) - control(b.xi[1]))
+                   + (0 if neutral else POSSESSION_HOME) + noise, POSSESSION_RANGE) for b in blocks]
+
+
+def _side_stats_live(key: str, me: _Side, side: int, blocks: list[_Block], poss: list[float],
+                     goals: list[Goal], saves_against: int, end: int
+                     ) -> tuple[SideStats, list[Shot], list[float], list[float]]:
+    """A live match's statistics for one side, and its passes and completed passes so far
+    at the end of each block."""
+    mins = me.minutes(end)
+    lines = {pid: PlayerLine(me.canon[pid], minutes=mins[pid]) for pid in me.entered}
+    shots = []
+    for g in goals:
+        if g.side == side:
+            ln = lines[g.scorer.id]
+            ln.shots += 1
+            ln.on_target += 1
+            shots.append(Shot(g.minute, side, True, True))
+    for b, p in zip(blocks, poss):
+        rng = random.Random(f"live|{key}|{side}|shots|{b.lo}")
+        mine = p if side == 0 else 1 - p
+        lam, share = min(b.lam[side], SHOT_XG_CAP), (b.hi - b.lo) / 90
+        saved = poisson(rng, SAVED_PER_XG * lam * share)
+        off = poisson(rng, (OFF_BASE + OFF_PER_XG * lam) * share * (1 + SHOT_POSSESSION * (mine - 0.5) * 2))
+        for n, on in ((saved, True), (off, False)):
+            for _ in range(n):
+                ln = lines[_pick(rng, b.xi[side], SCORE_WEIGHT).id]
+                ln.shots += 1
+                ln.on_target += on
+                shots.append(Shot(rng.randint(b.lo + 1, b.hi), side, on, False))
+    scale = random.Random(f"live|{key}|{side}|passes").gauss(1, PASSES_SD)
+    own = {pid: random.Random(f"live|{key}|{side}|man|{pid}") for pid in me.entered}
+    spread = {pid: own[pid].uniform(0.8, 1.2) for pid in me.entered}
+    noise = {pid: own[pid].gauss(0, ACCURACY_SD) for pid in me.entered}
+    shares = {pid: 0.0 for pid in me.entered}
+    done = {pid: 0.0 for pid in me.entered}
+    cum_passes, cum_done = [], []
+    for b, p in zip(blocks, poss):
+        mine = p if side == 0 else 1 - p
+        xi = b.xi[side]
+        w = [(c.id, PASS_WEIGHT[c.pos] * math.exp(0.03 * (c.rating - 80)) * spread[c.id]) for c in xi]
+        total_w = sum(x for _, x in w)
+        block_total = PASSES_AT_HALF * 2 * mine * (b.hi - b.lo) / 90 * scale
+        for (pid, x), c in zip(w, xi):
+            n = block_total * x / total_w
+            acc = _clamp(ACCURACY_BASE + ACCURACY_K * (lines[pid].card.rating - 80)
+                         + ACCURACY_POSSESSION * (mine - 0.5) + noise[pid], ACCURACY_RANGE)
+            shares[pid] += n
+            done[pid] += n * acc
+        cum_passes.append(sum(shares.values()))
+        cum_done.append(sum(done.values()))
+    total = max(0, round(sum(shares.values())))
+    counts = {pid: int(x) for pid, x in shares.items()}
+    for pid in sorted(shares, key=lambda q: shares[q] - counts[q], reverse=True)[:total - sum(counts.values())]:
+        counts[pid] += 1
+    for pid, ln in lines.items():
+        rate = done[pid] / shares[pid] if shares[pid] else 0.0
+        ln.passes, ln.completed = counts[pid], min(counts[pid], round(counts[pid] * rate))
+    keeper = next((ln for ln in lines.values() if ln.card.pos == "GK"), None)
+    if keeper is not None:
+        keeper.saves = saves_against
+    played = sum(b.hi - b.lo for b in blocks)
+    mean = sum((p if side == 0 else 1 - p) * (b.hi - b.lo) for b, p in zip(blocks, poss)) / played
+    return SideStats(mean, list(lines.values())), shots, cum_passes, cum_done
+
+
+def _match_stats_live(key: str, sides: tuple[_Side, _Side], blocks: list[_Block], r: Result, neutral: bool,
+                      end: int) -> tuple[tuple[SideStats, SideStats], list[Shot], list[tuple]]:
+    poss = _block_possession(blocks, neutral, random.Random(f"live|{key}|possession").gauss(0, POSSESSION_SD))
+    a, a_shots, a_passes, a_done = _side_stats_live(key, sides[1], 1, blocks, poss, r.goals, 0, end)
+    h, h_shots, h_passes, h_done = _side_stats_live(key, sides[0], 0, blocks, poss, r.goals,
+                                                    a.on_target - r.away_goals, end)
+    keeper = next((ln for ln in a.players if ln.card.pos == "GK"), None)
+    if keeper is not None:
+        keeper.saves = h.on_target - r.home_goals
+    h.possession = round(h.possession, 3)
+    a.possession = round(1 - h.possession, 3)
+    flow, held, share = [], 0, 0.0
+    for b, p, hp, ap, hd, ad in zip(blocks, poss, h_passes, a_passes, h_done, a_done):
+        held += b.hi - b.lo
+        share += p * (b.hi - b.lo)
+        flow.append((b.hi, round(share / held, 3), round(hp, 1), round(ap, 1), round(hd, 1), round(ad, 1)))
+    if flow:
+        # At the whistle the running numbers are the real ones.
+        flow[-1] = (flow[-1][0], h.possession, h.passes, a.passes, h.completed, a.completed)
+    shots = sorted(h_shots + a_shots, key=lambda x: (x.minute, x.side, not x.goal))
+    return (h, a), shots, flow

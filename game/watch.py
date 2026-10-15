@@ -22,6 +22,15 @@ earlier, so every screen jumps to the same place.
 The host also sets the pace (C54): seconds per match minute, the solo page's three
 speeds. A change mid-watch re-times every round and moves the kick-off moment so the room
 stays where it was (``retime``): the same second of a countdown, the same match minute.
+
+A LIVE room (C60, every room made since that drafts a bench and watches together) differs
+in three ways. Its matches stop for half-time (HALF_S) and, in a round that allows for
+extra time, for a moment before it (ET_BREAK_S), on every screen at once. A friend who
+makes their own changes can pause everyone's clock to make one (the room's start then
+moves on by the time paused, at most PAUSE_S). And since a change alters the rest of a
+match, its results are not let out at kick-off: each poll gets the round's matches as far
+as the clock has gone and LEAD_S beyond it (web.app.fixture_upto), the finished matches
+come at the whistle, and a change comes at the first break after everything already sent.
 """
 
 from __future__ import annotations
@@ -48,6 +57,12 @@ def minute_s(pace: str | None) -> float:
     return MINUTE_S if pace is None else PACES[pace]
 
 
+HALF_S = 3.0          # a live room's half-time (C60)
+ET_BREAK_S = 2.0      # and the moment before extra time, in a round that allows for it
+LEAD_S = 1.2          # a live room lets each match out this far ahead of the clock: a poll's worth
+PAUSE_S = 30.0        # a pause for a change lasts at most this long
+
+
 FIRST_PHASES = (LEAGUE, "Group stage")
 PARTS = ("pairs", "results", "after")   # what a round lets out, in the order it does
 
@@ -61,26 +76,56 @@ class Round:
     start: float                    # its countdown begins, seconds after kick-off
     minutes: int
     minute_s: float = MINUTE_S      # one match minute at the room's pace
+    live: bool = False              # a live room's (C60): breaks, and results only at the whistle
 
     @property
     def kick(self) -> float:
         return self.start + BREAK_S
 
+    def segments(self) -> list[tuple[float, int]]:
+        """The match part of the round as (seconds, match minutes played in them); a break
+        plays none. One stretch, except in a live room."""
+        ms = self.minute_s
+        if not self.live:
+            return [(self.minutes * ms, self.minutes)]
+        out = [(45 * ms, 45), (HALF_S, 0), (45 * ms, 45)]
+        if self.minutes == 120:
+            out += [(ET_BREAK_S, 0), (30 * ms, 30)]
+        return out
+
+    @property
+    def whistle(self) -> float:
+        """The end of the round's allowance."""
+        return self.kick + sum(secs for secs, _ in self.segments())
+
     @property
     def end(self) -> float:
-        return self.kick + self.minutes * self.minute_s + AFTER_S
+        return self.whistle + AFTER_S
 
     def at(self, part: int) -> float:
-        """When part ``part`` of PARTS becomes known."""
-        return (self.start, self.kick, self.end)[part]
+        """When part ``part`` of PARTS becomes known: a live room's results at the whistle,
+        since a change could still alter them until then."""
+        return (self.start, self.whistle if self.live else self.kick, self.end)[part]
+
+    def minute_at(self, p: float) -> float:
+        """The match minute at moment ``p``: 0 until kick-off, held at 45 through half-time,
+        the whole allowance after the whistle."""
+        d, played = p - self.kick, 0.0
+        if d <= 0:
+            return 0.0
+        for secs, mins in self.segments():
+            if d < secs:
+                return played + (d / self.minute_s if mins else 0.0)
+            d, played = d - secs, played + mins
+        return float(self.minutes)
 
 
-def rounds(t: Tournament, minute: float = MINUTE_S) -> list[Round]:
+def rounds(t: Tournament, minute: float = MINUTE_S, live: bool = False) -> list[Round]:
     """The rounds the room watches, in playing order. Fixtures are stored in the order
     they were played, a round's at the first appearance of its (stage, label); a second
     leg and a final may go to extra time, so they get 120 minutes whether they do or not
     (an allowance that depended on the result would give the result away). ``minute`` is
-    the pace, seconds per match minute."""
+    the pace, seconds per match minute; ``live`` a live room's (C60)."""
     order: dict[tuple[str, str], list[Fixture]] = {}
     for f in t.fixtures:
         order.setdefault((f.stage, f.label), []).append(f)
@@ -89,7 +134,7 @@ def rounds(t: Tournament, minute: float = MINUTE_S) -> list[Round]:
         mine = tuple(f for f in fixtures if f.home.owner is not None or f.away.owner is not None)
         if not mine:
             continue
-        r = Round(stage, label, mine, key, start, 120 if label in ("Second leg", "Final") else 90, minute)
+        r = Round(stage, label, mine, key, start, 120 if label in ("Second leg", "Final") else 90, minute, live)
         out.append(r)
         start = r.end
     return out
@@ -128,10 +173,14 @@ def retime(old: list[Round], new: list[Round], p: float) -> float:
     d = p - o.start
     if d < BREAK_S:
         return n.start + d
-    played = (d - BREAK_S) / o.minute_s
-    if played < o.minutes:
-        return n.kick + played * n.minute_s
-    return n.kick + n.minutes * n.minute_s + (d - BREAK_S - o.minutes * o.minute_s)
+    # Through the match stretch by stretch: a stretch of play keeps its minute, a break
+    # (whose length is no pace's) its second.
+    d, t = d - BREAK_S, n.kick
+    for (o_secs, mins), (n_secs, _) in zip(o.segments(), n.segments()):
+        if d < o_secs:
+            return t + (d / o.minute_s * n.minute_s if mins else d)
+        d, t = d - o_secs, t + n_secs
+    return t + d
 
 
 SKIPS = ("kickoff", "fulltime", "phase", "end")

@@ -326,6 +326,8 @@ function renderPlanning() {
   planPanel($("plan"), d, !ready && localPlan ? localPlan : d.plan, {
     tag: ready ? "ready" : localPlan || d.plan_chosen ? "your plan" : "automatic plan",
     onChange: (p) => { if (ready) act("plan", { changes: p }); else { localPlan = p; renderPlanning(); } },
+    // A live room (C60): make the changes yourself while the room watches; a pause stops everyone.
+    mode: R.live ? { manual: d.manual, onMode: (manual) => act("manual", { manual }) } : null,
     foot: ready
       ? `<p class="note waiting">Ready. ${waiting.length ? `Waiting for ${esc(waiting.join(", "))}.` : "Opening the tournament…"}
           You can change your plan until everyone is.</p>${finish}`

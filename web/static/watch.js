@@ -11,9 +11,15 @@
    Only the host moves the clock, and only forward, and only the host sets its pace (C54):
    the solo page's three speeds, changeable mid-watch, every screen staying at the minute
    it was at. A pace change re-times every round, so the parts are fetched again. The cup page hands the room to this
-   while it is being watched and takes it back, every result shown, when the watch ends. */
+   while it is being watched and takes it back, every result shown, when the watch ends.
+
+   A live room (C60) stops for half-time on every screen, and sends each match of the round
+   being played only as far as the clock has gone (`live_round`), since a friend who makes
+   their own changes can still alter the rest: they pause everyone's clock with "Make a
+   sub", choose, and the clock goes on. The finished matches come at the round's whistle. */
 
 const WATCH_POLL_MS = 2000;
+const WATCH_LIVE_POLL_MS = 700;       // a live room's round in play (C60): its matches come in pieces
 const WATCH_MAX_BACKOFF_MS = 20000;
 const WATCH_TICK_MS = 100;
 const WATCH_LEAD_S = 0.15;            // poll just after a part is due, not just before
@@ -27,6 +33,8 @@ let wDrawn = "";                      // what the screen was last drawn for
 let wRun = null;                      // the match on the card: { key, runner }
 let wBurstUntil = 0;
 let wSel = null;                      // the match chosen to watch this round; null: your own
+let wBreak = "";                      // the half-time or extra-time break on the card (C60)
+let wSubbing = false;                 // this screen is choosing a change
 
 const WATCH_LOOK = {
   name: (s) => s.you ? "Your XI" : s.club,
@@ -35,6 +43,13 @@ const WATCH_LOOK = {
 };
 
 function wNow() { return Date.now() / 1000 + WCLOCK.offset; }
+
+/* Where the watch is, in seconds after kick-off: held while a live room is paused (C60),
+   until the pause runs out. */
+function wP() {
+  const z = WS.paused;
+  return z ? z.p + Math.max(0, wNow() - z.until) : wNow() - WS.t0;
+}
 
 /* Each reply's server_now plus half its round trip, keeping the sample with the shortest
    round trip, since that one carries the least error. */
@@ -65,7 +80,7 @@ function wApply(w) {
     WS.have = 0;
     wDrawn = "";
   }
-  for (const k of ["pace", "minute_s"]) if (k in w) WS[k] = w[k];
+  for (const k of ["pace", "minute_s", "live_room", "manual", "any_manual", "paused", "live_round"]) if (k in w) WS[k] = w[k];
   if (w.unchanged) return;
   for (const k of ["started", "t0", "is_host", "seated", "host", "can_start", "host_wait", "you", "format",
                    "break_s"]) if (k in w) WS[k] = w[k];
@@ -88,7 +103,7 @@ function wSchedule(ms) {
   clearTimeout(wPollTimer);
   if (!WS || document.hidden) return;
   if (ms == null) {
-    ms = WATCH_POLL_MS;
+    ms = WS.live_round && !WS.paused ? WATCH_LIVE_POLL_MS : WATCH_POLL_MS;
     const r = WS.started && wNext();
     if (r != null) ms = Math.max(50, Math.min(ms, (r - wNow() + WATCH_LEAD_S) * 1000));
   }
@@ -97,9 +112,9 @@ function wSchedule(ms) {
 
 // When the next part comes out: the current round's kick-off or full time.
 function wNext() {
-  const p = wNow() - WS.t0, r = WS.rounds[WS.rounds.length - 1];
-  if (!r) return null;
-  const due = [r.kick, r.end].find((x) => x > p);
+  const p = wP(), r = WS.rounds[WS.rounds.length - 1];
+  if (!r || WS.paused) return null;
+  const due = [r.kick, r.whistle ?? r.kick, r.end].find((x) => x > p);
   return due == null ? null : WS.t0 + due;
 }
 
@@ -168,15 +183,31 @@ async function watchEnd() {
 
 function wWhere() {
   if (!WS.started) return { phase: "waiting" };
-  const p = wNow() - WS.t0;
+  const p = wP();
   let i = -1;
   WS.rounds.forEach((r, k) => { if (r.start <= p) i = k; });
   if (i < 0) return { phase: "waiting", p };       // kicked off; the first round is on its way
   const r = WS.rounds[i];
   if (p < r.kick) return { phase: "countdown", i, r, p, left: Math.ceil(r.kick - p) };
-  const minute = Math.floor((p - r.kick) / WS.minute_s);
-  if (minute < r.minutes) return { phase: "live", i, r, p, minute };
+  // A live room's round has breaks in it (C60): half-time, and before extra time.
+  let d = p - r.kick, played = 0;
+  for (const [secs, mins] of r.segments || [[r.minutes * WS.minute_s, r.minutes]]) {
+    if (d < secs) {
+      if (mins) return { phase: "live", i, r, p, minute: Math.floor(played + d / WS.minute_s) };
+      return { phase: "live", i, r, p, minute: played, brk: played === 45 ? "Half-time" : "Extra time" };
+    }
+    d -= secs; played += mins;
+  }
   return { phase: "after", i, r, p, minute: r.minutes };
+}
+
+/* A live room's match as far as it has been sent (C60), or the finished one once the
+   round's results are out. */
+function wFixtures(at) {
+  const r = at.r;
+  if (r.fixtures) return r.fixtures;
+  const lr = WS.live_round;
+  return lr && lr.round === at.i ? lr.fixtures : null;
 }
 
 const wTitle = (r) => r.stage === "League phase" || r.stage === "Group stage" ? r.label : r.stage;
@@ -204,7 +235,8 @@ function wScore(f, minute) {
 function wTick() {
   if (!WS) return;
   const at = wWhere();
-  const key = [at.phase, at.i, at.r && !!at.r.fixtures, wStandings(at)?.round, WS.is_host, WS.can_start, wSel].join("|");
+  const key = [at.phase, at.i, at.r && !!at.r.fixtures, at.r && !!wFixtures(at), wStandings(at)?.round, WS.is_host,
+    WS.can_start, wSel, !!WS.paused, wSubbing].join("|");
   if (key !== wDrawn) { wDrawn = key; wDraw(at); }
   wLive(at);
 }
@@ -221,7 +253,8 @@ function wStandings(at) {
 
 function wDraw(at) {
   const where = `Room ${esc(ROOM)} · ${esc(WS.format || "")} · Watching together`;
-  const squad = `<p class="cup-link"><a href="/squad?room=${esc(ROOM)}">${WS.you ? "Your squad and ratings" : "Every squad"}</a></p>`;
+  const squad = `<p class="cup-link"><a href="/squad?room=${esc(ROOM)}">${WS.you ? "Your squad and ratings" : "Every squad"}</a></p>
+    ${WS.manual ? `<p class="note">You make your own changes: <b>Make a sub</b> stops everyone's clock while you choose.</p>` : ""}`;
   if (at.phase === "waiting") {
     wRun = null;
     const kicked = WS.started;
@@ -257,9 +290,9 @@ function wDraw(at) {
 function wPaceHtml() {
   if (!WS.is_host) {
     const p = PACES.find((x) => x[0] === WS.pace);
-    return p ? `<p class="note wpace-note">Pace: ${p[1]} · the host's choice</p>` : "";
+    return `<div class="pace wpace">${soundChip()}${p ? `<span class="wpace-note">Pace: ${p[1]} · the host's choice</span>` : ""}</div>`;
   }
-  return `<div class="pace wpace"><span>Pace for everyone</span><div class="chips" role="radiogroup" aria-label="Match pace for the room">${PACES.map(([k, label]) =>
+  return `<div class="pace wpace">${soundChip()}<span>Pace for everyone</span><div class="chips" role="radiogroup" aria-label="Match pace for the room">${PACES.map(([k, label]) =>
     `<button class="chip" role="radio" aria-checked="${k === WS.pace}" data-wpace="${k}">${label}</button>`).join("")}</div></div>`;
 }
 
@@ -267,32 +300,77 @@ function wPaceWire() {
   $("hero").querySelectorAll("[data-wpace]").forEach((b) => b.onclick = () => {
     if (b.dataset.wpace !== WS.pace) wPost("pace", { pace: b.dataset.wpace });
   });
+  wireSound($("hero"), () => !!(wRun && !wRun.runner.over));
 }
 
 /* Only the host can skip, and only forward: to this round's kick-off or full time, past
    the league phase, or to the end. Everyone else is told whose clock it is. */
 function wActions(at) {
+  const sub = wCanSub(at) ? `<button class="btn primary" id="wsub">Make a sub</button>` : "";
+  const carry = WS.paused && (WS.is_host || (WS.you && `P${WS.paused.seat}` === WS.you)) && !wSubbing
+    ? `<button class="btn ghost" id="wresume">Carry on</button>` : "";
   if (!WS.is_host) {
-    $("actions").innerHTML = `<p class="note">${esc(WS.host || "The host")} controls the clock. Only the host can skip ahead.</p>`;
+    $("actions").innerHTML = `${sub}${carry}<p class="note">${esc(WS.host || "The host")} controls the clock. Only the host can skip ahead.</p>`;
+    wWireSub();
     return;
   }
-  const b = [];
+  const b = [sub, carry];
   if (at.phase === "countdown") b.push(`<button class="btn primary" data-skip="kickoff">Kick off now</button>`);
   if (at.phase !== "after") b.push(`<button class="btn ghost" data-skip="fulltime">Skip to full time</button>`);
   if (wFirstPhase(at.r)) b.push(`<button class="btn ghost" data-skip="phase">Skip the ${esc(at.r.stage.toLowerCase())}</button>`);
   b.push(`<button class="btn ghost" data-skip="end">Skip to the end</button>`);
   $("actions").innerHTML = b.join("");
-  $("actions").querySelectorAll("[data-skip]").forEach((x) => x.onclick = () => {
+  wWireSub();
+  $("actions").querySelectorAll("[data-skip]").forEach((x) => x.onclick = async () => {
     const to = x.dataset.skip;
-    if (to === "end" && !confirm("Skip to the end for everyone in the room? Every result will show.")) return;
-    wPost("skip", { to, round: at.i, have: WS.have, pace: WS.pace || "" });
+    // Friends who make their own changes won't be there for the skipped matches (C60).
+    let auto = false;
+    if (WS.any_manual && to !== "kickoff") {
+      const what = to === "fulltime" ? "The rest of this round is skipped for everyone."
+        : to === "phase" ? `The rest of the ${at.r.stage.toLowerCase()} is skipped for everyone.` : "Every match left is skipped for everyone.";
+      auto = await askAutoPlan(what, true);
+      if (auto == null) return;
+    } else if (to === "end" && !confirm("Skip to the end for everyone in the room? Every result will show.")) return;
+    wPost("skip", { to, round: at.i, have: WS.have, pace: WS.pace || "", auto });
   });
+}
+
+/* "Make a sub" (C60): for a seat that makes its own changes, while its match is played and
+   nobody has the clock stopped. */
+function wCanSub(at) {
+  if (!WS.manual || WS.paused || wSubbing || at.phase !== "live") return false;
+  const list = wFixtures(at);
+  const mine = list && list.find((f) => f.home.you || f.away.you);
+  return !!mine && !(mine.done && at.minute >= (mine.extra_time ? 120 : 90));
+}
+
+function wWireSub() {
+  if ($("wsub")) $("wsub").onclick = wMakeSub;
+  if ($("wresume")) $("wresume").onclick = () => wPost("resume");
+}
+
+async function wMakeSub() {
+  wSubbing = true;
+  wDrawn = "";
+  let reply;
+  try {
+    const t0 = Date.now();
+    reply = await api(`/api/rooms/${ROOM}/watch/pause`, { method: "POST" });
+    wSample(t0, Date.now(), reply.server_now);
+    wApply(reply);
+  } catch (e) { toast(e.message); wSubbing = false; wDrawn = ""; return; }
+  const o = reply.options;
+  const pick = await subDialog({ ...o, left: o.left });
+  wSubbing = false;
+  wDrawn = "";
+  if (pick) await wPost("sub", { on: pick.on, off: pick.off }), toast(`Your change comes at ${o.minute}'`);
+  else await wPost("resume");
 }
 
 /* The match card: the pairing before kick-off, the match as it plays, full time after. */
 function wCard(at, fresh) {
   const r = at.r, k = wPick(r);
-  if (at.phase === "countdown" || !r.fixtures) {
+  if (at.phase === "countdown" || !wFixtures(at)) {
     if (fresh) {
       wRun = null;
       const f = { ...r.pairs[k], stage: r.stage, label: r.label };
@@ -300,12 +378,18 @@ function wCard(at, fresh) {
     }
     return;
   }
-  const f = { ...r.fixtures[k], stage: r.stage, label: r.label };
+  const list = wFixtures(at);
+  if (!list) return;
+  const src = list[k], f = { ...src, stage: r.stage, label: r.label };
   const key = `${at.i}:${k}`;
   if (!wRun || wRun.key !== key) {
     // A late arrival, a skip or another match chosen: catch up quietly to the minute.
-    wRun = { key, runner: matchRunner($("match"), f, WATCH_LOOK) };
+    wRun = { key, src, runner: matchRunner($("match"), f, WATCH_LOOK) };
     wRun.runner.to(at.minute, false);
+  } else if (wRun.src !== src) {
+    // The next piece of a live room's match, or the finished match at the whistle (C60).
+    wRun.src = src;
+    wRun.runner.update(f);
   }
   if (at.phase === "after") wRun.runner.whistle();
 }
@@ -322,13 +406,25 @@ function wLive(at) {
   // The match on the card says how far it is; one that ended at 90 in a round allowed
   // 120 (extra time came elsewhere, or could have) is at full time.
   const over = at.phase === "after" || (wRun && wRun.runner.over);
-  if (state) state.textContent = at.phase === "countdown" ? `kick-off in ${at.left}` : over ? "full time" : `live, ${at.minute}'`;
-  if (r.fixtures && at.phase !== "countdown") {
+  const z = WS.paused;
+  if (state) state.textContent = z ? `paused by ${z.by || "a friend"} for a change · ${Math.max(0, Math.ceil(z.until - wNow()))}s`
+    : at.phase === "countdown" ? `kick-off in ${at.left}` : over ? "full time" : at.brk ? at.brk.toLowerCase() : `live, ${at.minute}'`;
+  const list = at.phase === "countdown" ? null : wFixtures(at);
+  if (list) {
+    if (at.phase !== "countdown") wCard(at, false);
     if (wRun) {
+      if (!SOUND.crowd && !wRun.runner.over && at.phase === "live" && !at.brk) { if (wRun.runner.minute === 0) blow("kick"); crowdStart(); }
       if (wRun.runner.to(at.minute).length) wBurstUntil = Date.now() + GOAL_PAUSE_MS;
       if (wBurstUntil && Date.now() > wBurstUntil) { wBurstUntil = 0; $("match").querySelector(".goal-burst")?.remove(); }
+      // Half-time and the break before extra time, on every screen at once (C60).
+      const brk = at.brk && !wRun.runner.over ? `${at.i}:${at.brk}` : "";
+      if (brk !== wBreak) {
+        wBreak = brk;
+        if (brk) { blow(at.brk === "Half-time" ? "half" : "et"); breakCard(wRun.runner.f, at.brk, wRun.runner.score(), at.minute, wRun.runner.end); }
+        else clearBreak();
+      }
     }
-    r.fixtures.forEach((f, k) => {
+    list.forEach((f, k) => {
       const s = wScore(f, at.minute), sc = $(`wsc${k}`), ck = $(`wck${k}`);
       if (sc) sc.textContent = s.sc;
       if (ck) ck.textContent = s.clock;

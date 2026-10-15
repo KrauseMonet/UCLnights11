@@ -332,14 +332,30 @@ function goalBurst(f, g, look) {
     <div class="gb-ball" aria-hidden="true">⚽</div><div class="gb-word">Goal</div>
     <div class="gb-who">${esc(g.scorer)} <span>${g.minute}'</span></div>
     ${g.assist ? `<div class="gb-assist"><span aria-hidden="true">${ASSIST_MARK}</span> assisted by ${esc(g.assist)}</div>` : ""}
+    ${g.kind ? `<div class="gb-kind">${esc(kindLabel(g))}</div>` : ""}
     <div class="gb-side">${esc(look.name(side))}</div></div>`);
 }
+
+/* How a goal was scored (C61): "Header · from a corner", "Volley · left foot". */
+const KIND_WORDS = { header: "Header", penalty: "Penalty", free_kick: "Free kick", long_range: "Long range",
+  tap_in: "Tap-in", volley: "Volley", solo_run: "Solo run" };
+const MADE_WORDS = { pass: "from a pass", cross: "from a cross", corner: "from a corner", header: "from a knock-down",
+  rebound: "from a rebound", free_kick: "from a free kick" };
+function kindLabel(g) {
+  const foot = g.foot ? `${g.foot} foot` : "";
+  const what = g.kind === "foot" ? foot.charAt(0).toUpperCase() + foot.slice(1) : KIND_WORDS[g.kind] || "";
+  const how = g.kind === "header" || g.kind === "foot" ? MADE_WORDS[g.made] || "" : g.foot && g.kind !== "foot" ? foot : "";
+  return how ? `${what} · ${how}` : what;
+}
+const kindChip = (g) => g.kind
+  ? `<span class="gk">${esc(kindLabel(g))}</span>` : "";
+const saidLine = (g) => g.line ? `<span class="said">${kindChip(g)}${esc(g.line)}</span>` : "";
 
 function goalLine(g) {
   const assist = g.assist ? ` <small title="Assist"><span aria-label="assist by">${ASSIST_MARK}</span> ${esc(g.assist)}</small>` : "";
   return g.side === 0
-    ? `<div class="h">${esc(g.scorer)}${assist}<span class="m">${g.minute}'</span>⚽</div>`
-    : `<div class="a">⚽<span class="m">${g.minute}'</span>${esc(g.scorer)}${assist}</div>`;
+    ? `<div class="h">${esc(g.scorer)}${assist}<span class="m">${g.minute}'</span>⚽${saidLine(g)}</div>`
+    : `<div class="a">⚽<span class="m">${g.minute}'</span>${esc(g.scorer)}${assist}${saidLine(g)}</div>`;
 }
 
 /* A match on the card that can be moved on to any minute: `to(m, show)` plays every

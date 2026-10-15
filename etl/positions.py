@@ -56,11 +56,11 @@ TM_POSITION = {
 }
 
 
-def download() -> dict[str, str]:
+def download(files: tuple[str, ...] = FILES) -> dict[str, str]:
     """The dataset's files, fetched once; returns their SHA-256s."""
     DOWNLOADS.mkdir(parents=True, exist_ok=True)
     out = {}
-    for name in FILES:
+    for name in files:
         path = DOWNLOADS / name
         if not path.exists():
             print(f"downloading {name} ...", file=sys.stderr)

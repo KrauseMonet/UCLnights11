@@ -51,6 +51,7 @@ ASSOCIATIONS = ROOT / "data" / "associations.json"
 RATINGS = ROOT / "data" / "ratings"
 POSITION_FILES = ROOT / "data" / "positions"
 MEASURED = POSITION_FILES / "measured.json"
+GOAL_KINDS = ROOT / "data" / "goal_kinds.json"
 OUT = ROOT / "data" / "deck.json"
 
 MIN_RATING, MAX_RATING = 50, 99
@@ -289,8 +290,13 @@ def build() -> dict:
         raise BuildError("\n".join(errors))
     out.sort(key=lambda s: (s["season"], s["name"]))
     # The quarter-finalists Wikipedia supplies no readable squad for, so the archive page
-    # can say why they are missing; carried here so the server needs one data file.
-    return {"version": 2, "club_seasons": out, "skipped": skipped, "gaps": squads_doc.get("gaps", [])}
+    # can say why they are missing; carried here so the server needs one data file. So are
+    # the measured goal kinds (etl.goal_kinds, C61), each player's foot for this deck's people only.
+    kinds = json.loads(GOAL_KINDS.read_text())
+    people = {p["id"] for s in out for p in s["players"]}
+    kinds["foot"] = {k: v for k, v in kinds["foot"].items() if k in people}
+    return {"version": 2, "club_seasons": out, "skipped": skipped, "gaps": squads_doc.get("gaps", []),
+            "goal_kinds": kinds}
 
 
 def serialise(deck: dict) -> str:

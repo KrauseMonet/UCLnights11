@@ -335,7 +335,7 @@ function resRow(f) {
   const t = (s, side) => `<div class="t ${side}">${side === "h" ? `<span class="nm ${s.you ? "you-name" : ""}">${esc(sideName(s))}</span>${sideCrest(s, 22)}` : `${sideCrest(s, 22)}<span class="nm ${s.you ? "you-name" : ""}">${esc(sideName(s))}</span>`}</div>`;
   return `<details class="res-d"><summary class="res ${outcome(f)}"><div class="tag">${esc(shortStage(f))}</div>
     ${t(f.home, "h")}<div class="sc">${f.hg}–${f.ag}${extraLine(f) ? `<small>${extraLine(f)}</small>` : ""}</div>${t(f.away, "a")}</summary>
-    ${f.goals.length ? `<div class="res-goals">${f.goals.map((g) => `<span class="${g.side ? "a" : "h"}">${esc(g.scorer)} ${g.minute}'${g.assist ? ` <small>${ASSIST_MARK} ${esc(g.assist)}</small>` : ""}</span>`).join("")}</div>` : ""}
+    ${f.goals.length ? `<div class="res-goals">${f.goals.map((g) => `<span class="${g.side ? "a" : "h"}">${esc(g.scorer)} ${g.minute}'${g.assist ? ` <small>${ASSIST_MARK} ${esc(g.assist)}</small>` : ""}${saidLine(g)}</span>`).join("")}</div>` : ""}
     ${statsHtml(f)}</details>`;
 }
 

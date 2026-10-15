@@ -27,7 +27,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from game import analysis as analyses, daily as daily_rules, journey as journeys, match, squad_ratings
-from game import watch
+from game import commentary, goal_kinds, watch
 from game.deck import Card, ClubSeason, load_deck
 from game.draft import (Change, IllegalMove, LiveEntry, Pick, Reroll, Session, can_replace, carry_plan,
                         check_sheet, decode, decode_live, decode_solo, decode_state, default_sheet, encode,
@@ -211,17 +211,33 @@ def side_out(side: Side) -> dict:
     return out
 
 
+def goals_out(f: Fixture, told: bool = False) -> list[dict]:
+    """A match's goals. ``told`` adds how each was scored and its line of commentary (C61):
+    worked out here from the match and its goals, never stored, so every link, room and
+    day ever played has them and none replays differently."""
+    r = f.result
+    out = [{"minute": g.minute, "side": g.side, "scorer": g.scorer.name,
+            "assist": g.assist.name if g.assist else None} for g in r.goals]
+    if told and r.goals:
+        name = goal_kinds.match_name(f.stage, f.label, f.home.xi, f.away.xi)
+        kinds = goal_kinds.kinds(load_deck().goal_kinds, name, r.goals)
+        said = commentary.lines(name, r.goals, kinds, ({c.id for c in f.home.xi}, {c.id for c in f.away.xi}))
+        for g, k, line in zip(out, kinds, said):
+            g.update(kind=k.flavour or k.finish, foot=k.foot, made=k.made, line=line)
+    return out
+
+
 def fixture_out(f: Fixture, timeline: bool = False) -> dict:
     """``timeline`` adds every shot's minute, [minute, side, on target, goal], for a match
-    the page plays live (C30); only your own matches carry it, to keep the reply small."""
+    the page plays live (C30), and each goal's kind and commentary (C61); only your own
+    matches carry them, to keep the reply small."""
     r = f.result
     out = {
         "stage": f.stage, "label": f.label, "group": f.group,
         "home": side_out(f.home), "away": side_out(f.away),
         "hg": r.home_goals, "ag": r.away_goals, "extra_time": r.extra_time,
         "pens": list(r.pens) if r.pens else None,
-        "goals": [{"minute": g.minute, "side": g.side, "scorer": g.scorer.name,
-                   "assist": g.assist.name if g.assist else None} for g in r.goals],
+        "goals": goals_out(f, told=timeline),
         "stats": stats_out(r),
     }
     if timeline:

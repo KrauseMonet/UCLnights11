@@ -9,6 +9,15 @@ are `games.csv.gz` and `game_lineups.csv.gz`; their SHA-256s are in
 `data/positions/measured.json`. Players are linked through Wikidata's Transfermarkt player
 id (P2446, CC0). Positions before 2013–14 are this game's own judgement.
 
+## Goal kinds
+
+How often a goal is a header, a penalty, a direct free kick or a shot with either foot, and
+how it was set up, is counted from Transfermarkt's Champions League match events, 2012–13
+on, as published by the same transfermarkt-datasets project (CC0): `game_events.csv.gz`,
+with `games.csv.gz` and `game_lineups.csv.gz`; their SHA-256s are in `data/goal_kinds.json`.
+Long range, tap-in, volley and solo run are this game's own judgement. The commentary is
+written for this site.
+
 ## Club crests
 
 Every crest belongs to its club. They appear here on a non-commercial fan site, at the site

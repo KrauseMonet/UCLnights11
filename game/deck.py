@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from functools import lru_cache
 from pathlib import Path
 
@@ -64,6 +64,7 @@ class ClubSeason:
 class Deck:
     club_seasons: tuple[ClubSeason, ...]
     by_key: dict[str, ClubSeason]
+    goal_kinds: dict = field(default_factory=dict)   # etl.goal_kinds' measured shares (C61)
 
 
 def build_deck(doc: dict) -> Deck:
@@ -86,7 +87,7 @@ def build_deck(doc: dict) -> Deck:
             team=s["team"], deep=s["deep"], ink=s["ink"], cards=cards, best=best,
             association=s.get("association"),
         ))
-    return Deck(tuple(seasons), {s.key: s for s in seasons})
+    return Deck(tuple(seasons), {s.key: s for s in seasons}, doc.get("goal_kinds", {}))
 
 
 @lru_cache(maxsize=1)

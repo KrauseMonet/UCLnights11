@@ -412,7 +412,7 @@ function renderTurns() {
   $("pickcount").textContent = `${T.expect} made`;
   $("recent").innerHTML = T.recent.length ? T.recent.map((r) => `<li style="${teamStyle(r)}">
       <span class="dot" aria-hidden="true"></span><b>${esc(r.username)}</b>
-      <span class="pk">${esc(r.card.name)}</span>${positionsHtml(r.card)}
+      <span class="pick-name">${esc(r.card.name)}</span>${positionsHtml(r.card)}
       <small>${esc(r.card.short)} ${esc(r.card.season.slice(2))}${r.card.rating == null ? "" : ` · ${r.card.rating}`}</small></li>`).join("")
     : `<li class="empty">No picks yet.</li>`;
   startTicker();

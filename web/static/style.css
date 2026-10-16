@@ -938,7 +938,7 @@ button{font:inherit;cursor:pointer}
 .feed-list li:first-child{border:0}
 .feed-list li.empty{display:block;color:var(--ink-3)}
 .feed-list .dot{width:8px;height:8px;border-radius:50%;background:var(--team);box-shadow:0 0 8px var(--team)}
-.feed-list .pk{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:650}
+.feed-list .pick-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:650}
 .feed-list small{grid-column:2/-1;color:var(--ink-3);font-size:11.5px}
 
 /* --- a room's results --- */

@@ -9,6 +9,9 @@
    its watch ends, and then shows here with every result out. */
 
 const ROOM = new URLSearchParams(location.search).get("room");
+// A season of a dynasty (C64): /cup?season=N#DYNASTY. Its tournament is the state up to
+// season N; its watch marks are its own (dynasty.js reads them), and it is never saved yet.
+const SEASON = ROOM ? 0 : +new URLSearchParams(location.search).get("season") || 0;
 shell(ROOM ? "friends" : "draft");
 let CUP = null;
 
@@ -53,8 +56,11 @@ function renderHero() {
   const avg = Math.round(CUP.you.xi.reduce((a, c) => a + c.rating, 0) / 11);
   // Your eleven, its bench and plan live on the squad page now (C44), one tap away.
   const squad = ROOM ? `/squad?room=${esc(ROOM)}` : `/squad#${esc(CUP.state)}`;
-  const kicker = `<div class="kicker">${where}Your XI · ${esc(CUP.you.formation)} · average ${avg}</div>`;
-  const squadLink = `<p class="cup-link"><a href="${squad}">Your squad and ratings</a></p>`;
+  const year = CUP.dynasty ? `Year ${CUP.dynasty.season} · ` : "";
+  const kicker = `<div class="kicker">${where}${year}Your XI · ${esc(CUP.you.formation)} · average ${avg}</div>`;
+  const squadLink = CUP.dynasty
+    ? `<p class="cup-link"><a href="/dynasty#${esc(CUP.dynasty.full)}">Back to your dynasty</a></p>`
+    : `<p class="cup-link"><a href="${squad}">Your squad and ratings</a></p>`;
   const placed = leaguePlace();
   if (!done) {
     const next = CUP.your_matches[CUP.revealed];
@@ -228,6 +234,12 @@ function resultLine(f) {
 }
 
 function endActions() {
+  if (CUP.dynasty) {
+    $("actions").innerHTML = `<a class="btn primary" href="/dynasty#${esc(CUP.dynasty.full)}">Back to your dynasty</a>`
+      + (CUP.journey ? `<button class="btn ghost" id="jcard">Journey card</button>` : "");
+    if ($("jcard")) $("jcard").onclick = showJourney;
+    return;
+  }
   const card = (CUP.journey ? `<button class="btn ghost" id="jcard">Journey card</button>` : "")
     + `<a class="btn ghost" href="${CUP.room ? `/analysis?room=${esc(CUP.room.code)}` : `/analysis#${esc(CUP.state)}`}">Tournament analysis</a>`;
   $("actions").innerHTML = CUP.room
@@ -273,7 +285,8 @@ function showJourney() {
   const y = CUP.you;
   const side = { name: y.you ? "Your XI" : y.name, formation: y.formation, crest: y.crest, human: !!y.human,
     avg: Math.round(y.xi.reduce((a, c) => a + c.rating, 0) / y.xi.length), team: y.team, deep: y.deep, ink: y.ink };
-  openJourney(CUP.journey, side, CUP.room ? `ROOM ${CUP.room.code}` : `SEED ${CUP.state.split("-")[0].replace(/^[bl]/, "")}`);
+  openJourney(CUP.journey, side, CUP.room ? `ROOM ${CUP.room.code}`
+    : CUP.dynasty ? `DYNASTY · YEAR ${CUP.dynasty.season}` : `SEED ${CUP.state.split("-")[0].replace(/^[bl]/, "")}`);
 }
 
 function championBlock() {
@@ -284,9 +297,18 @@ function championBlock() {
       <div class="champ-name">${c.you ? "Your XI" : esc(c.name).replace(/ (\d{4}–\d{2})$/, ' <span class="nowrap">$1</span>')}</div></div>`;
 }
 
+/* How far your matches have been watched, kept in this browser. A dynasty's season keeps
+   its own marks, and one more once every match has been seen, which is when the dynasty
+   page shows how it went and opens the next season. */
+function markSeen(n) {
+  if (!CUP.dynasty) return store.set(`cup:${CUP.state}`, n);
+  store.set(`dynseen:${CUP.state}`, n);
+  if (n >= CUP.your_matches.length) store.set(`dyndone:${CUP.state}`, "1");
+}
+
 function reveal(n) {
   CUP.revealed = n;
-  store.set(`cup:${CUP.state}`, n);
+  markSeen(n);
   renderHero();
   renderBody();
 }
@@ -309,7 +331,7 @@ function playNext() {
   const live = CUP.you.manual ? { open: (minute) => openSub(k, minute) } : null;
   const finish = playMatch($("match"), f, CUP_LOOK, () => {
     CUP.revealed += 1;
-    store.set(`cup:${CUP.state}`, CUP.revealed);
+    markSeen(CUP.revealed);
     $("actions").innerHTML = CUP.revealed < CUP.your_matches.length
       ? `<button class="btn primary" id="cont">Next match</button>`
       : `<button class="btn primary" id="cont">See how it ended</button>`;
@@ -430,8 +452,11 @@ function friendsHtml() {
 
 (async function boot() {
   loadMeta().catch(() => {});
-  const state = ROOM ? `room:${ROOM}` : location.hash.slice(1);
-  if (ROOM ? !/^[A-Za-z0-9]{6}$/.test(ROOM) : !/^[\w.-]+$/.test(state)) { location.href = ROOM ? "/friends" : "/draft"; return; }
+  const full = location.hash.slice(1);
+  // A dynasty's season is asked for with the state up to it: all its tournament depends on.
+  const state = ROOM ? `room:${ROOM}` : SEASON ? full.split("~").slice(0, SEASON).join("~") : full;
+  const ok = ROOM ? /^[A-Za-z0-9]{6}$/.test(ROOM) : SEASON ? /^y[\w.~-]+$/.test(full) && SEASON <= full.split("~").length : /^[\w.-]+$/.test(state);
+  if (!ok) { location.href = ROOM ? "/friends" : SEASON ? "/start" : "/draft"; return; }
   // A room that watches together (C52) is shown on its shared clock until the watch ends.
   let together = false;
   if (ROOM) {
@@ -441,11 +466,13 @@ function friendsHtml() {
       together = w.together;
     } catch { /* the tournament's own reply says what is wrong */ }
   }
-  try { CUP = await api(ROOM ? `/api/rooms/${ROOM}/tournament` : `/api/tournament/${state}`); }
+  try { CUP = await api(ROOM ? `/api/rooms/${ROOM}/tournament` : SEASON ? `/api/dynasty/${state}/tournament` : `/api/tournament/${state}`); }
   catch (e) { $("hero").innerHTML = `<h1>Something went wrong</h1><p>${esc(e.message)}</p>`; return; }
   CUP.state = state;
+  if (SEASON) CUP.dynasty = { season: SEASON, full };
   // Watched together, every result is out; otherwise each match is revealed as it is seen.
-  CUP.revealed = together ? CUP.your_matches.length : Math.min(+(store.get(`cup:${state}`) || 0), CUP.your_matches.length);
+  const seen = store.get(SEASON ? `dynseen:${state}` : `cup:${state}`);
+  CUP.revealed = together ? CUP.your_matches.length : Math.min(+(seen || 0), CUP.your_matches.length);
   renderHero();
   renderBody();
 })();

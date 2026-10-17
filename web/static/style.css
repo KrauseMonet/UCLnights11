@@ -201,8 +201,8 @@ button{font:inherit;cursor:pointer}
 .setup-head{margin:6px 0 26px}
 .setup-head .sub{max-width:620px}
 .setup-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:24px 30px;align-items:start;
-  grid-template-areas:"form pv" "rate pv" "cta pv"}
-.setup-form{grid-area:form}.setup-ratings{grid-area:rate}.setup-cta{grid-area:cta}
+  grid-template-areas:"form pv" "rate pv" "mode pv" "cta pv"}
+.setup-form{grid-area:form}.setup-ratings{grid-area:rate}.setup-mode{grid-area:mode}.setup-cta{grid-area:cta}
 .setup-preview{grid-area:pv;position:sticky;top:96px}
 .step-h{display:flex;align-items:baseline;gap:12px;margin-bottom:14px}
 .step-h .n{font:700 13px var(--display);color:var(--ice);letter-spacing:.04em}
@@ -242,7 +242,7 @@ button{font:inherit;cursor:pointer}
 .pv-lines div{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .pv-lines .label{width:78px}
 @media (max-width:980px){
-  .setup-grid{grid-template-columns:minmax(0,1fr);grid-template-areas:"form" "pv" "rate" "cta"}
+  .setup-grid{grid-template-columns:minmax(0,1fr);grid-template-areas:"form" "pv" "rate" "mode" "cta"}
   .setup-preview{position:static}
   .setup-preview .pitch{max-width:440px;margin:18px auto}
 }
@@ -1388,4 +1388,45 @@ button{font:inherit;cursor:pointer}
   .topnav-in,.acct-menu,.modal-in,.toast,.peek,.peek-card{background:var(--panel-2)}
   .turnbar-in{background:linear-gradient(110deg,color-mix(in srgb,var(--team-deep) 85%,var(--panel)),var(--panel) 70%)}
   .matchcard .mid{background:var(--bg-2)}
+}
+
+/* --- dynasty (C64) --- the seasons strip, the transfer window's summer, a played season */
+.dyn-years{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 10px;margin:0 0 18px;scrollbar-width:thin}
+.dyn-year,.dyn-titles{flex:none;display:grid;gap:4px;min-width:112px;padding:11px 14px;border:1px solid var(--line);border-radius:var(--r-md);
+  background:var(--panel);color:var(--ink);text-decoration:none}
+.dyn-year b,.dyn-titles b{font:700 14px/1.15 var(--display);letter-spacing:-.01em}
+.dyn-year small{color:var(--ink-3);font-size:12px}
+a.dyn-year:hover{border-color:rgba(124,196,255,.55);background:var(--panel-2)}
+.dyn-year.on{border-color:var(--ice);box-shadow:0 0 0 1px var(--ice) inset}
+.dyn-year.champ b{color:var(--trophy)}
+.dyn-year.future{opacity:.45}
+.dyn-titles{min-width:84px;border-color:color-mix(in srgb,var(--trophy) 40%,transparent)}
+.dyn-titles b{font-size:22px;color:var(--trophy)}
+.dyn-window{margin:0 0 22px}
+.dyn-window summary{cursor:pointer;list-style:none}
+.dyn-window summary::-webkit-details-marker{display:none}
+.dyn-window details:not([open]) summary{border-bottom:0}
+.dyn-window summary .label:first-child::before{content:"▸";display:inline-block;margin-right:8px;transition:transform .2s}
+.dyn-window details[open] summary .label:first-child::before{transform:rotate(90deg)}
+.dyn-intro{padding:14px 20px 4px;color:var(--ink-2);font-size:14px;line-height:1.5}
+.dyn-intro p{margin:0}
+.dyn-shapes{padding:12px 20px 4px;display:grid;gap:8px}
+.dyn-group{padding-bottom:8px}
+.fate{display:flex;align-items:center;gap:12px;padding:9px 20px;border-top:1px solid var(--line)}
+.fate .who{flex:1;min-width:0}
+.fate .who b{font-weight:650;font-size:14.5px}
+.fate .who small{display:flex;flex-wrap:wrap;align-items:center;gap:4px;color:var(--ink-3);font-size:12.5px;margin-top:3px;line-height:1.4}
+.fate.left,.fate.end,.fate.no-place{opacity:.7}
+.fate.released .who b{text-decoration:line-through;text-decoration-color:var(--ink-3)}
+.dyn-delta{flex:none;font:700 13px var(--display);color:var(--ink-2);white-space:nowrap}
+.dyn-delta.up{color:var(--win)}
+.dyn-delta.down{color:var(--loss)}
+.dyn-season{padding:16px 20px;display:grid;gap:10px}
+.dyn-result{margin:0;font:700 20px/1.2 var(--display);letter-spacing:-.015em}
+.dyn-end{margin:0;color:var(--trophy-2)}
+@media (max-width:480px){
+  .fate{padding:9px 14px;gap:9px;flex-wrap:wrap}
+  .fate .crest{display:none}
+  .fate .btn{margin-left:auto}
+  .dyn-year,.dyn-titles{min-width:96px;padding:9px 11px}
 }

@@ -27,7 +27,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from game import analysis as analyses, daily as daily_rules, journey as journeys, match, squad_ratings
-from game import commentary, goal_kinds, watch
+from game import commentary, dynasty as dy, goal_kinds, watch
 from game.deck import Card, ClubSeason, load_deck
 from game.draft import (Change, IllegalMove, LiveEntry, Pick, Reroll, Session, can_replace, carry_plan,
                         check_sheet, decode, decode_live, decode_solo, decode_state, default_sheet, encode,
@@ -138,14 +138,16 @@ def eleven_out(f, picks: list[Card], memory: bool) -> list[dict]:
     return hide_ratings(out) if memory else out
 
 
-def session_out(state: str, s: Session, memory: bool = False) -> dict:
+def session_out(state: str, s: Session, memory: bool = False, why=None) -> dict:
     """A draft as the drafter sees it. Every dealt card carries ``i``, its index in the
     deal, which is what a pick names. In Memory mode the ratings are removed here, not
     hidden by the page, and the deal is listed by name: the deck lists a squad best
-    first, so the order alone would give the ratings away."""
+    first, so the order alone would give the ratings away. ``why`` says why a card can't
+    be taken, where the draft's own rule doesn't know everything (a dynasty's window)."""
     deal = None
     if s.deal is not None:
-        cards = [{**card_out(c, why_not(c, s.formation, s.picks)), "i": i} for i, c in enumerate(s.deal.cards)]
+        why = why or (lambda c: why_not(c, s.formation, s.picks))
+        cards = [{**card_out(c, why(c)), "i": i} for i, c in enumerate(s.deal.cards)]
         if memory:
             cards.sort(key=lambda c: (LINE_ORDER.index(c["pos"]), c["name"]))
         deal = club_season_out(s.deal, cards)
@@ -855,6 +857,171 @@ def tournament_analysis(state: str, response: Response) -> dict:
     you = next((s for s in t.sides if s.you), None)
     pure(response)
     return {"analysis": analysis_out(analyses.tournament_analysis(t, you)), "you": side_out(you)}
+
+
+# -- dynasty mode (C64) -----------------------------------------------------
+# One squad over ten seasons, each man ageing into his next real season (game.dynasty).
+# The whole dynasty is its state string, like a solo draft's: the routes edit its LAST
+# season (its picks, sheet and plan) or open the next season's window, and every season's
+# tournament is a pure function of the state up to it.
+
+def _dynasty(state: str) -> list[dy.Season]:
+    try:
+        return dy.replay(load_deck(), state)
+    except IllegalMove as e:
+        raise HTTPException(400, str(e)) from None
+
+
+def fate_out(i: int, f: dy.Fate) -> dict:
+    """One man of last season's squad and what became of him: ``to`` is his card this
+    season (None if he has left), ``i`` what a release names."""
+    return {"i": i, "reason": f.reason, "from": card_out(f.card),
+            "to": None if f.next is None else card_out(f.next),
+            "moved": f.next is not None and f.next.club_name != f.card.club_name,
+            "jump": None if f.next is None else f.next.season - f.card.season}
+
+
+def _deck_ends() -> str:
+    y = dy.last_season(load_deck())
+    return f"{y}–{(y + 1) % 100:02d}"
+
+
+def dynasty_out(state: str, seasons: list[dy.Season]) -> dict:
+    """The dynasty as the page shows it: its last season as a draft (the deal, the squad so
+    far with the kept substitutes ``waiting`` for the eleven to fill, the plan once it is
+    complete), how that season's squad came from the one before, and every season's state."""
+    last = seasons[-1]
+    out = session_out(state, last.session, why=last.why_not)
+    block = dy.last_block(state)
+    out["waiting"] = [card_out(c) for c in last.waiting]
+    out["dynasty"] = {
+        "season": last.number, "length": dy.LENGTH, "max": dy.MAX_SEASONS, "releases": dy.RELEASES,
+        "jump": dy.JUMP, "deck_ends": _deck_ends(),
+        "seasons": [{"number": x.number, "formation": x.session.formation.label, "complete": x.session.complete,
+                     "state": st} for x, st in zip(seasons, dy.season_states(state))],
+        "fates": [fate_out(i, f) for i, f in enumerate(last.fates)],
+        "released": list(block.releases),
+        # The window's shape and releases can be chosen again until its first pick or reroll.
+        "reshape": last.number > 1 and not block.moves,
+    }
+    return out
+
+
+class DynastyIn(BaseModel):
+    formation: str = DEFAULT
+    seed: int | None = None
+
+
+@app.post("/api/dynasty")
+def dynasty_start(body: DynastyIn) -> dict:
+    seed = body.seed if body.seed is not None else random.SystemRandom().randrange(1, 10**9)
+    state = dy.encode_dynasty(seed, body.formation, [])
+    return dynasty_out(state, _dynasty(state))
+
+
+@app.get("/api/dynasty/{state}")
+def dynasty_get(state: str, response: Response) -> dict:
+    out = dynasty_out(state, _dynasty(state))
+    pure(response)
+    return out
+
+
+def _dynasty_edit(state: str, **fields) -> dict:
+    _dynasty(state)
+    try:
+        new = dy.edit_last(state, **fields)
+    except KeyError:
+        raise HTTPException(400, "a change comes on a score the plan knows") from None
+    return dynasty_out(new, _dynasty(new))
+
+
+@app.post("/api/dynasty/{state}/pick")
+def dynasty_pick(state: str, body: PickIn) -> dict:
+    _dynasty(state)
+    return _dynasty_edit(state, moves=(*dy.last_block(state).moves, Pick(body.index)))
+
+
+@app.post("/api/dynasty/{state}/reroll")
+def dynasty_reroll(state: str) -> dict:
+    _dynasty(state)
+    return _dynasty_edit(state, moves=(*dy.last_block(state).moves, Reroll()))
+
+
+@app.post("/api/dynasty/{state}/plan")
+def dynasty_plan(state: str, body: PlanIn) -> dict:
+    """The last season's plan (C41), part of the state like a solo draft's."""
+    if not _dynasty(state)[-1].session.complete:
+        raise HTTPException(409, "finish the squad first")
+    plan = None if body.changes is None else tuple(Change(c.on, c.minute, c.when, c.off) for c in body.changes)
+    return _dynasty_edit(state, plan=plan)
+
+
+@app.post("/api/dynasty/{state}/sheet")
+def dynasty_sheet(state: str, body: SheetIn) -> dict:
+    """The last season's team sheet (C44); its plan follows its men across (carry_plan)."""
+    before = _dynasty(state)[-1].session
+    if not before.complete:
+        raise HTTPException(409, "finish the squad first")
+    try:
+        sheet = new_sheet(before, body)
+    except IllegalMove as e:
+        raise HTTPException(400, str(e)) from None
+    after = _dynasty(dy.edit_last(state, sheet=sheet, plan=None))[-1].session
+    return _dynasty_edit(state, sheet=sheet, plan=carry_plan(before, after, before.plan))
+
+
+class WindowIn(BaseModel):
+    formation: str
+    releases: list[int] = []
+    reshape: bool = False      # choose this season's window again, before its first pick
+
+
+@app.post("/api/dynasty/{state}/window")
+def dynasty_window(state: str, body: WindowIn) -> dict:
+    """The next season's transfer window, once the last season's squad is complete; or,
+    with ``reshape``, the last window's formation and releases chosen again."""
+    seasons = _dynasty(state)
+    if not body.reshape and not seasons[-1].session.complete:
+        raise HTTPException(409, "finish this season's squad first")
+    try:
+        new = dy.open_window(state, body.formation, tuple(body.releases), body.reshape)
+    except IllegalMove as e:
+        raise HTTPException(400, str(e)) from None
+    return dynasty_out(new, _dynasty(new))
+
+
+@lru_cache(maxsize=32)
+def _dynasty_tournament(state: str) -> Tournament:
+    """The LAST season's tournament of ``state``: the state up to a season is all its
+    tournament depends on, so the page asks with that and every later window shares it."""
+    season = _dynasty(state)[-1]
+    if not season.session.complete:
+        raise HTTPException(409, "the squad is not complete yet")
+    return dy.season_tournament(load_deck(), league(), season)
+
+
+@app.get("/api/dynasty/{state}/tournament")
+def dynasty_tournament(state: str, response: Response) -> dict:
+    out = tournament_out(_dynasty_tournament(state))
+    out["dynasty"] = {"season": len(state.split("~")), "length": dy.LENGTH}
+    pure(response)
+    return out
+
+
+@app.get("/api/dynasty/{state}/record")
+def dynasty_record(state: str, response: Response) -> dict:
+    """How each finished season of ``state`` went. The page asks only with the seasons it
+    has watched, so nothing it shows is a result not yet seen."""
+    seasons = _dynasty(state)
+    out = []
+    for x, st in zip(seasons, dy.season_states(state)):
+        if not x.session.complete:
+            break
+        r = dy.record(_dynasty_tournament(st))
+        out.append({"number": x.number, "reached": r.reached, "w": r.won, "d": r.drawn, "l": r.lost,
+                    "gf": r.scored, "ga": r.conceded})
+    pure(response)
+    return {"seasons": out}
 
 
 # -- accounts ---------------------------------------------------------------
@@ -2094,7 +2261,8 @@ def _page(name: str):
 PAGES = (("/", "index"), ("/start", "start"), ("/draft", "draft"), ("/cup", "cup"), ("/archive", "archive"),
          ("/friends", "friends"), ("/room", "room"), ("/about", "about"), ("/faq", "faq"),
          ("/privacy", "privacy"), ("/terms", "terms"), ("/offline", "offline"), ("/admin", "admin"),
-         ("/analysis", "analysis"), ("/daily", "daily"), ("/profile", "profile"), ("/squad", "squad"))
+         ("/analysis", "analysis"), ("/daily", "daily"), ("/profile", "profile"), ("/squad", "squad"),
+         ("/dynasty", "dynasty"))
 for _path, _name in PAGES:
     app.add_api_route(_path, _page(_name), methods=["GET"], include_in_schema=False)
 

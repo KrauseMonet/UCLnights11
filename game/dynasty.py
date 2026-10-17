@@ -45,7 +45,7 @@ the releases as base-36 indices into the previous season's picks ("x" alone for 
 from __future__ import annotations
 
 import random
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 
 from game import match
 from game.daily import hash_seed
@@ -284,6 +284,31 @@ def season_tournament(deck: Deck, league: match.League, season: Season) -> Tourn
     return play_tournament(deck, league, season.session.seed, side_of(season.session), engine=2, fmt="league")
 
 
+@dataclass(frozen=True)
+class Record:
+    """How a season went for your side: how far, and its matches' W-D-L and goals."""
+
+    reached: str
+    won: int
+    drawn: int
+    lost: int
+    scored: int
+    conceded: int
+
+
+def record(t: Tournament) -> Record:
+    you = t.you()
+    w = d = l = gf = ga = 0
+    for f in t.fixtures:
+        if you not in (f.home, f.away):
+            continue
+        mine, theirs = ((f.result.home_goals, f.result.away_goals) if f.home is you
+                        else (f.result.away_goals, f.result.home_goals))
+        gf, ga = gf + mine, ga + theirs
+        w, d, l = w + (mine > theirs), d + (mine == theirs), l + (mine < theirs)
+    return Record(t.reached(you), w, d, l, gf, ga)
+
+
 # -- state strings ----------------------------------------------------------------------
 
 def _moves_token(moves) -> str:
@@ -351,3 +376,40 @@ def decode(state: str):
         raise IllegalMove(f"a dynasty holds at most {MAX_SEASONS} seasons")
     seed, formation, moves, _, plan, sheet = decode_solo("l" + head[1:])
     return seed, formation, moves, sheet, plan, [decode_window(w) for w in rest]
+
+
+def season_states(state: str) -> list[str]:
+    """The state up to and including each season: what season n's tournament is a function of."""
+    blocks = state.split("~")
+    return ["~".join(blocks[:n]) for n in range(1, len(blocks) + 1)]
+
+
+def last_block(state: str) -> Window:
+    """The last season's block, season 1's included (its releases empty)."""
+    seed, formation, moves, sheet, plan, windows = decode(state)
+    return windows[-1] if windows else Window(formation, (), tuple(moves), sheet, plan)
+
+
+def edit_last(state: str, **fields) -> str:
+    """The state with its last season's block changed (``moves``, ``sheet`` or ``plan``)."""
+    seed, formation, moves, sheet, plan, windows = decode(state)
+    if windows:
+        windows[-1] = replace(windows[-1], **fields)
+        return encode_dynasty(seed, formation, moves, sheet, plan, windows)
+    first = replace(Window(formation, (), tuple(moves), sheet, plan), **fields)
+    return encode_dynasty(seed, first.formation, list(first.moves), first.sheet, first.plan)
+
+
+def open_window(state: str, formation: str, releases: tuple[int, ...], reshape: bool = False) -> str:
+    """A new season's window after the last season, or, with ``reshape``, the last window
+    chosen again (another formation or other releases), which is allowed only before its
+    first pick or reroll: after one, the deals already shown would change."""
+    seed, first_formation, moves, sheet, plan, windows = decode(state)
+    w = Window(formation, tuple(sorted(releases)), ())
+    if reshape:
+        if not windows or windows[-1].moves:
+            raise IllegalMove("this season's window can't be changed now")
+        windows[-1] = w
+    else:
+        windows.append(w)
+    return encode_dynasty(seed, first_formation, moves, sheet, plan, windows)

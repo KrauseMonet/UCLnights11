@@ -86,13 +86,15 @@ def parse_day(text: str | None) -> date:
     return d
 
 
-def seed_for(day: date, purpose: str, edition: int = 0, account_id: int | None = None) -> int:
+def seed_for(day: date, purpose: str, edition: int = 0, account_id: int | None = None, resets: int = 0) -> int:
     """A secret seed for `purpose` ("deal", "ranked" or "practice") on `day`, in the day's
     `edition` (0, the day as first made, keeps the seeds every day before C55 had), and
     for one account's ranked match on a day made with its own seeds (C59; None keeps the
-    day's one seed, as every day before had)."""
+    day's one seed, as every day before had), after `resets` resets by an admin (C63; 0
+    keeps the seed an attempt had before any)."""
     text = (f"daily:{day.isoformat()}:{purpose}" + (f":{edition}" if edition else "")
-            + (f":account:{account_id}" if account_id is not None else ""))
+            + (f":account:{account_id}" if account_id is not None else "")
+            + (f":reset:{resets}" if resets else ""))
     mac = hmac.new(auth._session_secret().encode(), text.encode(), hashlib.sha256)
     return int.from_bytes(mac.digest()[:8], "big") % (2**31 - 2) + 1
 
@@ -158,20 +160,38 @@ def plan_of(ch: rules.Challenge, plan: tuple[Change, ...] | str | None) -> tuple
     return decode_plan(plan) if isinstance(plan, str) else plan
 
 
-def match_seed(ch: rules.Challenge, purpose: str, account_id: int | None = None) -> int:
+def match_seed(ch: rules.Challenge, purpose: str, account_id: int | None = None, resets: int = 0) -> int:
     """The seed a match of the day is played from: on a day made with its own seeds (C59)
-    a ranked match is the account's alone; practice and every older day share the day's."""
-    own = purpose == "ranked" and ch.own_seed
+    a ranked match is the account's alone; practice and every older day share the day's.
+    An attempt an admin has reset (C63) is the account's own on any day, and new with each
+    reset, so playing again draws new luck."""
+    resets = resets if purpose == "ranked" else 0
+    own = purpose == "ranked" and (ch.own_seed or resets > 0)
     if own and account_id is None:
         raise ValueError("a ranked match on this day is played from its account's seed")
-    return seed_for(date.fromisoformat(ch.day), purpose, ch.edition, account_id if own else None)
+    return seed_for(date.fromisoformat(ch.day), purpose, ch.edition, account_id if own else None, resets)
+
+
+def resets_of(conn, day: date, account_id: int) -> int:
+    """How many times an admin has let this account play this day again (C63)."""
+    row = conn.execute("select resets from daily_resets where day = %s and account_id = %s",
+                       (day, account_id)).fetchone()
+    return 0 if row is None else row[0]
+
+
+def _count_reset(conn, day: date, account_ids) -> None:
+    for a in set(account_ids):
+        conn.execute("insert into daily_resets (day, account_id, resets) values (%s, %s, 1)"
+                     " on conflict (day, account_id) do update set resets = daily_resets.resets + 1",
+                     (day, a))
 
 
 def play(deck: Deck, league: match.League, ch: rules.Challenge, moves: list, purpose: str,
          plan: tuple[Change, ...] | None = None, sheet: tuple[int, ...] | None = None,
-         account_id: int | None = None, live: LiveEntry | None = None):
+         account_id: int | None = None, live: LiveEntry | None = None, resets: int = 0):
     """The finished eleven's match: (fixture, journey). Refuses an unfinished draft. A
-    ranked match names its account, whose seed it is played from on a day made since C59.
+    ranked match names its account, whose seed it is played from on a day made since C59,
+    and how many times it has been reset (C63, ``resets_of``).
     ``live`` is the changes made during the match (C60), for a side that makes its own;
     the match is then a live one (game.tournament.Live), on the same seed."""
     s = rules.draft(deck, ch, moves, plan, sheet)
@@ -179,7 +199,7 @@ def play(deck: Deck, league: match.League, ch: rules.Challenge, moves: list, pur
         raise IllegalMove("the squad isn't complete yet" if ch.bench else "the eleven isn't complete yet")
     you = rules.side_of(s)
     opp = club_side(deck.by_key[ch.opponent])
-    seed = match_seed(ch, purpose, account_id)
+    seed = match_seed(ch, purpose, account_id, resets)
     engine = ch.engine
     if live is not None:
         if not ch.bench:
@@ -222,7 +242,8 @@ def submit(conn, deck: Deck, league: match.League, account: Account, day: date, 
     check_edition(ch, edition)
     moves = moves_of(ch, text)
     plan, sheet = plan_of(ch, plan), sheet_of(ch, sheet)
-    fx, j = play(deck, league, ch, moves, "ranked", plan, sheet, account.account_id)
+    fx, j = play(deck, league, ch, moves, "ranked", plan, sheet, account.account_id,
+                 resets=resets_of(conn, day, account.account_id))
     r = fx.result
     ok = rules.met(ch.kind, ch.target, r.home_goals, r.away_goals)
     # The plan is stored as played, the automatic one written out, so the match replays.
@@ -252,10 +273,10 @@ def live_of(conn, day: date, account_id: int):
 
 
 def replay_live(deck: Deck, league: match.League, ch: rules.Challenge, row, account_id: int,
-                 changes: str | None = None):
+                 changes: str | None = None, resets: int = 0):
     moves, plan, sheet, stored = row[0], row[1], row[2], row[3]
     return play(deck, league, ch, moves_of(ch, moves), "ranked", plan_of(ch, plan), sheet_of(ch, sheet),
-                account_id, live_entry(changes or stored))
+                account_id, live_entry(changes or stored), resets)
 
 
 def start_live(conn, deck: Deck, league: match.League, account: Account, day: date, text: str,
@@ -272,7 +293,8 @@ def start_live(conn, deck: Deck, league: match.League, account: Account, day: da
         raise DailyError("this day has no bench")
     moves = moves_of(ch, text)
     plan, sheet = plan_of(ch, plan), sheet_of(ch, sheet)
-    fx, j = play(deck, league, ch, moves, "ranked", plan, sheet, account.account_id, LiveEntry())
+    fx, j = play(deck, league, ch, moves, "ranked", plan, sheet, account.account_id, LiveEntry(),
+                 resets_of(conn, day, account.account_id))
     stored = encode_plan(plan if plan is not None else rules.auto_changes(fx.home.bench))
     inserted = conn.execute(
         "insert into daily_live (day, account_id, moves, plan, sheet, revealed) values (%s,%s,%s,%s,%s,%s)"
@@ -300,7 +322,8 @@ def live_step(conn, deck: Deck, league: match.League, account: Account, day: dat
     ch = get_challenge(conn, deck, league, day)
     row = _held(conn, day, account)
     revealed = row[4]
-    fx, j = replay_live(deck, league, ch, row, account.account_id)
+    resets = resets_of(conn, day, account.account_id)
+    fx, j = replay_live(deck, league, ch, row, account.account_id, resets=resets)
     end = 120 if fx.result.extra_time else 90
     options = None
     if action == "more":
@@ -313,7 +336,7 @@ def live_step(conn, deck: Deck, league: match.League, account: Account, day: dat
             raise IllegalMove("that change can't be made now")
         squad = [c.id for c in [*fx.home.xi, *fx.home.bench]]
         text = encode_live({0: replace(entry, changes=(*entry.changes, (revealed, on, squad.index(off))))})
-        fx2, j2 = replay_live(deck, league, ch, row, account.account_id, text)
+        fx2, j2 = replay_live(deck, league, ch, row, account.account_id, text, resets)
         if not change_made(fx2.result, 0, revealed, fx.home.bench[on], off):
             raise IllegalMove("that change can't be made now")
         conn.execute("update daily_live set changes = %s where day = %s and account_id = %s",
@@ -326,7 +349,7 @@ def live_step(conn, deck: Deck, league: match.League, account: Account, day: dat
             text = encode_live({0: replace(entry, auto_from=min(revealed, 115))})
             conn.execute("update daily_live set changes = %s where day = %s and account_id = %s",
                          (text, day, account.account_id))
-            fx, j = replay_live(deck, league, ch, row, account.account_id, text)
+            fx, j = replay_live(deck, league, ch, row, account.account_id, text, resets)
         revealed = 120 if fx.result.extra_time else 90
         end = revealed
     else:
@@ -348,7 +371,7 @@ def finish_live(conn, deck: Deck, league: match.League, day: date, account_id: i
     if row is None:
         return False
     ch = get_challenge(conn, deck, league, day)
-    fx, j = replay_live(deck, league, ch, row, account_id)
+    fx, j = replay_live(deck, league, ch, row, account_id, resets=resets_of(conn, day, account_id))
     r = fx.result
     ok = rules.met(ch.kind, ch.target, r.home_goals, r.away_goals)
     conn.execute(
@@ -404,23 +427,28 @@ def days_played(conn, account_id: int) -> list[date]:
 
 def reset(conn, day: date, account_id: int) -> bool:
     """An admin's way to let one account play a day again: the attempt and its saved
-    result go."""
+    result go, and the next attempt is played from a new seed (C63), since the same seed
+    gave a different eleven the same score more often than not."""
     gone = conn.execute("delete from daily_results where day = %s and account_id = %s returning 1",
                         (day, account_id)).fetchone()
     gone = conn.execute("delete from daily_live where day = %s and account_id = %s returning 1",
                         (day, account_id)).fetchone() or gone
     conn.execute("delete from results where account_id = %s and source = 'daily' and natural_key = %s",
                  (account_id, day.isoformat()))
+    if gone is not None:
+        _count_reset(conn, day, [account_id])
     return gone is not None
 
 
 def clear(conn, day: date) -> int:
     """Every attempt at a day, and the results they saved, gone: the same challenge, open
-    to everyone again. How many attempts there were."""
-    n = len(conn.execute("delete from daily_results where day = %s returning 1", (day,)).fetchall())
-    n += len(conn.execute("delete from daily_live where day = %s returning 1", (day,)).fetchall())
+    to everyone again, each account that had played on a new seed (C63). How many attempts
+    there were."""
+    gone = [a for (a,) in conn.execute("delete from daily_results where day = %s returning account_id", (day,))]
+    gone += [a for (a,) in conn.execute("delete from daily_live where day = %s returning account_id", (day,))]
     conn.execute("delete from results where source = 'daily' and natural_key = %s", (day.isoformat(),))
-    return n
+    _count_reset(conn, day, gone)
+    return len(gone)
 
 
 def remake(conn, deck: Deck, league: match.League, day: date) -> rules.Challenge:

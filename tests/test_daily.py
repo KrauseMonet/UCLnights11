@@ -566,3 +566,72 @@ def test_an_admin_can_let_one_account_play_a_past_day_s_attempt_go(monkeypatch):
     assert boss.delete(f"/api/admin/daily/{c.account_id}", params={"day": yesterday.isoformat()}).json()["reset"] is True
     with db.connection() as conn:
         assert daily.result_of(conn, yesterday, c.account_id) is None
+
+
+# -- a reset draws new luck (C63) ---------------------------------------------------
+
+def test_a_reset_seed_is_new_each_time_the_account_s_own_and_never_practice_s():
+    d = date(2026, 3, 1)
+    own = rules.Challenge(d.isoformat(), 1, "433", "x", "win", 1, 0.4, True, 0, own_seed=True)
+    shared = rules.Challenge(d.isoformat(), 1, "433", "x", "win", 1, 0.4, True, 0, own_seed=False)
+    assert daily.match_seed(own, "ranked", 1, 0) == daily.seed_for(d, "ranked", 0, 1)        # no reset: as played before
+    assert daily.match_seed(shared, "ranked", 1, 0) == daily.seed_for(d, "ranked")
+    seeds = {daily.match_seed(own, "ranked", 1, n) for n in range(4)}
+    assert len(seeds) == 4
+    # On a day with one seed for everyone, a reset attempt is the account's own.
+    assert daily.match_seed(shared, "ranked", 1, 1) != daily.match_seed(shared, "ranked", 2, 1)
+    assert daily.match_seed(own, "practice", 1, 3) == daily.seed_for(d, "practice")
+
+
+def test_a_reset_attempt_is_played_from_a_new_seed_and_replays_as_played(monkeypatch):
+    boss, c = admin_and(monkeypatch), player()
+    moves = drafted(c)
+    first = c.post("/api/daily/submit", json={"moves": moves}).json()
+    assert boss.delete(f"/api/admin/daily/{c.account_id}").json()["reset"] is True
+    second = c.post("/api/daily/submit", json={"moves": moves}).json()
+    assert second["fixture"]["shots"] != first["fixture"]["shots"]       # the same eleven, new luck
+    again = c.get("/api/daily").json()["mine"]
+    assert again["fixture"]["shots"] == second["fixture"]["shots"] and (again["gf"], again["ga"]) == (second["gf"], second["ga"])
+    boss.delete(f"/api/admin/daily/{c.account_id}")
+    third = c.post("/api/daily/submit", json={"moves": moves}).json()
+    assert third["fixture"]["shots"] not in (first["fixture"]["shots"], second["fixture"]["shots"])
+    with db.connection() as conn:
+        assert daily.resets_of(conn, daily.today(), c.account_id) == 2
+
+
+def test_a_reset_live_match_is_played_and_stored_from_the_new_seed(monkeypatch):
+    boss, c = admin_and(monkeypatch), player()
+    moves = drafted(c)
+    c.post("/api/daily/submit", json={"moves": moves, "manual": True})
+    first = c.post("/api/daily/live", json={"action": "finish", "auto": True}).json()
+    boss.delete(f"/api/admin/daily/{c.account_id}")
+    start = c.post("/api/daily/submit", json={"moves": moves, "manual": True}).json()
+    assert c.get("/api/daily").json()["live"]["fixture"] == start["fixture"]     # a reload, the same match
+    more = c.post("/api/daily/live", json={"action": "more"}).json()
+    assert [g for g in more["fixture"]["goals"] if g["minute"] <= 10] == start["fixture"]["goals"]
+    assert c.get("/api/daily").json()["live"]["fixture"] == more["fixture"]
+    o = c.post("/api/daily/live", json={"action": "options"}).json()["options"]
+    b = next(x for x in o["bench"] if x["can_replace"])
+    sub = c.post("/api/daily/live", json={"action": "sub", "on": b["i"], "off": b["can_replace"][0]}).json()
+    assert c.get("/api/daily").json()["live"]["fixture"] == sub["fixture"]
+    done = c.post("/api/daily/live", json={"action": "finish", "auto": True}).json()
+    assert done["fixture"]["shots"] != first["fixture"]["shots"]
+    with db.connection() as conn:
+        stored = conn.execute("select gf, ga from daily_results where day = %s and account_id = %s",
+                              (daily.today(), c.account_id)).fetchone()
+    assert stored == (done["gf"], done["ga"])
+    assert c.get("/api/daily").json()["mine"]["fixture"]["shots"] == done["fixture"]["shots"]
+
+
+def test_clearing_a_day_counts_a_reset_for_everyone_who_had_played_and_nobody_else(monkeypatch):
+    boss, a, b, idle = admin_and(monkeypatch), player(), player(), player()
+    a.post("/api/daily/submit", json={"moves": drafted(a)})
+    b.post("/api/daily/submit", json={"moves": drafted(b), "manual": True})        # one still being played
+    assert boss.delete(f"/api/admin/daily/{idle.account_id}").json()["reset"] is False
+    with db.connection() as conn:
+        before = {x.account_id: daily.resets_of(conn, daily.today(), x.account_id) for x in (a, b)}
+    boss.post("/api/admin/daily/clear")
+    with db.connection() as conn:
+        after = {x.account_id: daily.resets_of(conn, daily.today(), x.account_id) for x in (a, b)}
+        assert daily.resets_of(conn, daily.today(), idle.account_id) == 0
+    assert all(after[k] == before[k] + 1 for k in after)

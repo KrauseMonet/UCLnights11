@@ -1764,13 +1764,14 @@ def daily_today(request: Request, day: str | None = None) -> dict:
             held = daily.live_of(conn, d, me.account_id) if row is None else None
             if held is not None:
                 # A ranked match under way (C60): it carries on from where it was let out to.
-                fx, _ = daily.replay_live(load_deck(), league(), ch, held, me.account_id)
+                fx, _ = daily.replay_live(load_deck(), league(), ch, held, me.account_id,
+                                          resets=daily.resets_of(conn, d, me.account_id))
                 live = daily_live_out(ch, fx, held[4])
             if row is not None:
                 try:
                     fx, j = daily.play(load_deck(), league(), ch, daily.moves_of(ch, row[0]), "ranked",
                                        daily.plan_of(ch, row[6]), daily.sheet_of(ch, row[7]), me.account_id,
-                                       daily.live_entry(row[8]))
+                                       daily.live_entry(row[8]), daily.resets_of(conn, d, me.account_id))
                     mine = daily_result_out(ch, fx, j, row[1], True)
                 except (IllegalMove, ValueError):
                     # The picks no longer replay (the deck changed since that day): the

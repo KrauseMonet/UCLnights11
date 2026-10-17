@@ -70,7 +70,32 @@ function render(p) {
       ${boardHtml("Assists", p.boards.assists, (v) => v)}
       ${boardHtml("Most picked", p.boards.picked, (v) => v)}
       ${boardHtml("Average mark", p.boards.mark, (v) => v.toFixed(2), `${p.min_apps_for_mark}+ apps`)}
-    </div>`;
+    </div>
+    <div id="pfdyn"></div>`;
+  dynastyLegacies(p);
+}
+
+/* Each recent dynasty's legacy (C67): its legends, team of the dynasty and top scorers, as
+   its own page shows them. Asked for with its latest saved state, and a season is saved only
+   once watched to the end, so nothing here is a result not yet seen. Fetched after the rest
+   of the profile is drawn: a dynasty's legacy replays every one of its seasons. */
+const DYNASTIES_SHOWN = 3;
+async function dynastyLegacies(p) {
+  const shown = p.dynasties.slice(0, DYNASTIES_SHOWN);
+  if (!shown.length) return;
+  const got = await Promise.all(shown.map((d) => api(`/api/dynasty/${d.latest}/legacy`).catch(() => null)));
+  const el = $("pfdyn");
+  if (!el) return;
+  const rows = shown.map((d, k) => [d, got[k], k]).filter(([, L]) => L);
+  if (!rows.length) return;
+  el.innerHTML = `<h2 class="h2">Your dynasties</h2>
+    <p class="sub">Legends, the team of each dynasty and its scorers, over the seasons you've saved.${p.dynasties.length > shown.length ? ` The ${shown.length} most recent.` : ""}</p>
+    ${rows.map(([d, L, k]) => `<div class="pf-dyn">
+      <div class="pf-dyn-h"><h3>Seed ${esc(d.seed)} · Year ${d.year}</h3>
+        <span class="label">${d.titles} title${d.titles === 1 ? "" : "s"} · ${d.finals} final${d.finals === 1 ? "" : "s"}</span>
+        <a class="btn ghost small" href="/dynasty#${esc(d.latest)}">Open the dynasty</a></div>
+      ${legacyHtml(L, `pfteam${k}`)}</div>`).join("")}`;
+  rows.forEach(([, L, k]) => legacyPitch(L, $(`pfteam${k}`)));
 }
 
 function signedOut() {

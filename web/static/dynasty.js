@@ -254,34 +254,13 @@ function renderLegacy() {
   const el = $("legacy");
   el.hidden = !LEGACY;
   if (!LEGACY) return;
-  const L = LEGACY, d = D();
+  const d = D();
   const runs = Object.entries(d.runs).sort((a, b) => b[1] - a[1]);
-  const nearest = runs.length && runs[0][1] < d.legend
-    ? (() => { const c = [...S.picks, ...S.waiting].find((x) => x.id === runs[0][0]); return c ? ` Longest run in your squad now: ${esc(c.name)}, ${runs[0][1]}.` : ""; })() : "";
-  const legends = L.legends.length
-    ? L.legends.map((g) => `<div class="fate">${crest(g.crest, 36, g.club)}<div class="who"><b>${esc(g.name)} <span class="dyn-star">★ Legend</span></b>
-        <small>${positionsHtml(g)} ${g.run} seasons in a row · Year ${g.first} to Year ${g.last} · ${esc(g.club)} ${esc(g.season)}</small></div></div>`).join("")
-    : `<p class="dyn-intro">A man who stays ${NUMBER[d.legend] || d.legend} seasons in a row in your squad becomes a legend.${nearest}</p>`;
-  // The mark rides in the rating's badge; a man short of the regulars' bar is starred there,
-  // since a phone hides the line under each name (C38).
-  const xi = L.team.xi.filter((x) => x.man).map((x) => ({ ...x.man, slot: x.slot,
-    rating: `${x.man.mark.toFixed(1)}${x.regular ? "" : "*"}`, short: `${x.man.apps} apps`, season: "  " }));
-  const stand = L.team.xi.some((x) => x.man && !x.regular)
-    ? ` * Fewer matches than that: no regular played the place, so it goes to the best of the rest.` : "";
-  const scorers = L.scorers.map((c, k) => `<li>${crest(c.crest, 22, c.club)}<div class="who"><b>${esc(c.name)}</b>
-      <small>${c.apps} apps · ${c.assists} assists · ${c.seasons} season${c.seasons === 1 ? "" : "s"}</small></div><span class="n">${c.goals}</span></li>`).join("");
+  const c = runs.length && runs[0][1] < d.legend ? [...S.picks, ...S.waiting].find((x) => x.id === runs[0][0]) : null;
   el.innerHTML = `<h2 class="h2">Your dynasty so far</h2>
-    <p class="sub">Over the ${L.seasons} season${L.seasons === 1 ? "" : "s"} you've watched to the end.</p>
-    <div class="dyn-legacy-grid">
-      <section class="panel"><div class="panel-h"><span class="label">Team of the dynasty</span><span class="label">${esc(L.team.formation.label)} · by match mark</span></div>
-        <div class="pitch" id="dynteam"></div>
-        <p class="dyn-intro dyn-small">The best average mark in each place, among men with at least half as many matches as anyone. The formation is the one you used most.${stand}</p></section>
-      <div class="dyn-legacy-side">
-        <section class="panel"><div class="panel-h"><span class="label">Legends</span><span class="label">${d.legend}+ seasons in a row</span></div>${legends}</section>
-        <section class="panel an-board"><div class="panel-h"><span class="label">Top scorers</span></div>${scorers ? `<ol>${scorers}</ol>` : `<p class="empty">Nothing yet.</p>`}</section>
-      </div>
-    </div>`;
-  renderPitch($("dynteam"), L.team.formation.slots, xi, null);
+    <p class="sub">Over the ${LEGACY.seasons} season${LEGACY.seasons === 1 ? "" : "s"} you've watched to the end.</p>
+    ${legacyHtml(LEGACY, "dynteam", c ? ` Longest run in your squad now: ${esc(c.name)}, ${runs[0][1]}.` : "")}`;
+  legacyPitch(LEGACY, $("dynteam"));
 }
 
 (async function boot() {

@@ -878,3 +878,37 @@ const store = {
 // A solo draft is known by its seed (with the bench's "b"): its sheet and plan change the
 // rest of the link after the picks, and it stays the same draft.
 const draftedKey = (state) => `drafted:${state.split("-")[0]}`;
+
+
+/* A dynasty's legacy (C66), from /api/dynasty/.../legacy: the team of the dynasty on a pitch
+   beside its legends and top scorers. Drawn by the dynasty page and, for each dynasty, by the
+   profile (C67). `pitchId` names the pitch, which `legacyPitch` then fills; `nearest` adds to
+   the line shown while there is no legend yet. */
+function legacyHtml(L, pitchId, nearest = "") {
+  const words = { 7: "seven" };
+  const legends = L.legends.length
+    ? L.legends.map((g) => `<div class="fate">${crest(g.crest, 36, g.club)}<div class="who"><b>${esc(g.name)} <span class="dyn-star">★ Legend</span></b>
+        <small>${positionsHtml(g)} ${g.run} seasons in a row · Year ${g.first} to Year ${g.last} · ${esc(g.club)} ${esc(g.season)}</small></div></div>`).join("")
+    : `<p class="dyn-intro">A man who stays ${words[L.legend] || L.legend} seasons in a row in your squad becomes a legend.${nearest}</p>`;
+  const stand = L.team.xi.some((x) => x.man && !x.regular)
+    ? ` * Fewer matches than that: no regular played the place, so it goes to the best of the rest.` : "";
+  const scorers = L.scorers.map((c) => `<li>${crest(c.crest, 22, c.club)}<div class="who"><b>${esc(c.name)}</b>
+      <small>${c.apps} apps · ${c.assists} assists · ${c.seasons} season${c.seasons === 1 ? "" : "s"}</small></div><span class="n">${c.goals}</span></li>`).join("");
+  return `<div class="dyn-legacy-grid">
+      <section class="panel"><div class="panel-h"><span class="label">Team of the dynasty</span><span class="label">${esc(L.team.formation.label)} · by match mark</span></div>
+        <div class="pitch" id="${pitchId}"></div>
+        <p class="dyn-intro dyn-small">The best average mark in each place, among men with at least half as many matches as anyone. The formation is the one you used most.${stand}</p></section>
+      <div class="dyn-legacy-side">
+        <section class="panel"><div class="panel-h"><span class="label">Legends</span><span class="label">${L.legend}+ seasons in a row</span></div>${legends}</section>
+        <section class="panel an-board"><div class="panel-h"><span class="label">Top scorers</span></div>${scorers ? `<ol>${scorers}</ol>` : `<p class="empty">Nothing yet.</p>`}</section>
+      </div>
+    </div>`;
+}
+
+/* The team of the dynasty on its pitch: each man's average mark rides in the rating's badge,
+   starred for a man short of the regulars' bar, since a phone hides the line under a name (C38). */
+function legacyPitch(L, el) {
+  const xi = L.team.xi.filter((x) => x.man).map((x) => ({ ...x.man, slot: x.slot,
+    rating: `${x.man.mark.toFixed(1)}${x.regular ? "" : "*"}`, short: `${x.man.apps} apps`, season: "  " }));
+  renderPitch(el, L.team.formation.slots, xi, null);
+}

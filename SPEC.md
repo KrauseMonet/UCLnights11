@@ -442,6 +442,7 @@ One squad over ten seasons (`game.dynasty`; the engine and the site's pages come
   least half as many matches as anyone) who held that position with you, each man once; a place
   no regular played goes to the best of the rest, marked. Both, with the top scorers, cover the
   seasons watched to the end.
+  The profile shows the same for its three most recent dynasties, over their saved seasons (C67).
 
 ## 7b. Saved results, the profile and the daily challenge
 

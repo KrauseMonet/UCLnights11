@@ -167,6 +167,7 @@ function reportFailure(kind, detail) {
 window.addEventListener("error", (e) => reportFailure("error", `${e.message} @ ${(e.filename || "").split("/").pop()}:${e.lineno}`));
 window.addEventListener("unhandledrejection", (e) => {
   if (e.reason instanceof ApiError) return;           // the request itself was reported, or it was the network
+  if (skippedTransition(e.reason)) { e.preventDefault(); return; }
   reportFailure("rejection", e.reason && e.reason.message || String(e.reason));
 });
 
@@ -729,9 +730,20 @@ function nameEleven() {
   p.style.viewTransitionName = "xi-pitch";
   p.querySelectorAll(".slot[data-id]").forEach((s) => { s.style.viewTransitionName = `xi-${s.dataset.id.replace(/[^\w-]/g, "_")}`; });
 }
-// A transition the browser skips (a hidden tab, a slow page) rejects `ready`; that is not a
-// failure of the page, and unhandled it would be reported as one.
-const onTransition = (e) => { if (!e.viewTransition) return; e.viewTransition.ready.catch(() => {}); nameEleven(); };
+// A transition the browser skips (a hidden tab, a slow page, a page that doesn't opt in)
+// rejects its promises; that is not a failure of the page, and unhandled it would be
+// reported as one. Where the event hands us the transition, all three are caught here. A
+// hidden page's incoming transition is skipped before `pagereveal` fires, so no script ever
+// holds its promises: the rejection handler above drops it by its error instead.
+const onTransition = (e) => {
+  const vt = e.viewTransition;
+  if (!vt) return;
+  for (const p of [vt.ready, vt.finished, vt.updateCallbackDone]) p && p.catch(() => {});
+  nameEleven();
+};
+function skippedTransition(err) {
+  return err instanceof DOMException && /transition/i.test(err.message);
+}
 addEventListener("pageswap", onTransition);
 addEventListener("pagereveal", onTransition);
 

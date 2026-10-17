@@ -404,6 +404,32 @@ phase articles state them; where this game departs from them it says so.
   half as many matches as anyone; pass accuracy also needs 20 passes a match and is
   outfield only. An empty rate is "–", never 0.
 
+## 7a. Dynasty mode (C64)
+
+One squad over ten seasons (`game.dynasty`; the engine and the site's pages come later).
+
+- **Season 1 is a league draft**, its state string with `y` for `l`, and its tournament is
+  that draft's own: the same seed.
+- **Between seasons every man moves on to the next season the deck has for him, within
+  three** (`JUMP`), at that season's rating and positions and with that season's club. With
+  none in that time he has **left**; if the deck ends inside that time, the reason says so.
+  Nothing is made up for a missing season: the deck holds quarter-finalists only, so a man
+  whose club missed the quarter-finals is listed by no squad that year.
+- **A transfer window**: the formation may change, up to three men may be released
+  (`RELEASES`), and the open places are filled from deals as in the draft (the deal-time
+  guarantee, two rerolls a window, one person once, a kept substitute included).
+- **The kept men are placed**: as many start as the slots can take, best-rated first; the
+  best of the rest sit on the bench (three places, never a keeper, only a position the
+  formation has); anyone else has **no place** and leaves without counting as a release.
+  A man's positions are his new season's own, so this is common (23% of windows in a
+  simulation that kept one formation); another shape can keep him.
+- Then a team sheet and a plan, as after any bench draft. Each season's tournament is the
+  league phase on engine 2, against opposition drawn fresh, from a seed of the dynasty's
+  seed and the season's number, so a later window never moves an earlier season.
+- State: `ySEED-FORMATION-moves[-sheet][-plan]`, then per window `~FORMATION-xRELEASES[-moves][-sheet][-plan]`,
+  the releases as base-36 indices into the previous season's picks. At most 30 seasons.
+  Nothing else reads a `y` state.
+
 ## 7b. Saved results, the profile and the daily challenge
 
 - **Saved results** (C31): signed in, a finished solo tournament or room can be saved

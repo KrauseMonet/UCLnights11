@@ -434,7 +434,14 @@ One squad over ten seasons (`game.dynasty`; the engine and the site's pages come
   releases and the formation open until the window's first pick, and keeps a strip of seasons
   and titles. A season is played on the cup page (`/cup?season=N#STATE`), and its result shows
   on the dynasty page only once every match of it has been watched; from then its sheet and
-  plan are fixed and the next season can open. Seasons are not saved to the profile yet.
+  plan are fixed and the next season can open.
+- **On the profile (C66):** each season saves as a `dynasty` result keyed by the state up to it,
+  by itself when the dynasty was drafted in this browser; the profile groups them by dynasty.
+- **Legends (C66):** a man seven seasons in a row in your squad. **The team of the dynasty:**
+  the formation used most, and in each place the best average match mark among regulars (at
+  least half as many matches as anyone) who held that position with you, each man once; a place
+  no regular played goes to the best of the rest, marked. Both, with the top scorers, cover the
+  seasons watched to the end.
 
 ## 7b. Saved results, the profile and the daily challenge
 

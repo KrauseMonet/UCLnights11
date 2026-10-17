@@ -5,8 +5,10 @@
 shell("profile");
 const PF_GOLD = "#c08a1e";   // the analysis's validated gold for a single series (C28)
 
-const sourceLabel = { solo: "Solo", room: "Room", daily: "Daily" };
-const resultHref = (r) => r.source === "solo" ? `/cup#${r.key}` : r.source === "room" ? `/cup?room=${r.key}` : `/daily#${r.key}`;
+const sourceLabel = { solo: "Solo", room: "Room", daily: "Daily", dynasty: "Dynasty" };
+// A dynasty's season (C66) is keyed by the dynasty's state up to it, so its place is its block count.
+const resultHref = (r) => r.source === "solo" ? `/cup#${r.key}` : r.source === "room" ? `/cup?room=${r.key}`
+  : r.source === "dynasty" ? `/cup?season=${r.key.split("~").length}#${r.key}` : `/daily#${r.key}`;
 const when = (iso) => new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
 
 function tiles(p) {
@@ -45,12 +47,23 @@ function recentHtml(p) {
       <span class="pf-when">${esc(when(r.at))}</span></a>`).join("")}</section>`;
 }
 
+/* Each dynasty with a season saved (C66): how far it has got and what it has won. */
+function dynastiesHtml(p) {
+  if (!p.dynasties.length) return "";
+  return `<section class="panel"><div class="panel-h"><span class="label">Dynasties</span><span class="label">${p.dynasties.length}</span></div>
+    ${p.dynasties.map((d) => `<a class="myroom pf-row" href="/dynasty#${esc(d.latest)}">
+      <span class="pill ${d.titles ? "complete" : ""}">Year ${d.year}</span>
+      <span><b>${d.titles} title${d.titles === 1 ? "" : "s"} · ${d.finals} final${d.finals === 1 ? "" : "s"}</b>
+        <small>${d.seasons} season${d.seasons === 1 ? "" : "s"} saved · best ${esc(d.best)} · seed ${esc(d.seed)}</small></span>
+      <span class="pf-when">${esc(when(d.at))}</span></a>`).join("")}</section>`;
+}
+
 function render(p) {
   $("pfhero").innerHTML = `<div class="kicker">Profile · since ${esc(when(p.member_since))}</div>
     <h1 class="arch-h">${esc(p.username)}</h1>${tiles(p)}`;
   $("pfbody").innerHTML = `<div class="cup-grid pf-grid">
     <div class="cup-stack">${recentHtml(p)}</div>
-    <div class="cup-stack">${finishesHtml(p)}</div></div>
+    <div class="cup-stack">${finishesHtml(p)}${dynastiesHtml(p)}</div></div>
     <h2 class="h2">Your players</h2><p class="sub">Across every saved tournament and daily challenge.</p>
     <div class="an-boards">
       ${boardHtml("Goals", p.boards.goals, (v) => v)}

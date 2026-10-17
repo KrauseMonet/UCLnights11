@@ -895,6 +895,9 @@ def dynasty_out(state: str, seasons: list[dy.Season]) -> dict:
     block = dy.last_block(state)
     out["waiting"] = [card_out(c) for c in last.waiting]
     out["dynasty"] = {
+        # Each man's seasons in a row with you, this one included, and the run that makes
+        # a legend (C66).
+        "runs": dy.runs(seasons), "legend": dy.LEGEND,
         "season": last.number, "length": dy.LENGTH, "max": dy.MAX_SEASONS, "releases": dy.RELEASES,
         "jump": dy.JUMP, "deck_ends": _deck_ends(),
         "seasons": [{"number": x.number, "formation": x.session.formation.label, "complete": x.session.complete,
@@ -1006,6 +1009,41 @@ def dynasty_tournament(state: str, response: Response) -> dict:
     out["dynasty"] = {"season": len(state.split("~")), "length": dy.LENGTH}
     pure(response)
     return out
+
+
+def career_out(c: dy.Career) -> dict:
+    """``played`` is every position he held in a season with you, ``positions`` his latest card's."""
+    return {**card_out(c.card), "seasons": c.seasons, "apps": c.apps, "goals": c.goals,
+            "assists": c.assists, "mark": c.mark, "played": sorted(c.positions)}
+
+
+@app.get("/api/dynasty/{state}/legacy")
+def dynasty_legacy(state: str, response: Response) -> dict:
+    """The dynasty so far (C66): its legends (LEGEND seasons in a row in your squad), its
+    best eleven by match mark and its top scorers, over the finished seasons of ``state``.
+    Like /record, the page asks with the state up to the last season it has watched."""
+    seasons = _dynasty(state)
+    done = []
+    for x, st in zip(seasons, dy.season_states(state)):
+        if not x.session.complete:
+            break
+        done.append(_dynasty_tournament(st))
+    if not done:
+        raise HTTPException(409, "no season is finished yet")
+    every = dy.careers_of(done)
+    code = dy.most_used(seasons[:len(done)])
+    team = dy.team_of(code, every)
+    pure(response)
+    return {
+        "seasons": len(done), "legend": dy.LEGEND,
+        "legends": [{**card_out(g.card), "run": g.seasons, "first": g.first, "last": g.last}
+                    for g in dy.legends(seasons[:len(done)])],
+        "team": {"formation": formation_out(FORMATIONS[code]),
+                 "xi": [{"slot": s, "man": None if c is None else career_out(c), "regular": reg}
+                        for s, c, reg in team]},
+        "scorers": [career_out(c) for c in sorted((c for c in every.values() if c.goals),
+                                                  key=lambda c: (-c.goals, -c.assists, c.card.name))[:5]],
+    }
 
 
 @app.get("/api/dynasty/{state}/record")
@@ -1774,8 +1812,12 @@ def _journey_to_save(source: str, key: str, request: Request):
         t = _solo_tournament(key)
     elif source == "room":
         _, t = _room_tournament(key, request)
+    elif source == "dynasty":
+        # A season of a dynasty (C66), by the state up to it: what its tournament is of. Any
+        # other state is refused (400) by the replay itself.
+        t = _dynasty_tournament(key)
     else:
-        raise HTTPException(400, "only a solo run or a room can be saved by hand")
+        raise HTTPException(400, "only a solo run, a room or a dynasty's season can be saved by hand")
     you = next((s for s in t.sides if s.you), None)
     if you is None:
         raise HTTPException(403, "you don't have a side in that tournament")

@@ -149,3 +149,41 @@ def test_a_bad_state_is_a_400():
 def test_the_dynasty_page_is_served():
     assert client.get("/dynasty").status_code == 200
     assert web_app.PAGES[-1] == ("/dynasty", "dynasty")
+
+
+# -- the dynasty so far (C66) --------------------------------------------------------------
+
+def test_the_legacy_needs_a_finished_season_and_covers_only_the_state_it_is_given():
+    assert client.get("/api/dynasty/y3-433/legacy").status_code == 409
+    d = first_season()
+    w = fill(client.post(f"/api/dynasty/{d['state']}/window", json={"formation": "442"}).json())
+    one = client.get(f"/api/dynasty/{d['state']}/legacy").json()
+    two = client.get(f"/api/dynasty/{w['state']}/legacy").json()
+    assert one["seasons"] == 1 and two["seasons"] == 2
+    assert one["team"]["formation"]["code"] == "433"
+    assert two["team"]["formation"]["code"] == "442"                    # a tie: the later
+    apps = lambda L: sum(c["apps"] for c in L["scorers"])  # noqa: E731
+    assert apps(two) >= apps(one)
+    goals = [c["goals"] for c in two["scorers"]]
+    assert goals == sorted(goals, reverse=True) and len(goals) <= 5
+    for x in two["team"]["xi"]:
+        if x["man"]:
+            assert x["slot"] in x["man"]["played"]          # a place he held in a season with you
+
+
+def test_every_man_in_the_squad_has_his_run():
+    d = first_season()
+    assert set(d["dynasty"]["runs"]) == {c["id"] for c in d["picks"]} and set(d["dynasty"]["runs"].values()) == {1}
+    w = client.post(f"/api/dynasty/{d['state']}/window", json={"formation": "433"}).json()
+    kept = {f["to"]["id"] for f in w["dynasty"]["fates"] if f["reason"] in ("carried", "skipped")}
+    assert all(w["dynasty"]["runs"][i] == 2 for i in kept)
+    assert w["dynasty"]["legend"] == dy.LEGEND
+
+
+def test_a_career_says_every_position_he_held_with_you():
+    from game.deck import Card
+    from web.app import career_out
+    card = Card(id="Q1", name="P1", title="P1", pos="MF", positions=("CM",), source="declared", nation=None,
+                rating=80, season=2005, label="2005–06", club="A", club_name="A", short="A", key="2005-A", crest="A")
+    out = career_out(dy.Career(card, {"CM", "DM"}, 2, 20, 1, 2, [7.0] * 20))
+    assert out["played"] == ["CM", "DM"] and out["positions"] == ["CM"] and out["mark"] == 7.0

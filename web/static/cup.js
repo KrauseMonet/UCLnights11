@@ -238,6 +238,7 @@ function endActions() {
     $("actions").innerHTML = `<a class="btn primary" href="/dynasty#${esc(CUP.dynasty.full)}">Back to your dynasty</a>`
       + (CUP.journey ? `<button class="btn ghost" id="jcard">Journey card</button>` : "");
     if ($("jcard")) $("jcard").onclick = showJourney;
+    saveButton();
     return;
   }
   const card = (CUP.journey ? `<button class="btn ghost" id="jcard">Journey card</button>` : "")
@@ -255,7 +256,7 @@ function endActions() {
    at the end; a solo link opened from elsewhere (a friend's) waits for the button, since
    anyone opening a solo link sees it as theirs. Saving twice is harmless. */
 async function saveButton() {
-  const source = CUP.room ? "room" : "solo", key = CUP.room ? CUP.room.code : CUP.state;
+  const source = CUP.room ? "room" : CUP.dynasty ? "dynasty" : "solo", key = CUP.room ? CUP.room.code : CUP.state;
   $("actions").insertAdjacentHTML("beforeend", `<button class="btn ghost" id="save" disabled>Save to profile</button>`);
   const btn = $("save");
   const mark = () => { btn.textContent = "Saved ✓"; btn.disabled = true; btn.title = "On your profile"; };

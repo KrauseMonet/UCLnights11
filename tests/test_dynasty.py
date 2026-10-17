@@ -302,3 +302,96 @@ def test_a_deck_at_a_reused_address_is_not_given_anothers_careers():
     a, b = made_up_deck(), load_deck()
     dy._CAREERS[id(b)] = (a, dy.careers(a))      # as if b had been made where a once lived
     assert "Q0" not in dy.careers(b)
+
+
+# -- legends, runs and the team of the dynasty (C66) -------------------------------------
+
+def seasons_of(*squads, waiting=()):
+    """Seasons whose squads are these lists of made-up people (ids), for the run rules."""
+    from game.deck import Card
+    def man(i, positions=("CM",), rating=80):
+        return Card(id=f"Q{i}", name=f"P{i}", title=f"P{i}", pos="MF", positions=positions, source="declared",
+                    nation=None, rating=rating, season=2000, label="2000–01", club="A", club_name="A",
+                    short="A", key="2000-A", crest="A")
+    out = []
+    for n, ids in enumerate(squads, start=1):
+        s = Session(seed=1, formation=FORMATIONS["433"], picks=[man(i) for i in ids], bench_size=BENCH)
+        out.append(dy.Season(n, s, [], [man(i) for i in waiting] if n == len(squads) else []))
+    return out
+
+
+def test_a_run_counts_seasons_in_a_row_and_starts_again_after_a_gap():
+    s = seasons_of([1, 2, 3], [1, 2], [1, 3], [1, 2, 3], waiting=[4])
+    assert dy.runs(s) == {"Q1": 4, "Q2": 1, "Q3": 2, "Q4": 1}     # a waiting substitute is in the squad
+
+
+def test_a_legend_is_legend_seasons_in_a_row():
+    seven = [[1, 2]] * dy.LEGEND
+    s = seasons_of(*seven, [2], *([[1, 2]] * (dy.LEGEND - 1)))
+    got = {g.card.id: (g.seasons, g.first, g.last) for g in dy.legends(s)}
+    assert got == {"Q1": (dy.LEGEND, 1, dy.LEGEND), "Q2": (2 * dy.LEGEND, 1, 2 * dy.LEGEND)}
+    assert [g.card.id for g in dy.legends(s)] == ["Q2", "Q1"]                  # the longest first
+    assert dy.legends(seasons_of(*([[1]] * (dy.LEGEND - 1)))) == []
+
+
+def career(i, positions, mark, apps, rating=80):
+    from game.deck import Card
+    c = Card(id=f"Q{i}", name=f"P{i}", title=f"P{i}", pos="MF", positions=tuple(positions), source="declared",
+             nation=None, rating=rating, season=2000, label="2000–01", club="A", club_name="A", short="A",
+             key="2000-A", crest="A")
+    return c.id, dy.Career(c, set(positions), 1, apps, 0, 0, [mark] * apps)
+
+
+def full_team(extra=()):
+    """One regular for every 4-3-3 place, marked 6.0, and whoever else is given."""
+    return dict([career(k, [s], 6.0, 30) for k, s in enumerate(SLOTS)] + list(extra))
+
+
+def test_the_team_takes_the_best_mark_among_regulars_each_man_once():
+    team = dy.team_of("433", full_team([career(50, ["ST", "RW"], 8.0, 30), career(51, ["ST"], 7.0, 30)]))
+    got = {s: (c.card.id if c else None) for s, c, _ in team if s in ("ST", "RW")}
+    assert got == {"RW": "Q50", "ST": "Q51"}                                # Q50 once, where both fit best
+
+
+def test_a_regular_comes_before_a_better_mark_with_few_matches():
+    team = dy.team_of("433", full_team([career(60, ["ST"], 9.5, 10)]))       # 10 < half of 30
+    st = next((c, reg) for s, c, reg in team if s == "ST")
+    assert st[0].card.id == "Q9" and st[1]
+
+
+def test_a_place_no_regular_plays_goes_to_the_best_of_the_rest_and_says_so():
+    every = full_team([career(70, ["GK"], 7.5, 10), career(71, ["GK"], 7.0, 9)])
+    del every["Q0"]                                                          # the regular keeper
+    gk = next((c, reg) for s, c, reg in dy.team_of("433", every) if s == "GK")
+    assert gk[0].card.id == "Q70" and not gk[1]
+
+
+def test_a_place_nobody_plays_is_empty():
+    every = full_team()
+    del every["Q0"]
+    assert next(c for s, c, _ in dy.team_of("433", every) if s == "GK") is None
+
+
+def test_the_most_used_formation_and_the_later_on_a_tie():
+    s = seasons_of([1], [1], [1])
+    s[0].session.formation, s[1].session.formation = FORMATIONS["442"], FORMATIONS["4231"]
+    assert dy.most_used(s) == "433"
+    assert dy.most_used(s[:2]) == "4231"
+
+
+def test_careers_add_up_every_season_you_played():
+    from game.journey import journey
+    deck = load_deck()
+    seasons = dy.replay(deck, dynasty(5, 2))
+    ts = [dy.season_tournament(deck, league_of(deck), x) for x in seasons]
+    every = dy.careers_of(ts)
+    assert all(c.apps for c in every.values())                              # an unused substitute has none
+    for t in ts:
+        for p in journey(t, t.you()).players:
+            if p.apps:
+                assert every[p.card.id].positions >= set(p.card.positions)
+    assert sum(c.apps for c in every.values()) == sum(p.apps for t in ts for p in journey(t, t.you()).players)
+    assert sum(c.goals for c in every.values()) == sum(p.goals for t in ts for p in journey(t, t.you()).players)
+    later = {p.card.id: p.card for p in journey(ts[1], ts[1].you()).players if p.apps}
+    both = [c for c in every.values() if c.seasons == 2]
+    assert both and all(c.card is later[c.card.id] for c in both)          # his latest card with you

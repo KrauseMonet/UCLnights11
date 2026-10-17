@@ -73,13 +73,19 @@ from game.draft import (
 )
 from game.draft import replay as draft_replay
 from game.formations import FORMATIONS
-from game.positions import fits
+from game.journey import journey
+from game.positions import BIG, assign, fits
 from game.tournament import Side, Tournament, auto_plan, play_tournament
 
 JUMP = 3            # a man moves on to a season at most this many years later, or leaves
 RELEASES = 3        # men a window may release
 LENGTH = 10         # a dynasty's seasons
 MAX_SEASONS = 30    # how many a state may hold, carrying on past LENGTH
+# Unbroken seasons in your squad that make a man a legend. Measured over 80 ten-season
+# dynasties (C66): five in a row came 8.0 times a dynasty for a best-pick drafter and 5.7
+# for a random one, since the deck holds long real runs (a club that kept reaching the
+# quarter-finals); seven came 2.7 and 2.0 times.
+LEGEND = 7
 _B36 = "0123456789abcdefghijklmnopqrstuvwxyz"
 
 
@@ -307,6 +313,115 @@ def record(t: Tournament) -> Record:
         gf, ga = gf + mine, ga + theirs
         w, d, l = w + (mine > theirs), d + (mine == theirs), l + (mine < theirs)
     return Record(t.reached(you), w, d, l, gf, ga)
+
+
+def squad(season: Season) -> list[Card]:
+    """Everyone in a season's squad, the kept substitutes still waiting for the bench too."""
+    return [*season.session.picks, *season.waiting]
+
+
+def runs(seasons: list[Season]) -> dict[str, int]:
+    """For each man in the last season's squad, the seasons in a row he has been in yours,
+    this one included."""
+    run: dict[str, int] = {}
+    for x in seasons:
+        run = {c.id: run.get(c.id, 0) + 1 for c in squad(x)}
+    return run
+
+
+@dataclass(frozen=True)
+class Legend:
+    card: Card          # his card in the last season of his run
+    seasons: int        # the run's length
+    first: int          # the dynasty seasons it ran from and to
+    last: int
+
+
+def legends(seasons: list[Season]) -> list[Legend]:
+    """Every man whose longest unbroken run in your squad is LEGEND seasons or more, the
+    longest first."""
+    best: dict[str, Legend] = {}
+    run: dict[str, int] = {}
+    for x in seasons:
+        run = {c.id: run.get(c.id, 0) + 1 for c in squad(x)}
+        for c in squad(x):
+            n = run[c.id]
+            if n >= LEGEND and (c.id not in best or n >= best[c.id].seasons):
+                best[c.id] = Legend(c, n, x.number - n + 1, x.number)
+    return sorted(best.values(), key=lambda g: (-g.seasons, -g.card.rating, g.card.name))
+
+
+@dataclass
+class Career:
+    """One man's numbers over the dynasty's seasons, from the tournaments themselves."""
+
+    card: Card                      # his latest card with you
+    positions: set[str]             # every position he held in a season with you
+    seasons: int = 0
+    apps: int = 0
+    goals: int = 0
+    assists: int = 0
+    marks: list[float] = field(default_factory=list)
+
+    @property
+    def mark(self) -> float | None:
+        return round(sum(self.marks) / len(self.marks), 2) if self.marks else None
+
+
+def careers_of(tournaments: list[Tournament]) -> dict[str, Career]:
+    """Each man who played for you, by person, over these seasons' tournaments."""
+    out: dict[str, Career] = {}
+    for t in tournaments:
+        for p in journey(t, t.you()).players:      # only men who played: an unused substitute has no line
+            c = out.get(p.card.id)
+            if c is None:
+                c = out[p.card.id] = Career(p.card, set())
+            c.card = p.card
+            c.positions |= set(p.card.positions)
+            c.seasons += 1
+            c.apps += p.apps
+            c.goals += p.goals
+            c.assists += p.assists
+            c.marks += p.marks
+    return out
+
+
+REGULAR_FIRST = 10_000     # a man short of the regulars' bar costs this much more in team_of
+NOBODY = 2 * REGULAR_FIRST
+
+
+def most_used(seasons: list[Season]) -> str:
+    """The formation these seasons used most, the later on a tie."""
+    used: dict[str, list[int]] = {}
+    for x in seasons:
+        used.setdefault(x.session.formation.code, []).append(x.number)
+    return max(used, key=lambda k: (len(used[k]), max(used[k])))
+
+
+def team_of(code: str, careers: dict[str, Career]) -> list[tuple[str, Career | None, bool]]:
+    """The dynasty's best eleven in formation ``code`` (``most_used``): in each slot the man with the best match mark over the dynasty who played that position in
+    a season with you, each man once, as (slot, man, whether he is a regular). A REGULAR has
+    at least half as many matches as anyone (the analysis page's rule, C28), so a few good
+    games don't outrank seasons of them. Regulars fill every place they can first; a place
+    none can fill goes to the best of the rest, because keepers change hands: in a
+    ten-season test none of them reached half of the 122 matches the most-used man played,
+    and the team had no goalkeeper. A place no one at all can fill is left empty."""
+    slots = FORMATIONS[code].slots
+    pool = [c for c in careers.values() if c.mark is not None]
+    most = max((c.apps for c in pool), default=0)
+    regular = [c.apps * 2 >= most for c in pool]
+    # Slots are rows; the pool and one "nobody" per slot are columns. A man costs minus his
+    # mark, plus REGULAR_FIRST if he isn't a regular: mark differences are under 1,000, so
+    # the cheapest assignment fills the most places with regulars, then has the best marks.
+    cost = [[BIG if s not in c.positions else -round(c.mark * 100) + (0 if reg else REGULAR_FIRST)
+             for c, reg in zip(pool, regular)] + [NOBODY] * len(slots) for s in slots]
+    col = assign(cost)
+    out = []
+    for r, s in enumerate(slots):
+        j = col[r]
+        man = pool[j] if j < len(pool) else None         # a BIG cell is never taken: "nobody" is cheaper
+        out.append((s, man, man is not None and regular[j]))
+    return out
 
 
 # -- state strings ----------------------------------------------------------------------

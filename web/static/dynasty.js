@@ -10,6 +10,7 @@ shell("draft");
 let S = null;
 let busy = false;
 let RECORDS = {};          // season number -> its record, for seasons watched to the end
+let LEGACY = null;         // legends, the best eleven and top scorers over those seasons (C66)
 let justPicked = false;
 const STATE_IN = location.hash.slice(1);
 // Set by the cup page: how many of your matches have been seen, and once all of them have.
@@ -32,6 +33,7 @@ function render(fresh) {
   const n = D().season;
   $("year").textContent = `Year ${n}`;
   renderYears();
+  renderLegacy();
   renderWindow();
   lineChips($("lines"), S.formation, S.xi);
   if (S.complete) return renderSeason();
@@ -81,7 +83,8 @@ function renderYears() {
 
 // --------------------------------------------------------------- the transfer window
 
-const NUMBER = { 2: "two", 3: "three", 4: "four" };
+const NUMBER = { 2: "two", 3: "three", 4: "four", 7: "seven" };
+const ordinal = (n) => `${n}${n % 100 >= 11 && n % 100 <= 13 ? "th" : ["th", "st", "nd", "rd"][n % 10] || "th"}`;
 const REASON = {
   left: (f) => `No squad in the deck lists him in the ${NUMBER[D().jump] || D().jump} seasons after ${esc(f.from.season)}: the deck holds quarter-finalists only.`,
   end: () => `The deck ends with ${esc(D().deck_ends)}, so it has no next season for him.`,
@@ -99,6 +102,8 @@ function fateRow(f, d) {
     note = `${esc(f.from.season)} → ${esc(f.to.season)}`;
     if (f.jump > 1) note += ` · ${f.jump - 1 === 1 ? "a season" : `${f.jump - 1} seasons`} skipped`;
     if (f.moved) note += ` · now at ${esc(f.to.club)}`;
+    const run = f.reason === "released" ? 0 : D().runs[f.to.id] || 0;
+    if (run > 1) note += ` · ${ordinal(run)} season with you`;
   } else {
     note = REASON[f.reason](f);
   }
@@ -106,8 +111,9 @@ function fateRow(f, d) {
     && (f.reason === "released" || d.released.length < d.releases);
   const toggle = canRelease
     ? `<button class="btn small ${f.reason === "released" ? "" : "ghost"}" data-rel="${f.i}">${f.reason === "released" ? "Keep him" : "Release"}</button>` : "";
+  const legend = f.to && f.reason !== "released" && (D().runs[f.to.id] || 0) >= D().legend;
   return `<div class="fate ${f.reason.replace(" ", "-")}">${crest(c.crest, 36, c.club)}
-    <div class="who"><b>${esc(c.name)}</b><small>${positionsHtml(c)} ${note}</small></div>${change}${toggle}</div>`;
+    <div class="who"><b>${esc(c.name)}${legend ? ` <span class="dyn-star" title="A legend: ${D().legend} seasons in a row with you">★ Legend</span>` : ""}</b><small>${positionsHtml(c)} ${note}</small></div>${change}${toggle}</div>`;
 }
 
 function renderWindow() {
@@ -169,7 +175,8 @@ function renderSeason() {
     const r = RECORDS[n];
     const done = watched(st);
     const end = n === d.length && done
-      ? `<p class="dyn-end">Ten seasons done: ${Object.values(RECORDS).filter((x) => x.reached === "Champions").length} titles. Carry on if you like.</p>` : "";
+      ? (() => { const n = Object.values(RECORDS).filter((x) => x.reached === "Champions").length;
+          return `<p class="dyn-end">Ten seasons done: ${n} title${n === 1 ? "" : "s"}. Carry on if you like.</p>`; })() : "";
     $("deal").style.cssText = "";
     $("deal").innerHTML = `<div class="panel-h"><span class="label">Year ${n}</span><span class="label">${r ? esc(r.reached) : "being played"}</span></div>
       <div class="dyn-season">${r ? `<p class="dyn-result">${esc(SHORT[r.reached] || r.reached)} · ${r.w}W ${r.d}D ${r.l}L · ${r.gf}–${r.ga}</p>` : ""}
@@ -203,6 +210,8 @@ async function move(kind, body) {
   try {
     const s = await call(kind, body);
     justPicked = kind === "pick";
+    // A dynasty drafted in this browser saves each season to the profile by itself (cup.js, C45).
+    store.set(draftedKey(s.state), "1");
     setSession(s);
   } catch (e) {
     dropFlight();
@@ -230,11 +239,49 @@ async function postWindow(formation, releases, reshape) {
 async function loadRecords() {
   const seen = D().seasons.filter((x) => x.complete && watched(x.state));
   if (!seen.length) return;
+  const upTo = seen[seen.length - 1].state;
   try {
-    const r = await api(`/api/dynasty/${seen[seen.length - 1].state}/record`);
+    const [r, legacy] = await Promise.all([api(`/api/dynasty/${upTo}/record`), api(`/api/dynasty/${upTo}/legacy`)]);
     const ok = new Set(seen.map((x) => x.number));
     RECORDS = Object.fromEntries(r.seasons.filter((x) => ok.has(x.number)).map((x) => [x.number, x]));
+    LEGACY = legacy;
   } catch { /* the strip says "Not watched" */ }
+}
+
+/* The dynasty so far (C66), over the seasons watched to the end: its legends, its best
+   eleven by match mark, and its top scorers. */
+function renderLegacy() {
+  const el = $("legacy");
+  el.hidden = !LEGACY;
+  if (!LEGACY) return;
+  const L = LEGACY, d = D();
+  const runs = Object.entries(d.runs).sort((a, b) => b[1] - a[1]);
+  const nearest = runs.length && runs[0][1] < d.legend
+    ? (() => { const c = [...S.picks, ...S.waiting].find((x) => x.id === runs[0][0]); return c ? ` Longest run in your squad now: ${esc(c.name)}, ${runs[0][1]}.` : ""; })() : "";
+  const legends = L.legends.length
+    ? L.legends.map((g) => `<div class="fate">${crest(g.crest, 36, g.club)}<div class="who"><b>${esc(g.name)} <span class="dyn-star">★ Legend</span></b>
+        <small>${positionsHtml(g)} ${g.run} seasons in a row · Year ${g.first} to Year ${g.last} · ${esc(g.club)} ${esc(g.season)}</small></div></div>`).join("")
+    : `<p class="dyn-intro">A man who stays ${NUMBER[d.legend] || d.legend} seasons in a row in your squad becomes a legend.${nearest}</p>`;
+  // The mark rides in the rating's badge; a man short of the regulars' bar is starred there,
+  // since a phone hides the line under each name (C38).
+  const xi = L.team.xi.filter((x) => x.man).map((x) => ({ ...x.man, slot: x.slot,
+    rating: `${x.man.mark.toFixed(1)}${x.regular ? "" : "*"}`, short: `${x.man.apps} apps`, season: "  " }));
+  const stand = L.team.xi.some((x) => x.man && !x.regular)
+    ? ` * Fewer matches than that: no regular played the place, so it goes to the best of the rest.` : "";
+  const scorers = L.scorers.map((c, k) => `<li>${crest(c.crest, 22, c.club)}<div class="who"><b>${esc(c.name)}</b>
+      <small>${c.apps} apps · ${c.assists} assists · ${c.seasons} season${c.seasons === 1 ? "" : "s"}</small></div><span class="n">${c.goals}</span></li>`).join("");
+  el.innerHTML = `<h2 class="h2">Your dynasty so far</h2>
+    <p class="sub">Over the ${L.seasons} season${L.seasons === 1 ? "" : "s"} you've watched to the end.</p>
+    <div class="dyn-legacy-grid">
+      <section class="panel"><div class="panel-h"><span class="label">Team of the dynasty</span><span class="label">${esc(L.team.formation.label)} · by match mark</span></div>
+        <div class="pitch" id="dynteam"></div>
+        <p class="dyn-intro dyn-small">The best average mark in each place, among men with at least half as many matches as anyone. The formation is the one you used most.${stand}</p></section>
+      <div class="dyn-legacy-side">
+        <section class="panel"><div class="panel-h"><span class="label">Legends</span><span class="label">${d.legend}+ seasons in a row</span></div>${legends}</section>
+        <section class="panel an-board"><div class="panel-h"><span class="label">Top scorers</span></div>${scorers ? `<ol>${scorers}</ol>` : `<p class="empty">Nothing yet.</p>`}</section>
+      </div>
+    </div>`;
+  renderPitch($("dynteam"), L.team.formation.slots, xi, null);
 }
 
 (async function boot() {

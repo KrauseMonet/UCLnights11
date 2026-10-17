@@ -17,7 +17,7 @@ from game.journey import Journey
 from game.tournament import FINISHES
 from web.accounts import Account
 
-SOURCES = ("solo", "room", "daily")
+SOURCES = ("solo", "room", "daily", "dynasty")
 RECENT = 20
 BOARD = 8
 MIN_APPS_FOR_MARK = 6          # a career mark needs this many matches behind it
@@ -112,6 +112,23 @@ def profile(conn, account: Account, today: date) -> dict:
         return [{"name": e["name"], "pos": e["pos"], "crest": e["crest"], "value": value(e), "apps": e["apps"]} for e in ranked]
     marked = [e for e in people.values() if e["mark_apps"] >= MIN_APPS_FOR_MARK]
 
+    # A dynasty's seasons (C66), keyed by its state up to each season: grouped by the
+    # dynasty's first season, which every later state of it begins with.
+    dynasties: dict[str, dict] = {}
+    for r in sorted((r for r in rows if r[0] == "dynasty"), key=lambda r: r[11]):
+        root = r[1].split("~")[0]
+        n = len(r[1].split("~"))
+        e = dynasties.setdefault(root, {"seed": root.split("-")[0][1:], "seasons": 0, "titles": 0, "finals": 0,
+                                        "best": None, "latest": None, "year": 0, "at": None})
+        e["seasons"] += 1
+        e["titles"] += r[3] == "Champions"
+        e["finals"] += r[3] in ("Champions", "Runners-up")
+        if e["best"] is None or FINISHES.index(r[3]) < FINISHES.index(e["best"]):
+            e["best"] = r[3]
+        if n >= e["year"]:
+            e["year"], e["latest"] = n, r[1]
+        e["at"] = r[11].isoformat()
+
     current, best_streak = streaks([d for d, _ in daily], today)
     totals = defaultdict(int)
     for r in cups:
@@ -133,6 +150,7 @@ def profile(conn, account: Account, today: date) -> dict:
             "mark": board(lambda e: round(e["mark_sum"] / e["mark_apps"], 2), marked),
         },
         "min_apps_for_mark": MIN_APPS_FOR_MARK,
+        "dynasties": sorted(dynasties.values(), key=lambda e: e["at"], reverse=True),
         "recent": [{"source": r[0], "key": r[1], "formation": r[2], "reached": r[3], "champion": r[4],
                     "record": [r[5], r[6], r[7]], "gf": r[8], "ga": r[9], "at": r[11].isoformat(),
                     "star": max(r[10], key=lambda p: (p["mark"] or 0))["name"] if r[10] else None}

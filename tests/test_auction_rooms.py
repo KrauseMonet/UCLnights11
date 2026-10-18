@@ -301,3 +301,24 @@ def test_only_a_seat_in_the_room_may_bid(clock):
     assert r.status_code == 403
     (h, g), open_code, open_room = auction_room("open")
     assert outsider.post(f"/api/rooms/{open_code}/bid", json={"lot": 1, "amount": 3}).status_code == 403
+
+
+def test_the_squads_page_shows_what_the_auction_came_to(clock):
+    (host, guest), code, room = auction_room("sealed")
+    lot = market_lot(room)
+    host.post(f"/api/rooms/{code}/bids", json={"round": 1, "bids": [[lot, 30]]})
+    guest.post(f"/api/rooms/{code}/bids", json={"round": 1, "bids": [[lot, 20]]})
+    host.post(f"/api/rooms/{code}/finish")
+    sq = host.get(f"/api/rooms/{code}/squads").json()
+    A = sq["auction"]
+    assert A["kind"] == "sealed" and A["biggest"][0]["price"] == 21 and A["biggest"][0]["beat"] == 1
+    for side in sq["sides"]:
+        buys = side["auction"]["buys"]
+        assert sum(b["price"] for b in buys) == side["auction"]["spent"] == sealed.BUDGET - side["auction"]["left"]
+        assert {b["card"]["id"] for b in buys} == {c["id"] for c in side["xi"]}
+    turn = [player(), player()]
+    tc = turn[0].post("/api/rooms", json={"size": 4, "bench": False, "together": False}).json()["code"]
+    turn[1].post(f"/api/rooms/{tc}/join")
+    turn[0].post(f"/api/rooms/{tc}/start")
+    turn[0].post(f"/api/rooms/{tc}/finish")
+    assert turn[0].get(f"/api/rooms/{tc}/squads").json()["auction"] is None

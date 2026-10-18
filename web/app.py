@@ -1668,8 +1668,21 @@ def room_squads(code: str, request: Request) -> dict:
     humans = rooms.sides(load_deck(), room)
     for side in humans:
         side.you = me is not None and side.owner == me
-    out = sorted((squad_out(s) for s in humans), key=lambda x: (not x["you"], -x["ratings"]["overall"]))
-    return {"room": room_brief(room), "sides": out, "field": len(load_deck().club_seasons)}
+    outs = [squad_out(s) for s in humans]
+    auction = None
+    if room.auction:
+        # What the auction came to (C72): each side's money and buys, and the room's
+        # biggest buys and bargains. Every price is the replay's, never stored apart.
+        a = rooms.auction_of(load_deck(), room)
+        r = sealed_rules.recap(a)
+        sale = lambda s: {"seat": s.seat, "username": room.seats[s.seat].username, "card": card_out(s.card),  # noqa: E731
+                          "price": s.price, "beat": len(s.others)}
+        for k, o in enumerate(outs):
+            o["auction"] = {"spent": a.spent[k], "left": a.money_left(k), "buys": [sale(s) for s in r.buys[k]]}
+        auction = {"kind": room.style, "budget": a.budget, "bargain": sealed_rules.BARGAIN,
+                   "biggest": [sale(s) for s in r.biggest], "bargains": [sale(s) for s in r.bargains]}
+    out = sorted(outs, key=lambda x: (not x["you"], -x["ratings"]["overall"]))
+    return {"room": room_brief(room), "sides": out, "field": len(load_deck().club_seasons), "auction": auction}
 
 
 @app.get("/api/rooms/{code}/analysis")

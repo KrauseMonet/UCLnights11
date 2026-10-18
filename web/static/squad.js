@@ -54,6 +54,26 @@ function compareHtml() {
     </tbody></table></div></section>`;
 }
 
+/* What each man of a side cost, in an auction room (C72): person id -> €m. */
+function priceOf(s) {
+  return s.auction ? Object.fromEntries(s.auction.buys.map((b) => [b.card.id, b.price])) : {};
+}
+
+/* The room's auction (C72): its biggest buys and its bargains, each with who bought him. */
+function auctionHtml() {
+  const A = SQ.auction;
+  if (!A) return "";
+  const row = (b) => `<li>${crest(b.card.crest, 28, b.card.club)}<div class="who"><b>${esc(b.card.name)}</b>
+      <small>${esc(b.username)} · ${esc(b.card.short)} ${esc(b.card.season.slice(2))} · ${b.card.rating}${b.beat ? ` · beat ${b.beat} bid${b.beat === 1 ? "" : "s"}` : ""}</small></div>
+      <span class="auc-price">€${b.price}m</span></li>`;
+  const list = (rows, empty) => rows.length ? `<ol class="sq-auc">${rows.map(row).join("")}</ol>` : `<p class="empty">${empty}</p>`;
+  return `<section class="cup-grid sq-auction">
+    <div class="cup-stack"><section class="panel an-board"><div class="panel-h"><span class="label">Biggest buys</span><span class="label">${A.kind === "sealed" ? "sealed bids" : "open auction"} · €${A.budget}m each</span></div>
+      ${list(A.biggest, "Nothing was sold.")}</section></div>
+    <div class="cup-stack"><section class="panel an-board"><div class="panel-h"><span class="label">Bargains</span><span class="label">€${A.bargain}m or less, best first</span></div>
+      ${list(A.bargains, `Nobody went for €${A.bargain}m or less.`)}</section></div></section>`;
+}
+
 // The share of the deck's club-seasons a figure is strictly above, in words.
 const standing = (p) => p >= 100 ? "above every side in the deck" : p <= 0 ? "the lowest in the deck" : `above ${p}% of the deck`;
 
@@ -71,6 +91,7 @@ function tileHtml(s, [k, label, colour]) {
    its weakest are marked, since that is what a team sheet is read for. */
 function linesHtml(s) {
   const order = ["GK", "DF", "MF", "FW"];
+  const paid = priceOf(s);
   const top = Math.max(...s.xi.map((c) => c.rating)), low = Math.min(...s.xi.map((c) => c.rating));
   const key = { GK: "goalkeeper", DF: "defence", MF: "midfield", FW: "attack" };
   return order.map((line) => {
@@ -80,7 +101,7 @@ function linesHtml(s) {
       ${men.map((c) => `<div class="sq-man">${posChip(c.slot)}${crest(c.crest, 28, c.club)}
         <div class="who"><b>${esc(c.name)}</b><small>${esc(c.club)} ${esc(c.season)}</small></div>
         ${c.rating === top ? `<span class="sq-flag top">best</span>` : c.rating === low && top !== low ? `<span class="sq-flag low">weakest</span>` : ""}
-        ${rate(c.rating)}</div>`).join("")}</div>`;
+        ${paid[c.id] == null ? "" : `<span class="auc-price">€${paid[c.id]}m</span>`}${rate(c.rating)}</div>`).join("")}</div>`;
   }).join("");
 }
 
@@ -90,6 +111,7 @@ function detailHtml(s) {
     <div class="sq-side-h">${sideCrest(s, 48)}<div><b class="${s.you ? "you-name" : ""}">${esc(sideName(s))}</b>
       <small>${esc(s.formation)} · ${s.clubs} club${s.clubs === 1 ? "" : "s"}${s.you && SQ_ROOM ? ` · ${esc(s.name)}` : ""}</small></div></div>
     <div class="sq-tiles">${TILES.map((t) => tileHtml(s, t)).join("")}</div>
+    ${s.auction ? `<p class="sq-engine">At the auction ${s.you ? "you" : "they"} spent <b>€${s.auction.spent}m</b> of €${SQ.auction.budget}m, with €${s.auction.left}m left over${s.auction.buys.length ? `; the dearest was ${esc(s.auction.buys[0].card.name)} at €${s.auction.buys[0].price}m` : ""}.</p>` : ""}
     <p class="sq-engine">What decides a match is the engine's own mix: <b>attack ${r.engine_attack.toFixed(1)}</b>
       (${standing(s.better_than.engine_attack)}) and <b>defence ${r.engine_defence.toFixed(1)}</b>
       (${standing(s.better_than.engine_defence)}). The midfield counts towards both and the keeper most of all towards defence.</p>
@@ -105,7 +127,7 @@ function detailHtml(s) {
 function render() {
   const s = SQ.sides[PICK];
   $("hero").innerHTML = heroHtml();
-  $("compare").innerHTML = compareHtml();
+  $("compare").innerHTML = compareHtml() + auctionHtml();
   $("detail").innerHTML = detailHtml(s);
   renderPitch($("sqpitch"), s.slots, s.xi, null);
   renderBench($("sqbench"), s.bench, s.bench.length);

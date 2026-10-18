@@ -464,6 +464,7 @@ function startTicker() {
 // ------------------------------------------------------------------ auctions (C70)
 
 let shownAuction = null;   // what the auction panel on screen belongs to: a sealed round, or an open lot
+let heardSale = null;      // the latest sale this page has rung the gavel for (C72)
 let myBids = new Map();    // a sealed round's bids as written here, lot -> amount, until they are sent
 const eur = (x) => `€${x}m`;
 const seatOf = (k) => R.seats[k] || { username: "?" };
@@ -507,7 +508,35 @@ function renderAuction() {
   shownAuction = key;
   if (A.kind === "sealed") renderSealed(A, d, fresh); else renderOpen(A, d, fresh);
   renderSales(A);
+  // A sale that happened while you watched rings the gavel; one already made when the page
+  // opened doesn't.
+  const latest = A.sales.length ? `${A.sales[0].seat}:${A.sales[0].card.id}:${A.sales[0].price}` : "";
+  if (heardSale !== null && latest && latest !== heardSale) gavel();
+  heardSale = latest;
   startAuctionTicker();
+}
+
+/* "Sold": two knocks of a gavel, synthesized as the match sounds are (C60), silent when the
+   speaker is off there (the same setting). A browser only lets a page sound after a tap. */
+let ACTX = null;
+function gavel() {
+  if (store.get("sound") === "off") return;
+  try {
+    ACTX ||= new (window.AudioContext || window.webkitAudioContext)();
+    if (ACTX.state === "suspended") ACTX.resume();
+    const t0 = ACTX.currentTime + 0.02;
+    for (const at of [0, 0.18]) {
+      const o = ACTX.createOscillator(), g = ACTX.createGain(), a = t0 + at;
+      o.type = "triangle";
+      o.frequency.setValueAtTime(320, a);
+      o.frequency.exponentialRampToValueAtTime(90, a + 0.09);
+      g.gain.setValueAtTime(0.0001, a);
+      g.gain.exponentialRampToValueAtTime(0.35, a + 0.005);
+      g.gain.exponentialRampToValueAtTime(0.0001, a + 0.12);
+      o.connect(g).connect(ACTX.destination);
+      o.start(a); o.stop(a + 0.15);
+    }
+  } catch { /* no sound is no failure */ }
 }
 
 /* What the seat bar says: whose move it is and the clock, in the room's own words. */

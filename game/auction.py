@@ -225,6 +225,34 @@ def replay(deck: Deck, seed: int, formations: list[str], rounds: list[Bids], ben
     return a
 
 
+@dataclass(frozen=True)
+class Recap:
+    """What an auction came to (C72): each seat's buys, dearest first, and the room's
+    biggest buys and bargains. A BARGAIN is declared, not measured: a man bought for
+    BARGAIN or less, the best-rated first."""
+
+    buys: list[list[Sale]]
+    biggest: list[Sale]
+    bargains: list[Sale]
+
+
+BARGAIN = 5            # €m
+RECAP_SHOWN = 3
+
+
+def recap(a: Auction) -> Recap:
+    """For a sealed or an open auction alike: both record every sale."""
+    buys: list[list[Sale]] = [[] for _ in range(a.seats)]
+    for s in a.sales:
+        buys[s.seat].append(s)
+    for b in buys:
+        b.sort(key=lambda s: (-s.price, -s.card.rating, s.card.name))
+    biggest = sorted(a.sales, key=lambda s: (-s.price, -s.card.rating, s.card.name))[:RECAP_SHOWN]
+    bargains = sorted((s for s in a.sales if s.price <= BARGAIN),
+                      key=lambda s: (-s.card.rating, s.price, s.card.name))[:RECAP_SHOWN]
+    return Recap(buys, biggest, bargains)
+
+
 # -- the rounds as text, for storage: rounds split by "/", seats by ";", a seat's bids by ","
 # ("0:3.40,7.12;1:-;2:3.35" is seat 0 bidding 40 on man 3 and 12 on man 7, seat 1 passing and
 # seat 2 bidding 35 on man 3; a seat that sent nothing isn't listed).

@@ -266,3 +266,20 @@ def test_a_market_never_holds_one_squad_twice():
         a = au.Auction(seed, [FORMATIONS["433"]] * 2, [[], []], [0, 0], [0, 0])
         m = au._market(random.Random(seed), deck, a)
         assert len({cs.key for cs in m}) == len(m) == 2
+
+
+# -- the recap (C72) -----------------------------------------------------------------------
+
+def test_the_recap_lists_each_seats_buys_dearest_first_and_the_rooms_biggest_and_bargains():
+    deck = made_up_deck()
+    a = auction(deck, 2)
+    cards = {c.id: c for c in deck.by_key["2000-A"].cards}
+    a.sales = [au.Sale(1, 0, cards["Q9"], 40, 40, ()), au.Sale(1, 1, cards["Q8"], 3, 3, ()),
+               au.Sale(2, 0, cards["Q7"], 5, 9, ((1, 4),)), au.Sale(2, 1, cards["Q10"], 6, 6, ()),
+               au.Sale(3, 0, cards["Q6"], 1, 1, ()), au.Sale(3, 1, cards["Q5"], 2, 2, ())]
+    r = au.recap(a)
+    assert [s.card.id for s in r.buys[0]] == ["Q9", "Q7", "Q6"]          # 40, 5, 1
+    assert [s.price for s in r.biggest] == [40, 6, 5]
+    # Bargains: 5 or less, best-rated first (Q8 88 at 3, Q7 87 at 5, Q6 86 at 1); Q10 (90) cost 6.
+    assert [s.card.id for s in r.bargains] == ["Q8", "Q7", "Q6"]
+    assert all(s.price <= au.BARGAIN for s in r.bargains)

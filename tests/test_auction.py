@@ -283,3 +283,25 @@ def test_the_recap_lists_each_seats_buys_dearest_first_and_the_rooms_biggest_and
     # Bargains: 5 or less, best-rated first (Q8 88 at 3, Q7 87 at 5, Q6 86 at 1); Q10 (90) cost 6.
     assert [s.card.id for s in r.bargains] == ["Q8", "Q7", "Q6"]
     assert all(s.price <= au.BARGAIN for s in r.bargains)
+
+
+# -- the first price (C75) -----------------------------------------------------------------
+
+def test_a_first_price_winner_pays_what_he_bid_contested_or_not():
+    deck = made_up_deck()
+    a = auction(deck, 3)
+    a.first_price = True
+    x, y = lot(a, 9), lot(a, 8)
+    sales = au.settle(a, {0: [(x, 40)], 1: [(x, 30), (y, 12)], 2: []})
+    assert {(s.seat, s.card.id, s.price) for s in sales} == {(0, "Q9", 40), (1, "Q8", 12)}
+    assert a.spent == [40, 12, 0]
+
+
+def test_the_replay_keeps_the_rule_it_is_given():
+    deck = load_deck()
+    a = au.replay(deck, 5, ["433", "442"], [])
+    lot0 = next(i for i in a.takeable(0) if i in a.takeable(1))
+    rounds = [{0: [(lot0, 30)], 1: [(lot0, 20)]}]
+    second = au.replay(deck, 5, ["433", "442"], rounds)
+    first = au.replay(deck, 5, ["433", "442"], rounds, first_price=True)
+    assert second.spent[0] == 21 and first.spent[0] == 30

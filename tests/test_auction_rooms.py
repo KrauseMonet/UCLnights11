@@ -125,8 +125,8 @@ def test_a_round_closes_once_everyone_still_buying_has_bid(clock):
     a = r["auction"]
     assert a["round"] == 2 and a["has_bid"] == [False, False] and a["bid"] is None
     (s,) = a["last_round"]
-    assert (s["seat"], s["price"], s["others"]) == (0, 21, [{"seat": 1, "amount": 20}])   # the second price
-    assert a["seats"][0]["spent"] == 21 and a["seats"][0]["places"] == 10
+    assert (s["seat"], s["price"], s["bid"], s["others"]) == (0, 30, 30, [{"seat": 1, "amount": 20}])   # his bid (C75)
+    assert a["pricing"] == "first" and a["seats"][0]["spent"] == 30 and a["seats"][0]["places"] == 10
     assert a["closes_at"] == pytest.approx(clock.t + 45)          # the next round's clock starts now
 
 
@@ -311,7 +311,7 @@ def test_the_squads_page_shows_what_the_auction_came_to(clock):
     host.post(f"/api/rooms/{code}/finish")
     sq = host.get(f"/api/rooms/{code}/squads").json()
     A = sq["auction"]
-    assert A["kind"] == "sealed" and A["biggest"][0]["price"] == 21 and A["biggest"][0]["beat"] == 1
+    assert A["kind"] == "sealed" and A["biggest"][0]["price"] == 30 and A["biggest"][0]["beat"] == 1
     for side in sq["sides"]:
         buys = side["auction"]["buys"]
         assert sum(b["price"] for b in buys) == side["auction"]["spent"] == sealed.BUDGET - side["auction"]["left"]
@@ -322,3 +322,26 @@ def test_the_squads_page_shows_what_the_auction_came_to(clock):
     turn[0].post(f"/api/rooms/{tc}/start")
     turn[0].post(f"/api/rooms/{tc}/finish")
     assert turn[0].get(f"/api/rooms/{tc}/squads").json()["auction"] is None
+
+
+def test_a_room_made_before_the_first_price_keeps_the_second(clock, database):
+    people = [player(), player()]
+    code = people[0].post("/api/rooms", json={"bench": False, "together": False, "size": 4, "style": "sealed",
+                                              "timer": 45}).json()["code"]
+    people[1].post(f"/api/rooms/{code}/join")
+    with psycopg.connect(database) as conn:
+        conn.execute("update rooms set first_price = false where code = %s", (code,))   # as migration 018 left it
+        conn.commit()
+    room = people[0].post(f"/api/rooms/{code}/start").json()
+    assert room["first_price"] is False
+    lot = market_lot(room)
+    people[0].post(f"/api/rooms/{code}/bids", json={"round": 1, "bids": [[lot, 30]]})
+    a = people[1].post(f"/api/rooms/{code}/bids", json={"round": 1, "bids": [[lot, 20]]}).json()["auction"]
+    assert a["pricing"] == "second" and a["last_round"][0]["price"] == 21
+
+
+def test_a_room_row_made_without_the_flag_is_second_price(database):
+    with psycopg.connect(database) as conn:
+        (default,) = conn.execute("select column_default from information_schema.columns"
+                                  " where table_name = 'rooms' and column_name = 'first_price'").fetchone()
+    assert default == "false"

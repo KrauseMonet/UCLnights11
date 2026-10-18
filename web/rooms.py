@@ -159,6 +159,7 @@ class Room:
     watch_paused_at: float | None   # a pause for a change (C60), by the app's clock
     watch_paused_by: int | None     # the seat that asked for it
     auction_text: str               # an auction room's rounds or events (C70); '' for any other
+    first_price: bool               # a sealed winner pays what he bid (C75); False: the second price
     seats: list[Seat]
 
     def seat_of(self, account_id: int | None) -> Seat | None:
@@ -250,7 +251,8 @@ def seat_session(deck: Deck, room: Room, seat: Seat, d: shared.SharedDraft | Non
 
 ROOM_COLUMNS = ("r.code, r.size, r.seed, r.host_id, r.status, r.version, r.memory, r.style, r.timer_seconds,"
                 " r.moves, r.turn_started_at, r.failure_reason, r.bench, r.together, r.watch_started_at,"
-                " r.completed_at, r.watch_pace, r.live, r.watch_paused_at, r.watch_paused_by, r.auction")
+                " r.completed_at, r.watch_pace, r.live, r.watch_paused_at, r.watch_paused_by, r.auction,"
+                " r.first_price")
 SEAT_COLUMNS = ("s.account_id, a.username, s.seat, s.formation, s.state, s.plan, s.sheet, s.live, s.idle_pauses,"
                 " s.bids")
 
@@ -350,8 +352,10 @@ def create_room(conn, account: Account, size: int, formation: str = DEFAULT,
     seed = random.SystemRandom().randrange(1, 2**31 - 1)
     for _ in range(20):
         code = "".join(secrets.choice(CODE_ALPHABET) for _ in range(CODE_LENGTH))
+        # Every room made now is live (C60) and pays first price if it auctions sealed (C75).
         row = conn.execute("insert into rooms (code, size, seed, host_id, memory, style, timer_seconds, bench,"
-                           " together, watch_pace, live) values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, true)"
+                           " together, watch_pace, live, first_price)"
+                           " values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, true, true)"
                            " on conflict (code) do nothing returning code",
                            (code, size, seed, account.account_id, memory, style, timer, bench,
                             together, watch.DEFAULT_PACE)).fetchone()
@@ -1064,14 +1068,14 @@ def auction_of(deck: Deck, room: Room, text: str | None = None):
     kept for the next request as the turn draft is (``shared_of``). Callers only read it."""
     text = room.auction_text if text is None else text
     forms = tuple(s.formation for s in room.seats)
-    key = (id(deck), room.style, room.seed, forms, text, room.bench, room.timer_seconds)
+    key = (id(deck), room.style, room.seed, forms, text, room.bench, room.timer_seconds, room.first_price)
     with _shared_lock:
         hit = _auction_cache.get(key)
         if hit is not None and hit[0] is deck:
             _auction_cache.move_to_end(key)
             return hit[1]
     if room.style == "sealed":
-        a = sealed.replay(deck, room.seed, list(forms), sealed.decode_rounds(text), room.bench)
+        a = sealed.replay(deck, room.seed, list(forms), sealed.decode_rounds(text), room.bench, room.first_price)
     else:
         a = opened.replay(deck, room.seed, list(forms), opened.decode_events(text), room.bench,
                           float(room.timer_seconds))

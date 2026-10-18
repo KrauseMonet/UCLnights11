@@ -1239,7 +1239,7 @@ def room_out(room: rooms.Room, me_id: int | None) -> dict:
     return {
         "code": room.code, "size": room.size, "format": ROOM_FORMATS[room.size],
         "memory": room.memory, "style": room.style, "timer": room.timer_seconds, "bench": room.bench,
-        "together": room.together, "picks_each": each,
+        "together": room.together, "picks_each": each, "first_price": room.first_price,
         "live": room.live_watch,
         "stages": CUP_STAGES.get(room.size, LEAGUE_STAGES if room.size == LEAGUE_TEAMS else STAGES),
         "status": room.status, "version": room.version, "failure_reason": room.failure_reason,
@@ -1292,6 +1292,8 @@ def auction_out(room: rooms.Room, a, mine) -> dict:
 
     out = {
         "kind": room.style, "budget": a.budget, "min_bid": sealed_rules.MIN_BID, "complete": a.complete,
+        # What a sealed winner pays: his bid (C75), or the second price in a room made before.
+        "pricing": "first" if room.first_price else "second",
         "server_now": time.time(), "timer": room.timer_seconds,
         "you": me, "max_bid": None if me is None or a.places_left(me) <= 0 else a.max_bid(me),
         "seats": [{"seat": s.seat, "username": s.username, "money": a.money_left(i), "spent": a.spent[i],

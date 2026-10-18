@@ -585,8 +585,9 @@ Every seat has €200m. Each round the room is dealt a market of real squads, en
 every seat still buying has someone it can take; each seat bids in secret on up to five men,
 keeping €1m for every other place it has left. The round is settled from the highest bid
 down: a seat wins at most one man a round, a tie goes to the seat with more places left and
-then a seeded draw, and the winner pays one €1m more than the best other bid on that man
-(never more than he bid; €1m if nobody else wanted him). A seat may pass three times; one
+then a seeded draw, and **the winner pays what he bid** (C75; a room made before C75 pays the
+second price: one €1m more than the best other bid on that man, never more than he bid, €1m
+if nobody else wanted him). A seat may pass three times; one
 that sends nothing bids €1m on a random man it can take. The football rules are the
 draft's: positions, the bench, one person once in the room.
 

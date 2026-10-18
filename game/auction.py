@@ -13,9 +13,12 @@ by round, instead of taking turns.
 - **Settling a round.** Bids are taken from the highest down: the man goes to that bidder
   unless he is sold already or the bidder has won this round, since **a seat wins at most
   one man a round**, so its own amounts say whom it wants most. A tie goes to the seat with
-  more places left, then to a seeded draw. **The winner pays the second price**: one
-  MIN_BID more than the best other bid on that man, never more than he bid himself, and
-  MIN_BID if nobody else wanted him. Bidding what a man is worth to you is then safe.
+  more places left, then to a seeded draw. **The winner pays what he bid** (the first
+  price, C75): every room made since, at the user's call, since guessing how little will
+  do is the fun of a blind bid. A room made before pays **the second price**: one MIN_BID
+  more than the best other bid on that man, never more than he bid himself, and MIN_BID if
+  nobody else wanted him (``first_price`` False). The rule rides on the room, so an
+  auction always replays at the price it was played at.
 - **The football rules are the draft's**: a man stands only where he holds the position,
   a bench man is no keeper and holds a position the formation has (game.draft.why_not),
   and one person once in the room, in any season.
@@ -70,6 +73,7 @@ class Auction:
     redraws: int = 0
     picks_each: int = PICKS_EACH
     budget: int = BUDGET
+    first_price: bool = False       # pays what it bid (C75); False, the second price (C68)
 
     @property
     def seats(self) -> int:
@@ -187,7 +191,10 @@ def settle(a: Auction, sent: Bids) -> list[Sale]:
         if lot in sold or seat in won:
             continue
         others = tuple((s, x) for s, l, x in bids if l == lot and s != seat)
-        price = min(amount, max((x for _, x in others), default=0) + MIN_BID) if others else MIN_BID
+        if a.first_price:
+            price = amount
+        else:
+            price = min(amount, max((x for _, x in others), default=0) + MIN_BID) if others else MIN_BID
         sales.append(Sale(a.round, seat, lots[lot], price, amount, others))
         sold.add(lot)
         won.add(seat)
@@ -199,7 +206,8 @@ def settle(a: Auction, sent: Bids) -> list[Sale]:
     return sales
 
 
-def replay(deck: Deck, seed: int, formations: list[str], rounds: list[Bids], bench: bool = False) -> Auction:
+def replay(deck: Deck, seed: int, formations: list[str], rounds: list[Bids], bench: bool = False,
+           first_price: bool = False) -> Auction:
     """The auction after its closed ``rounds``, with the next round's market dealt. Raises
     IllegalMove on a bid the round didn't allow, Stranded if the deck runs dry."""
     if not formations:
@@ -210,7 +218,7 @@ def replay(deck: Deck, seed: int, formations: list[str], rounds: list[Bids], ben
         raise IllegalMove(f"unknown formation {e.args[0]!r}") from None
     n = len(forms)
     a = Auction(seed, forms, [[] for _ in forms], [0] * n, [0] * n,
-                picks_each=PICKS_EACH + (BENCH if bench else 0))
+                picks_each=PICKS_EACH + (BENCH if bench else 0), first_price=first_price)
     for sent in rounds:
         if a.complete:
             raise IllegalMove("the auction is already over")

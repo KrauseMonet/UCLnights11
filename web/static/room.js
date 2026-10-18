@@ -227,7 +227,9 @@ function renderLobby() {
       <ol class="howto">
         ${R.style === "sealed"
           ? `<li><b>Everyone has €200m.</b> Each round a market of real squads is dealt to the whole room, and everyone bids in secret on up to five men.</li>
-             <li>A round closes when everyone has bid, or after ${R.timer} seconds. <b>Each of you wins at most one man a round</b>, the highest bids first, and pays €1m more than the next bid on him, never more than you bid.</li>
+             <li>A round closes when everyone has bid, or after ${R.timer} seconds. <b>Each of you wins at most one man a round</b>, the highest bids first, ${R.first_price
+               ? "and <b>pays what you bid</b>, whether anyone else wanted him or not: how little will do is the guess."
+               : "and pays €1m more than the next bid on him, never more than you bid."}</li>
              <li>You always keep €1m for every place you still have to fill. Send nothing and a €1m bid is made for you.</li>`
           : R.style === "open"
           ? `<li><b>Everyone has €200m.</b> You take turns to nominate: you're dealt a real squad, put one man up, and open the bidding at €1m yourself.</li>
@@ -660,7 +662,9 @@ function drawMyBids(A) {
   el.innerHTML = `<div class="panel-h"><span class="label">Your bid</span><span class="label">the most you can bid: ${eur(A.max_bid)}</span></div>
     ${myFirst ? `<div class="auc-bids"><div class="auc-bid first">${who(man(myFirst.lot))}<button class="kick" data-drop="first" aria-label="Clear your bid">✕</button></div>
         ${priceHtml("first", myFirst.amount, A)}
-        <p class="auc-hint">Starts at your money per place left. You pay ${eur(A.min_bid)} more than the next bid on him, never more than this.</p></div>`
+        <p class="auc-hint">Starts at your money per place left. ${A.pricing === "first"
+          ? "If you win him you pay exactly this, whatever anyone else bid: bid what he's worth to you, and no more."
+          : `You pay ${eur(A.min_bid)} more than the next bid on him, never more than this.`}</p></div>`
       : `<p class="empty">Tap <b>Bid</b> on the man you want most.</p>`}
     ${myFirst ? `<div class="auc-backups">${myBackups.map((b, k) => `<div class="auc-bids"><div class="auc-bid"><span class="auc-tag">Back-up ${k + 1}</span>${who(man(b.lot))}
           <button class="kick" data-drop="${k}" aria-label="Drop this back-up">✕</button></div>${priceHtml(`b${k}`, b.amount, A)}</div>`).join("")}
@@ -714,7 +718,9 @@ function resultHtml(A) {
   }
   if (won) {
     const n = next(won);
-    lines.unshift(`You won <b>${esc(won.card.name)}</b> for ${eur(won.price)}: you bid ${eur(won.bid)}, ${n == null ? "and nobody else bid on him" : `and the next bid was ${eur(n)}`}.`);
+    lines.unshift(A.pricing === "first"
+      ? `You won <b>${esc(won.card.name)}</b> for your ${eur(won.price)}: ${n == null ? "nobody else bid on him" : `the next bid was ${eur(n)}`}.`
+      : `You won <b>${esc(won.card.name)}</b> for ${eur(won.price)}: you bid ${eur(won.bid)}, ${n == null ? "and nobody else bid on him" : `and the next bid was ${eur(n)}`}.`);
   } else if (!lost.length) {
     lines.push("You won nobody last round.");
   }

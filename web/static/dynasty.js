@@ -167,7 +167,9 @@ function renderSeason() {
   xiFoot($("xifoot"), { ...S, picks: S.xi });
   const play = `/cup?season=${n}#${S.state}`;
   const more = n < d.max;
-  const next = more ? `<button class="btn primary" id="next">${n >= d.length ? `Carry on: Year ${n + 1}` : `Next season: Year ${n + 1}`}</button>` : "";
+  // From the last of the ten on, the end of the dynasty (C76) leads and the next season follows.
+  const ended = n >= d.length && watched(st);
+  const next = more ? `<button class="btn ${ended ? "ghost" : "primary"}" id="next">${n >= d.length ? `Carry on: Year ${n + 1}` : `Next season: Year ${n + 1}`}</button>` : "";
   if (begun(st)) {
     // Played (or being played): the sheet and plan stay as they were, since a new one is
     // a new tournament for a season already seen.
@@ -177,11 +179,14 @@ function renderSeason() {
     const end = n === d.length && done
       ? (() => { const n = Object.values(RECORDS).filter((x) => x.reached === "Champions").length;
           return `<p class="dyn-end">Ten seasons done: ${n} title${n === 1 ? "" : "s"}. Carry on if you like.</p>`; })() : "";
+    const story = ended
+      ? `<a class="btn primary" href="/legacy#${S.state}">${n === d.length ? "See how your dynasty ended" : "Every season, side by side"}</a>` : "";
     $("deal").style.cssText = "";
     $("deal").innerHTML = `<div class="panel-h"><span class="label">Year ${n}</span><span class="label">${r ? esc(r.reached) : "being played"}</span></div>
       <div class="dyn-season">${r ? `<p class="dyn-result">${esc(SHORT[r.reached] || r.reached)} · ${r.w}W ${r.d}D ${r.l}L · ${r.gf}–${r.ga}</p>` : ""}
         <div class="label">Your changes</div>${planHtml(namedPlan())}${end}</div>
-      <div class="plan-foot">${done ? `${next}<a class="btn ghost" href="${play}">See Year ${n} again</a>` : `<a class="btn primary" href="${play}">Carry on with Year ${n}</a>`}</div>`;
+      <div class="plan-foot">${done ? `${story}${next}<a class="btn ghost" href="${play}">See Year ${n} again</a>`
+        : `<a class="btn primary" href="${play}">Carry on with Year ${n}</a>`}</div>`;
   } else {
     if (!$("sheethint")) $("bench").insertAdjacentHTML("afterend", `<p class="sheet-hint" id="sheethint"></p>`);
     sheetEditor($("pitch"), $("bench"), S, {

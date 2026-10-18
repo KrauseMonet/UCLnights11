@@ -912,3 +912,44 @@ function legacyPitch(L, el) {
     rating: `${x.man.mark.toFixed(1)}${x.regular ? "" : "*"}`, short: `${x.man.apps} apps`, season: "  " }));
   renderPitch(el, L.team.formation.slots, xi, null);
 }
+
+// --------------------------------------------------------------- charts (C28, C76)
+/* Shared by the tournament analysis and the end of a dynasty. Colours were run through the
+   dataviz validator against the panel colour #11131f: gold #c08a1e and blue #4a86d8 for two
+   series, grey #56637f only as a neutral midpoint or an average. */
+const AC = { you: "#c08a1e", other: "#4a86d8", mid: "#56637f", grid: "rgba(255,255,255,.08)", ink2: "#aab1c6", ink3: "#7c839c" };
+const fmt1 = (v) => v == null ? "–" : v.toFixed(1);       // a rate: always one decimal, so 3.0 sits under 3.3
+const pctOr = (v) => v == null ? "–" : `${v}%`;
+
+/* Columns from one baseline, 4px rounded tops, value on each cap. One or two series. */
+function columnsSvg(labels, series, aria = `${series.map((s) => s.name).join(" and ")} by minute`) {
+  const W = 720, H = 260, padL = 34, padB = 34, padT = 26, inner = W - padL - 10;
+  const max = Math.max(1, ...series.flatMap((s) => s.values));
+  const step = max <= 5 ? 1 : max <= 12 ? 2 : max <= 30 ? 5 : max <= 60 ? 10 : 20;
+  const top = Math.ceil(max / step) * step;
+  const y = (v) => padT + (H - padT - padB) * (1 - v / top);
+  const band = inner / labels.length, barW = Math.min(24, (band - 16) / series.length);
+  let out = "";
+  for (let v = 0; v <= top; v += step) {
+    out += `<line x1="${padL}" x2="${W - 10}" y1="${y(v)}" y2="${y(v)}" stroke="${AC.grid}" stroke-width="1"/>
+      <text x="${padL - 8}" y="${y(v) + 4}" text-anchor="end" class="an-axis">${v}</text>`;
+  }
+  labels.forEach((lab, i) => {
+    const cx = padL + band * i + band / 2, groupW = barW * series.length + 2 * (series.length - 1);
+    series.forEach((s, k) => {
+      const v = s.values[i], x = cx - groupW / 2 + k * (barW + 2), yy = y(v), h = y(0) - yy;
+      const r = Math.min(4, h);
+      const path = h > 0 ? `M${x},${y(0)} V${yy + r} Q${x},${yy} ${x + r},${yy} H${x + barW - r} Q${x + barW},${yy} ${x + barW},${yy + r} V${y(0)} Z` : "";
+      out += `<g class="an-bar"><title>${esc(lab)}: ${v} ${esc(s.name)}</title>
+        <rect x="${x - 4}" y="${padT}" width="${barW + 8}" height="${H - padT - padB}" fill="transparent"/>
+        ${path ? `<path d="${path}" fill="${s.colour}"/>` : ""}
+        <text x="${x + barW / 2}" y="${yy - 6}" text-anchor="middle" class="an-val-lab">${v}</text></g>`;
+    });
+    out += `<text x="${cx}" y="${H - 10}" text-anchor="middle" class="an-axis">${esc(lab)}</text>`;
+  });
+  return `<svg viewBox="0 0 ${W} ${H}" class="an-svg" role="img" aria-label="${esc(aria)}">${out}</svg>`;
+}
+
+function legend(items) {
+  return `<div class="an-legend">${items.map(([c, l]) => `<span><i style="background:${c}"></i>${esc(l)}</span>`).join("")}</div>`;
+}

@@ -39,6 +39,7 @@
     { "src": "/daily", "dest": "/web/static/daily.html", "headers": { "cache-control": "public, max-age=0, must-revalidate" } },
     { "src": "/profile", "dest": "/web/static/profile.html", "headers": { "cache-control": "public, max-age=0, must-revalidate" } },
     { "src": "/squad", "dest": "/web/static/squad.html", "headers": { "cache-control": "public, max-age=0, must-revalidate" } },
-    { "src": "/dynasty", "dest": "/web/static/dynasty.html", "headers": { "cache-control": "public, max-age=0, must-revalidate" } }
+    { "src": "/dynasty", "dest": "/web/static/dynasty.html", "headers": { "cache-control": "public, max-age=0, must-revalidate" } },
+    { "src": "/legacy", "dest": "/web/static/legacy.html", "headers": { "cache-control": "public, max-age=0, must-revalidate" } }
   ]
 }

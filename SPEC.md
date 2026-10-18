@@ -597,6 +597,13 @@ is put up or 8 s after the last bid (a bid up to 1 s late still counts); one nob
 bid on sells at once, and the winner pays his bid. A nominator out of time has a random man of
 his deal put up for him.
 
+**In a room (C70)** the host chooses turns, own pace, sealed bids (any size, a round clock of
+30, 45 or 60 s) or an open auction (rooms of 2, 4 and 8, a nomination clock of 15, 30 or 45 s)
+in the lobby. Every clock is lazy, closing a round or lot on the next request that finds it
+run out. A seat's sealed bids are its own until its round closes; a sealed round closes early
+once everyone still buying has bid. After the auction a room plans, watches and plays exactly
+as a turn room does.
+
 ## 9. Not in scope yet
 
 Puzzle games, password reset. Auctions are being built (§8a). The engine, draft and

@@ -27,7 +27,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from game import analysis as analyses, daily as daily_rules, journey as journeys, match, squad_ratings
-from game import commentary, dynasty as dy, goal_kinds, watch
+from game import auction as sealed_rules, commentary, dynasty as dy, goal_kinds, open_auction as opened_rules, watch
 from game.deck import Card, ClubSeason, load_deck
 from game.draft import (Change, IllegalMove, LiveEntry, Pick, Reroll, Session, can_replace, carry_plan,
                         check_sheet, decode, decode_live, decode_solo, decode_state, default_sheet, encode,
@@ -1179,7 +1179,9 @@ def _replays(room: rooms.Room) -> bool:
     if room.status not in ("drafting", "complete"):
         return True
     try:
-        if room.turns:
+        if room.auction:
+            rooms.auction_of(load_deck(), room)
+        elif room.turns:
             rooms.shared_of(load_deck(), room)
         else:
             for seat in room.seats:
@@ -1198,10 +1200,14 @@ def room_out(room: rooms.Room, me_id: int | None) -> dict:
         room.status, room.failure_reason = "failed", STALE_ROOM
     each = room.picks_each
     picks = {s.account_id: (s.picks, s.picks == s.total) for s in room.seats}
-    if room.turns and room.status in ("drafting", "complete"):
-        d = rooms.shared_of(load_deck(), room)
+    auction = None
+    if room.shared and room.status in ("drafting", "complete"):
+        d = rooms.auction_of(load_deck(), room) if room.auction else rooms.shared_of(load_deck(), room)
         picks = {s.account_id: (len(p), len(p) == each) for s, p in zip(room.seats, d.picks)}
-        turns = turns_out(room, d, mine)
+        if room.auction:
+            auction = auction_out(room, d, mine)
+        else:
+            turns = turns_out(room, d, mine)
         if mine is not None:
             i = room.seats.index(mine)
             mine_picks = [card_out(c) for c in d.picks[i]]
@@ -1250,7 +1256,78 @@ def room_out(room: rooms.Room, me_id: int | None) -> dict:
         "fillers": room.size - len(room.seats),
         "draft": draft,
         "turns": turns,
+        "auction": auction,
     }
+
+
+def auction_out(room: rooms.Room, a, mine) -> dict:
+    """An auction room (C70) as a seat sees it. Everyone sees every seat's money and places,
+    and every sale with its bids. A sealed round's market carries the reasons for this seat,
+    and its own bids, never anyone else's until the round closes: only whether they have bid.
+    An open auction's deal (dealt to the nominator, watched by all) and its lot carry the
+    nominator's and this seat's reasons. In a memory room nobody sees a rating until the
+    room completes, and the market lists each line by name (C23)."""
+    deck = load_deck()
+    me = room.seats.index(mine) if mine is not None else None
+    hide = room.memory and room.status != "complete"
+    start = room.turn_started_at or 0.0
+
+    def card(c, reason=None, i=None):
+        out = card_out(c, reason)
+        if i is not None:
+            out["i"] = i
+        if hide:
+            out["rating"] = None
+        return out
+
+    def squad(cs, cards):
+        if hide:
+            cards.sort(key=lambda c: (LINE_ORDER.index(c["pos"]), c["name"]))
+        return club_season_out(cs, cards)
+
+    def sale(s):
+        return {"seat": s.seat, "card": card(s.card), "price": s.price,
+                "others": [{"seat": x, "amount": v} for x, v in s.others]}
+
+    out = {
+        "kind": room.style, "budget": a.budget, "min_bid": sealed_rules.MIN_BID, "complete": a.complete,
+        "server_now": time.time(), "timer": room.timer_seconds,
+        "you": me, "max_bid": None if me is None or a.places_left(me) <= 0 else a.max_bid(me),
+        "seats": [{"seat": s.seat, "username": s.username, "money": a.money_left(i), "spent": a.spent[i],
+                   "places": a.places_left(i), **rooms.seat_palette(s.seat)} for i, s in enumerate(room.seats)],
+        "sales": [sale(s) for s in reversed(a.sales[-12:])],
+    }
+    if room.style == "sealed":
+        lot = 0
+        market = []
+        for cs in a.market:
+            cards = []
+            for c in cs.cards:
+                cards.append(card(c, a.reason(c, me) if me is not None else None, lot))
+                lot += 1
+            market.append(squad(cs, cards))
+        mine_bids = rooms._sent(room).get(me) if me is not None else None
+        out.update({
+            "round": a.round, "market": market, "max_bids": sealed_rules.MAX_BIDS,
+            "closes_at": start + room.timer_seconds, "bid": [list(b) for b in mine_bids] if mine_bids else mine_bids,
+            "passes_left": None if me is None else sealed_rules.PASSES - a.passes[me],
+            "has_bid": [s.bids is not None for s in room.seats],
+            "last_round": [sale(s) for s in a.sales if s.round == a.round - 1],
+        })
+    else:
+        lot = a.lot
+        out.update({
+            "lots_done": a.lots_done, "nominator": a.nominator, "nominate_by": start + a.nominate_by,
+            "deal": None if a.deal is None else squad(a.deal, [card(c, a.reason(c, a.nominator), i)
+                                                              for i, c in enumerate(a.deal.cards)]),
+            "lot": None if lot is None else {
+                "number": lot.number, "card": card(lot.card), "nominator": lot.nominator, "leader": lot.leader,
+                "price": lot.price, "ends_at": start + lot.ends, "grace": opened_rules.GRACE_S,
+                "bids": [{"seat": s, "amount": x} for s, x, _ in lot.bids],
+                "why_not": None if me is None else a.can_bid(me),
+                "min_raise": opened_rules.MIN_RAISE},
+        })
+    return out
 
 
 def turns_out(room: rooms.Room, d, mine) -> dict:
@@ -1474,6 +1551,50 @@ def room_pick(code: str, body: RoomPickIn, request: Request) -> dict:
 @app.post("/api/rooms/{code}/reroll")
 def room_reroll(code: str, body: RoomRerollIn, request: Request) -> dict:
     return _room_move(code, request, Reroll(), body.expect)
+
+
+class SealedBidsIn(BaseModel):
+    round: int
+    bids: list[tuple[int, int]] = []     # [lot, amount]; none is a pass
+
+
+class NominateIn(BaseModel):
+    lot: int
+    index: int
+
+
+class OpenBidIn(BaseModel):
+    lot: int
+    amount: int
+
+
+def _auction_move(code: str, request: Request, act):
+    """An auction move (C70): refused with a 400 when the auction doesn't allow it, and with
+    a 409 carrying the room when the round or lot it was meant for has passed (A146)."""
+    with db.connection() as conn:
+        try:
+            act(conn, _signed_in(conn, request))
+        except IllegalMove as e:
+            raise HTTPException(400, str(e)) from None
+        except rooms.Conflict as e:
+            return JSONResponse({"detail": str(e), "room": _room_reply(conn, request, code)}, status_code=409)
+        return _room_reply(conn, request, code)
+
+
+@app.post("/api/rooms/{code}/bids")
+def room_sealed_bids(code: str, body: SealedBidsIn, request: Request) -> dict:
+    return _auction_move(code, request, lambda conn, me: rooms.sealed_bids(
+        conn, load_deck(), me, code, body.round, [tuple(b) for b in body.bids]))
+
+
+@app.post("/api/rooms/{code}/nominate")
+def room_nominate(code: str, body: NominateIn, request: Request) -> dict:
+    return _auction_move(code, request, lambda conn, me: rooms.nominate(conn, load_deck(), me, code, body.lot, body.index))
+
+
+@app.post("/api/rooms/{code}/bid")
+def room_open_bid(code: str, body: OpenBidIn, request: Request) -> dict:
+    return _auction_move(code, request, lambda conn, me: rooms.open_bid(conn, load_deck(), me, code, body.lot, body.amount))
 
 
 @app.post("/api/rooms/{code}/finish")

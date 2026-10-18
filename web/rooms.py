@@ -30,6 +30,13 @@ while the seat chooses; the change comes at the first break after everything the
 been sent, and the tournament, a pure function of the room as ever, now includes it. Every
 match is on a stream of its own (game.tournament.Live), so one friend's change moves
 nobody else's match. A host's skip past matches can hand them to the plans instead.
+
+AN AUCTION ROOM (C70) buys its squads instead: sealed-bid rounds (game.auction, any size) or
+an open auction (game.open_auction, rooms of 2, 4 and 8), the host's choice in the lobby.
+The auction is stored on the room (`rooms.auction`) and replayed like a turn room's moves;
+a sealed seat's bids for the round still open sit on its own seat row until the round
+closes. Every clock is lazy, as a turn room's is: a round or lot that has run out is closed
+by the next request that finds it so, poll or bid, with the room locked.
 """
 
 from __future__ import annotations
@@ -44,6 +51,8 @@ from dataclasses import dataclass, replace
 
 from game.colours import palette
 from game.deck import Deck
+from game import auction as sealed
+from game import open_auction as opened
 from game import shared_draft as shared
 from game import watch
 from game.draft import (BENCH, Change, IllegalMove, LiveEntry, Move, Pick, Session, carry_plan, check_plan,
@@ -55,7 +64,10 @@ from game.tournament import (ROOM_SIZES, Live, MatchPlan, Side, Tournament, auto
                              change_made)
 from web.accounts import Account
 
-STYLES = ("turns", "own")
+STYLES = ("turns", "own", "sealed", "open")
+# A sealed round's clock: longer than a pick's, since its market is several squads (C70).
+SEALED_TIMERS = (30, 45, 60)
+DEFAULT_SEALED_TIMER = 45
 # A turn's clock is allowed this long past its last second before the server picks for
 # the seat: the cricket site lost "the last second of every clock" to the round trip
 # until it added the same grace (its A146).
@@ -100,6 +112,7 @@ class Seat:
     sheet: str | None = None        # a bench room's team sheet (C44), encode_sheet; None: as drafted
     live: str | None = None         # a live room's seat that makes its own changes (C60): encode_live
     idle_pauses: int = 0            # pauses it ended without a change
+    bids: str | None = None         # a sealed auction's: this seat's bids in the open round (C70)
 
     @property
     def bench(self) -> bool:
@@ -145,6 +158,7 @@ class Room:
     live: bool                      # made since live changes (C60); see live_watch
     watch_paused_at: float | None   # a pause for a change (C60), by the app's clock
     watch_paused_by: int | None     # the seat that asked for it
+    auction_text: str               # an auction room's rounds or events (C70); '' for any other
     seats: list[Seat]
 
     def seat_of(self, account_id: int | None) -> Seat | None:
@@ -164,11 +178,26 @@ class Room:
         return self.style == "turns"
 
     @property
+    def auction(self) -> bool:
+        return self.style in ("sealed", "open")
+
+    @property
+    def shared(self) -> bool:
+        """Whether the seats' squads come from one draft of the whole room (turns or an
+        auction) rather than each seat's own state string."""
+        return self.turns or self.auction
+
+    @property
     def picks_each(self) -> int:
         return 11 + (BENCH if self.bench else 0)
 
     def clock_expired(self, now: float) -> bool:
         # Once every pick is made a bench room waits for plans, and no clock runs on those.
+        # A sealed round's clock is the same arithmetic; an open auction's depends on its
+        # lot, so it is asked of the auction itself (open_due).
+        if self.style == "sealed":
+            return (self.status == "drafting" and self.turn_started_at is not None
+                    and now - self.turn_started_at > self.timer_seconds + CLOCK_GRACE_S)
         return (self.turns and self.status == "drafting" and self.turn_started_at is not None
                 and len(self.moves) < self.picks_each * len(self.seats)
                 and now - self.turn_started_at > self.timer_seconds + CLOCK_GRACE_S)
@@ -201,8 +230,8 @@ def seat_session(deck: Deck, room: Room, seat: Seat, d: shared.SharedDraft | Non
     at its own pace, or cut from the room's shared draft when the room takes turns."""
     plan = decode_plan(seat.plan) if seat.plan else None
     sheet = decode_sheet(seat.sheet) if seat.sheet else None
-    if room.turns:
-        d = d if d is not None else shared_of(deck, room)
+    if room.shared:
+        d = d if d is not None else (auction_of(deck, room) if room.auction else shared_of(deck, room))
         i = next(k for k, x in enumerate(room.seats) if x.account_id == seat.account_id)
         s = Session(room.seed, d.formations[i], picks=list(d.picks[i]),
                     bench_size=BENCH if room.bench else 0)
@@ -221,8 +250,9 @@ def seat_session(deck: Deck, room: Room, seat: Seat, d: shared.SharedDraft | Non
 
 ROOM_COLUMNS = ("r.code, r.size, r.seed, r.host_id, r.status, r.version, r.memory, r.style, r.timer_seconds,"
                 " r.moves, r.turn_started_at, r.failure_reason, r.bench, r.together, r.watch_started_at,"
-                " r.completed_at, r.watch_pace, r.live, r.watch_paused_at, r.watch_paused_by")
-SEAT_COLUMNS = "s.account_id, a.username, s.seat, s.formation, s.state, s.plan, s.sheet, s.live, s.idle_pauses"
+                " r.completed_at, r.watch_pace, r.live, r.watch_paused_at, r.watch_paused_by, r.auction")
+SEAT_COLUMNS = ("s.account_id, a.username, s.seat, s.formation, s.state, s.plan, s.sheet, s.live, s.idle_pauses,"
+                " s.bids")
 
 
 ROOM_FROM = ("  from rooms r left join room_seats s on s.room_code = r.code"
@@ -295,11 +325,16 @@ def _check_formation(formation: str) -> str:
     return formation
 
 
-def _check_style(style: str, timer: int) -> None:
+def _check_style(style: str, timer: int, size: int) -> None:
     if style not in STYLES:
         raise RoomError(f"unknown draft style {style!r}")
-    if timer not in shared.TIMER_CHOICES:
-        raise RoomError(f"a pick clock is {', '.join(map(str, shared.TIMER_CHOICES))} seconds")
+    if style == "open" and size not in opened.ROOM_SIZES:
+        raise RoomError(f"an open auction is for rooms of {', '.join(map(str, opened.ROOM_SIZES))}: "
+                        "a bigger room would take well over an hour, so it bids sealed")
+    choices = SEALED_TIMERS if style == "sealed" else shared.TIMER_CHOICES
+    if timer not in choices:
+        what = "a sealed round" if style == "sealed" else "a nomination" if style == "open" else "a pick clock"
+        raise RoomError(f"{what} is {', '.join(map(str, choices))} seconds")
 
 
 def create_room(conn, account: Account, size: int, formation: str = DEFAULT,
@@ -308,7 +343,7 @@ def create_room(conn, account: Account, size: int, formation: str = DEFAULT,
     if size not in ROOM_SIZES:
         raise RoomError(f"a room holds {', '.join(map(str, ROOM_SIZES))} sides")
     _check_formation(formation)
-    _check_style(style, timer)
+    _check_style(style, timer, size)
     # Lobbies nobody started are swept here, lazily, rather than by a scheduled job.
     conn.execute("delete from rooms where status = 'lobby'"
                  " and updated_at < now() - make_interval(days => %s)", (LOBBY_TTL_DAYS,))
@@ -431,7 +466,7 @@ def set_style(conn, account: Account, code: str, style: str, timer: int) -> None
         raise Forbidden("only the host can choose how the room drafts")
     if room.status != "lobby":
         raise Conflict("the draft has already started")
-    _check_style(style, timer)
+    _check_style(style, timer, room.size)
     conn.execute("update rooms set style = %s, timer_seconds = %s where code = %s", (style, timer, room.code))
     _touch(conn, room)
 
@@ -442,8 +477,11 @@ def start_room(conn, account: Account, code: str) -> None:
         raise Forbidden("only the host can start the draft")
     if room.status != "lobby":
         raise Conflict("the draft has already started")
-    if room.turns:
-        conn.execute("update rooms set moves = '', turn_started_at = %s where code = %s", (clock(), room.code))
+    if room.turns or room.auction:
+        # An auction's clock starts here: a sealed round's, or the first nomination's (an
+        # open auction's events are timed from this moment).
+        conn.execute("update rooms set moves = '', auction = '', turn_started_at = %s where code = %s",
+                     (clock(), room.code))
         _touch(conn, room, "drafting")
         return
     for s in room.seats:
@@ -461,7 +499,10 @@ def _save_state(conn, room: Room, seat: Seat, state: str) -> None:
 
 
 def make_move(conn, deck: Deck, account: Account, code: str, move: Move, expect: int) -> None:
-    if load_room(conn, code).turns:
+    style = load_room(conn, code).style
+    if style in ("sealed", "open"):
+        raise RoomError("an auction room bids for its players")
+    if style == "turns":
         if not isinstance(move, Pick):
             raise RoomError("there are no rerolls when the room takes turns")
         return make_turn_pick(conn, deck, account, code, move.index, expect)
@@ -559,8 +600,8 @@ def set_sheet(conn, deck: Deck, account: Account, code: str, choose) -> None:
 
 def _all_in(deck: Deck, room: Room, d: shared.SharedDraft | None = None) -> bool:
     """Every pick made, and in a bench room every plan in."""
-    if room.turns:
-        d = d if d is not None else shared_of(deck, room)
+    if room.shared:
+        d = d if d is not None else (auction_of(deck, room) if room.auction else shared_of(deck, room))
         return d.complete and (not room.bench or all(s.plan is not None for s in room.seats))
     return all(s.complete for s in room.seats)
 
@@ -574,7 +615,7 @@ def seat_removed(conn, code: str) -> None:
         room = load_room(conn, code, lock=True)
     except NotFound:
         return
-    if room.turns and room.status != "lobby":
+    if room.shared and room.status != "lobby":
         conn.execute("update rooms set failure_reason = %s where code = %s",
                      ("a player's account was deleted during the draft", room.code))
         _touch(conn, room, "failed")
@@ -592,6 +633,9 @@ def finish_drafts(conn, deck: Deck, account: Account, code: str) -> None:
         raise Forbidden("only the host can finish the drafts")
     if room.status != "drafting":
         raise Conflict("there is nothing to finish")
+    if room.auction:
+        _finish_auction(conn, deck, room)
+        return
     if room.turns:
         moves = room.moves
         try:
@@ -628,7 +672,7 @@ def _plan_the_rest(conn, deck: Deck, room: Room, d: shared.SharedDraft | None = 
 
 def sides(deck: Deck, room: Room) -> list[Side]:
     """Every seat's eleven as a side, in seat order. The room must be complete."""
-    d = shared_of(deck, room) if room.turns else None
+    d = auction_of(deck, room) if room.auction else shared_of(deck, room) if room.turns else None
     return [human_side(seat, seat_session(deck, room, seat, d), room.live_watch) for seat in room.seats]
 
 
@@ -944,10 +988,13 @@ def _fail(conn, room: Room, reason: str) -> None:
 
 
 def resolve(conn, deck: Deck, room: Room) -> bool:
-    """Pick for a seat whose clock ran out. Called with the room locked, before any
+    """Pick for a seat whose clock ran out; in an auction room, close a round or lot (or
+    nominate for a seat) whose clock ran out. Called with the room locked, before any
     move and on any poll that finds the clock expired, so there is no scheduled job: if
     nobody is looking, the clock simply waits. One pick at most, since the pick starts
     the next turn's clock."""
+    if room.auction:
+        return _resolve_auction(conn, deck, room)
     if not room.clock_expired(clock()):
         return False
     moves = room.moves
@@ -967,7 +1014,8 @@ def resolve_if_due(conn, deck: Deck, code: str) -> Room:
     actually run out (the cricket site's A92: polls taking the pick lock froze drafts).
     Returns the room as it now stands, so the poll needn't read it again."""
     room = load_room(conn, code)
-    if room.clock_expired(clock()) and resolve(conn, deck, load_room(conn, code, lock=True)):
+    due = open_due(deck, room, clock()) if room.style == "open" else room.clock_expired(clock())
+    if due and resolve(conn, deck, load_room(conn, code, lock=True)):
         room = load_room(conn, code)
     return room
 
@@ -999,3 +1047,207 @@ def make_turn_pick(conn, deck: Deck, account: Account, code: str, index: int, ex
         _fail(conn, room, str(e))
         return
     _save_moves(conn, room, moves, "complete" if _all_in(deck, room, d) else None)
+
+
+# -- auction rooms (C70) ----------------------------------------------------------------
+# A sealed auction stores its closed rounds; the round still open is the seats' bids on
+# their own rows. An open auction stores its events, timed in seconds from the moment the
+# room started (turn_started_at, which an open auction never moves). Every change builds the
+# new rounds or events and replays them, so the server applies exactly the rules the replay
+# checks, and a stored auction can never hold a move the auction didn't allow.
+
+_auction_cache: OrderedDict = OrderedDict()
+
+
+def auction_of(deck: Deck, room: Room, text: str | None = None):
+    """The room's auction, replayed (game.auction.Auction or game.open_auction.OpenAuction),
+    kept for the next request as the turn draft is (``shared_of``). Callers only read it."""
+    text = room.auction_text if text is None else text
+    forms = tuple(s.formation for s in room.seats)
+    key = (id(deck), room.style, room.seed, forms, text, room.bench, room.timer_seconds)
+    with _shared_lock:
+        hit = _auction_cache.get(key)
+        if hit is not None and hit[0] is deck:
+            _auction_cache.move_to_end(key)
+            return hit[1]
+    if room.style == "sealed":
+        a = sealed.replay(deck, room.seed, list(forms), sealed.decode_rounds(text), room.bench)
+    else:
+        a = opened.replay(deck, room.seed, list(forms), opened.decode_events(text), room.bench,
+                          float(room.timer_seconds))
+    with _shared_lock:
+        _auction_cache[key] = (deck, a)
+        while len(_auction_cache) > SHARED_CACHE_SIZE:
+            _auction_cache.popitem(last=False)
+    return a
+
+
+def open_due(deck: Deck, room: Room, now: float) -> bool:
+    """Whether an open auction's clock has something due: a lot to close, or a nomination
+    to make for a seat out of time."""
+    if room.style != "open" or room.status != "drafting" or room.turn_started_at is None:
+        return False
+    return auction_of(deck, room).due(now - room.turn_started_at) is not None
+
+
+def _event_time(room: Room, a) -> float:
+    """Now, in seconds from the auction's start, in hundredths as the events store it, and
+    never before the last event, should two servers' clocks differ. Rounding down can't
+    put a close or a nomination for a seat before its clock: every lot's end and every
+    nomination's deadline is a stored event's time plus whole seconds, so it sits on the
+    hundredths too, and a moment at or past it rounds down to no earlier than it."""
+    t = math.floor((clock() - room.turn_started_at) * 100) / 100
+    return max(t, a.events[-1].t) if a.events else max(t, 0.0)
+
+
+def _save_auction(conn, deck: Deck, room: Room, text: str, new_round: bool = False) -> None:
+    if new_round:
+        conn.execute("update rooms set auction = %s, turn_started_at = %s where code = %s",
+                     (text, clock(), room.code))
+    else:
+        conn.execute("update rooms set auction = %s where code = %s", (text, room.code))
+    room.auction_text = text
+    _touch(conn, room, "complete" if _all_in(deck, room) else None)
+
+
+def _valid(conn, deck: Deck, room: Room, text: str) -> bool:
+    """Whether the auction replays with ``text``; a deck run dry fails the room."""
+    try:
+        auction_of(deck, room, text)
+    except shared.Stranded as e:
+        _fail(conn, room, str(e))
+        room.status = "failed"
+        return False
+    return True
+
+
+def _sent(room: Room) -> dict[int, list[tuple[int, int]]]:
+    """The open sealed round's bids, by seat index: [] a pass, absent a seat that sent none."""
+    out = {}
+    for i, s in enumerate(room.seats):
+        if s.bids is not None:
+            out[i] = [] if s.bids == "-" else [(int(lot), int(x)) for lot, x in
+                                                (b.split(".") for b in s.bids.split(","))]
+    return out
+
+
+def _close_round(conn, deck: Deck, room: Room, more: int = 0) -> None:
+    """Close the open sealed round with the bids sent (an auto bid for a seat that sent
+    none), and ``more`` rounds after it where nobody bids (the host's finish)."""
+    rounds = [*sealed.decode_rounds(room.auction_text), _sent(room)]
+    text = sealed.encode_rounds(rounds)
+    if not _valid(conn, deck, room, text):
+        return
+    for _ in range(more):
+        if auction_of(deck, room, text).complete:
+            break
+        rounds.append({})
+        text = sealed.encode_rounds(rounds)
+        if not _valid(conn, deck, room, text):
+            return
+    conn.execute("update room_seats set bids = null where room_code = %s", (room.code,))
+    for s in room.seats:
+        s.bids = None
+    _save_auction(conn, deck, room, text, new_round=True)
+
+
+def _append_event(conn, deck: Deck, room: Room, e: opened.Event) -> None:
+    text = opened.encode_events([*opened.decode_events(room.auction_text), e])
+    if _valid(conn, deck, room, text):                  # raises IllegalMove on a move it can't take
+        _save_auction(conn, deck, room, text)
+
+
+def _resolve_auction(conn, deck: Deck, room: Room) -> bool:
+    """With the room locked: close a sealed round whose clock ran out, or append the event
+    an open auction's clock says is due. One step at most, as a turn room's resolve."""
+    if room.status != "drafting":
+        return False
+    a = auction_of(deck, room)
+    if a.complete:
+        return False
+    if room.style == "sealed":
+        if not room.clock_expired(clock()):
+            return False
+        _close_round(conn, deck, room)
+        return True
+    kind = a.due(clock() - room.turn_started_at)
+    if kind is None:
+        return False
+    _append_event(conn, deck, room, opened.Event(_event_time(room, a), kind))
+    return True
+
+
+def _auction_seat(conn, deck: Deck, account: Account, code: str, style: str):
+    """The locked room, the auction after anything its clock made due, and the caller's
+    seat index; refuses anyone outside the room or a room not auctioning that way."""
+    room = load_room(conn, code, lock=True)
+    seat = room.seat_of(account.account_id)
+    if seat is None:
+        raise Forbidden("you are not in this room")
+    if room.style != style:
+        raise RoomError("this room doesn't auction that way")
+    if room.status != "drafting":
+        raise Conflict("there is nothing to bid for")
+    if resolve(conn, deck, room):
+        room = load_room(conn, code, lock=True)
+        if room.status != "drafting":
+            raise Conflict("the auction is over")
+    a = auction_of(deck, room)
+    if a.complete:
+        raise Conflict("the auction is over")
+    return room, a, next(i for i, s in enumerate(room.seats) if s.account_id == account.account_id)
+
+
+def sealed_bids(conn, deck: Deck, account: Account, code: str, round_no: int,
+                bids: list[tuple[int, int]]) -> None:
+    """A seat's bids for the open sealed round ([] is a pass), which replace any it sent
+    before. ``round_no`` is the round it bid in: one sent after that round closed is
+    refused, never applied to a market the bidder didn't see (A146). The round closes as
+    soon as every seat still buying has sent its bids."""
+    room, a, i = _auction_seat(conn, deck, account, code, "sealed")
+    if round_no != a.round:
+        raise Conflict("that round has closed; a new market is open")
+    sealed.check_bids(a, i, bids)                      # raises IllegalMove
+    text = "-" if not bids else ",".join(f"{lot}.{x}" for lot, x in bids)
+    conn.execute("update room_seats set bids = %s where room_code = %s and account_id = %s",
+                 (text, room.code, account.account_id))
+    room.seats[i].bids = text
+    if all(room.seats[k].bids is not None for k in a.buying()):
+        _close_round(conn, deck, room)
+    else:
+        _touch(conn, room)
+
+
+def nominate(conn, deck: Deck, account: Account, code: str, lot_no: int, index: int) -> None:
+    """The nominator puts a man of his deal up for sale, opening at the minimum. ``lot_no``
+    is the lot it would be: one sent after the clock nominated for him is refused."""
+    room, a, i = _auction_seat(conn, deck, account, code, "open")
+    if a.lot is not None or a.lots_done + 1 != lot_no:
+        raise Conflict("that nomination has passed")
+    _append_event(conn, deck, room, opened.Event(_event_time(room, a), "n", i, index))
+
+
+def open_bid(conn, deck: Deck, account: Account, code: str, lot_no: int, amount: int) -> None:
+    """A raise on lot ``lot_no``: refused once that lot has closed, so a bid never lands on
+    the next man up."""
+    room, a, i = _auction_seat(conn, deck, account, code, "open")
+    if a.lot is None or a.lot.number != lot_no:
+        raise Conflict("that lot has closed")
+    _append_event(conn, deck, room, opened.Event(_event_time(room, a), "b", i, amount))
+
+
+def _finish_auction(conn, deck: Deck, room: Room) -> None:
+    """The host's finish: a sealed auction closes the open round with the bids sent and
+    then bids the minimum for everyone until every squad is full; an open auction sells
+    its lot and fills every place at the minimum. Then anyone not ready gets the automatic
+    plan, and the room completes."""
+    a = auction_of(deck, room)
+    if not a.complete:
+        if room.style == "sealed":
+            _close_round(conn, deck, room, more=sealed.PICKS_EACH * 4 + 20)
+        else:
+            _append_event(conn, deck, room, opened.Event(_event_time(room, a), "f"))
+        if room.status == "failed":
+            return
+    _plan_the_rest(conn, deck, room, auction_of(deck, room))
+    _touch(conn, room, "complete")

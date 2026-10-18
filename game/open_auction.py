@@ -31,7 +31,7 @@ from __future__ import annotations
 import random
 from dataclasses import dataclass, field
 
-from game.auction import BUDGET, MIN_BID, Auction
+from game.auction import BUDGET, MIN_BID, Auction, Sale
 from game.deck import Card, ClubSeason, Deck
 from game.draft import BENCH, REDRAW_CAP, IllegalMove
 from game.formations import FORMATIONS
@@ -149,6 +149,8 @@ def _put_up(a: OpenAuction, t: float, index: int) -> None:
 
 def _sell(a: OpenAuction, deck: Deck, t: float) -> None:
     lot = a.lot
+    a.sales.append(Sale(lot.number, lot.leader, lot.card, lot.price, lot.price,
+                        tuple((s, x) for s, x, _ in lot.bids if s != lot.leader)))
     a.picks[lot.leader].append(lot.card)
     a.spent[lot.leader] += lot.price
     a.taken.add(lot.card.id)

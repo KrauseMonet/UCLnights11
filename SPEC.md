@@ -578,9 +578,28 @@ One squad over ten seasons (`game.dynasty`; the engine and the site's pages come
   again with a growing pause (2.5 s doubling to 20 s). A move whose reply was lost is
   settled by the next poll; sent again, its stale move count is refused.
 
+## 8a. The sealed-bid auction draft (C68)
+
+A room's other way to draft (`game.auction`; the server and the room page come later).
+Every seat has €200m. Each round the room is dealt a market of real squads, enough that
+every seat still buying has someone it can take; each seat bids in secret on up to five men,
+keeping €1m for every other place it has left. The round is settled from the highest bid
+down: a seat wins at most one man a round, a tie goes to the seat with more places left and
+then a seeded draw, and the winner pays one €1m more than the best other bid on that man
+(never more than he bid; €1m if nobody else wanted him). A seat may pass three times; one
+that sends nothing bids €1m on a random man it can take. The football rules are the
+draft's: positions, the bench, one person once in the room.
+
+**The open auction (C69)**, the host's other choice for rooms of 2, 4 and 8: the seats take
+turns to nominate a man from a squad dealt to them, opening at €1m themselves; anyone else
+who can take him raises by €1m or more, keeping the same reserve. A lot closes 12 s after it
+is put up or 8 s after the last bid (a bid up to 1 s late still counts); one nobody else could
+bid on sells at once, and the winner pays his bid. A nominator out of time has a random man of
+his deal put up for him.
+
 ## 9. Not in scope yet
 
-Puzzle games, password reset, auctions. The engine, draft and
+Puzzle games, password reset. Auctions are being built (§8a). The engine, draft and
 deck are built so each can be added without changing their contracts. No UEFA mark is
 used. Club crests are used on a non-commercial basis, era-correct where a dated file
 exists (`data/crest_eras.csv`), with every source named in `CREDITS.md`.

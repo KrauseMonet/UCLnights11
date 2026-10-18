@@ -235,7 +235,10 @@ function resultLine(f) {
 
 function endActions() {
   if (CUP.dynasty) {
-    $("actions").innerHTML = `<a class="btn primary" href="/dynasty#${esc(CUP.dynasty.full)}">Back to your dynasty</a>`
+    // The last of a dynasty's ten seasons leads to its end (C76), which reads every season back.
+    const last = CUP.dynasty.season === CUP.dynasty.length;
+    $("actions").innerHTML = (last ? `<a class="btn primary" href="/legacy#${esc(CUP.dynasty.full)}">See how your dynasty ended</a>` : "")
+      + `<a class="btn ${last ? "ghost" : "primary"}" href="/dynasty#${esc(CUP.dynasty.full)}">Back to your dynasty</a>`
       + (CUP.journey ? `<button class="btn ghost" id="jcard">Journey card</button>` : "");
     if ($("jcard")) $("jcard").onclick = showJourney;
     saveButton();
@@ -470,7 +473,7 @@ function friendsHtml() {
   try { CUP = await api(ROOM ? `/api/rooms/${ROOM}/tournament` : SEASON ? `/api/dynasty/${state}/tournament` : `/api/tournament/${state}`); }
   catch (e) { $("hero").innerHTML = `<h1>Something went wrong</h1><p>${esc(e.message)}</p>`; return; }
   CUP.state = state;
-  if (SEASON) CUP.dynasty = { season: SEASON, full };
+  if (SEASON) CUP.dynasty = { ...CUP.dynasty, season: SEASON, full };
   // Watched together, every result is out; otherwise each match is revealed as it is seen.
   const seen = store.get(SEASON ? `dynseen:${state}` : `cup:${state}`);
   CUP.revealed = together ? CUP.your_matches.length : Math.min(+(seen || 0), CUP.your_matches.length);

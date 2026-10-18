@@ -148,7 +148,7 @@ def test_a_bad_state_is_a_400():
 
 def test_the_dynasty_page_is_served():
     assert client.get("/dynasty").status_code == 200
-    assert web_app.PAGES[-1] == ("/dynasty", "dynasty")
+    assert ("/dynasty", "dynasty") in web_app.PAGES
 
 
 # -- the dynasty so far (C66) --------------------------------------------------------------

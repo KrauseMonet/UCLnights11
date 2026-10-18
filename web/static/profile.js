@@ -93,6 +93,7 @@ async function dynastyLegacies(p) {
     ${rows.map(([d, L, k]) => `<div class="pf-dyn">
       <div class="pf-dyn-h"><h3>Seed ${esc(d.seed)} · Year ${d.year}</h3>
         <span class="label">${d.titles} title${d.titles === 1 ? "" : "s"} · ${d.finals} final${d.finals === 1 ? "" : "s"}</span>
+        <a class="btn ghost small" href="/legacy#${esc(d.latest)}">Every season</a>
         <a class="btn ghost small" href="/dynasty#${esc(d.latest)}">Open the dynasty</a></div>
       ${legacyHtml(L, `pfteam${k}`)}</div>`).join("")}`;
   rows.forEach(([, L, k]) => legacyPitch(L, $(`pfteam${k}`)));

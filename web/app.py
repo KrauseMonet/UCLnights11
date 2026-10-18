@@ -28,6 +28,7 @@ from pydantic import BaseModel
 
 from game import analysis as analyses, daily as daily_rules, journey as journeys, match, squad_ratings
 from game import auction as sealed_rules, commentary, dynasty as dy, goal_kinds, open_auction as opened_rules, watch
+from game import dynasty_review as review_rules
 from game.deck import Card, ClubSeason, load_deck
 from game.draft import (Change, IllegalMove, LiveEntry, Pick, Reroll, Session, can_replace, carry_plan,
                         check_sheet, decode, decode_live, decode_solo, decode_state, default_sheet, encode,
@@ -1017,11 +1018,9 @@ def career_out(c: dy.Career) -> dict:
             "assists": c.assists, "mark": c.mark, "played": sorted(c.positions)}
 
 
-@app.get("/api/dynasty/{state}/legacy")
-def dynasty_legacy(state: str, response: Response) -> dict:
-    """The dynasty so far (C66): its legends (LEGEND seasons in a row in your squad), its
-    best eleven by match mark and its top scorers, over the finished seasons of ``state``.
-    Like /record, the page asks with the state up to the last season it has watched."""
+def _finished(state: str) -> tuple[list[dy.Season], list[Tournament]]:
+    """The seasons of ``state`` up to the first unfinished one, and their tournaments; a
+    409 if none is finished."""
     seasons = _dynasty(state)
     done = []
     for x, st in zip(seasons, dy.season_states(state)):
@@ -1030,20 +1029,109 @@ def dynasty_legacy(state: str, response: Response) -> dict:
         done.append(_dynasty_tournament(st))
     if not done:
         raise HTTPException(409, "no season is finished yet")
-    every = dy.careers_of(done)
-    code = dy.most_used(seasons[:len(done)])
+    return seasons[:len(done)], done
+
+
+def legacy_out(seasons: list[dy.Season], every: dict[str, dy.Career]) -> dict:
+    code = dy.most_used(seasons)
     team = dy.team_of(code, every)
-    pure(response)
     return {
-        "seasons": len(done), "legend": dy.LEGEND,
+        "seasons": len(seasons), "legend": dy.LEGEND,
         "legends": [{**card_out(g.card), "run": g.seasons, "first": g.first, "last": g.last}
-                    for g in dy.legends(seasons[:len(done)])],
+                    for g in dy.legends(seasons)],
         "team": {"formation": formation_out(FORMATIONS[code]),
                  "xi": [{"slot": s, "man": None if c is None else career_out(c), "regular": reg}
                         for s, c, reg in team]},
         "scorers": [career_out(c) for c in sorted((c for c in every.values() if c.goals),
                                                   key=lambda c: (-c.goals, -c.assists, c.card.name))[:5]],
     }
+
+
+@app.get("/api/dynasty/{state}/legacy")
+def dynasty_legacy(state: str, response: Response) -> dict:
+    """The dynasty so far (C66): its legends (LEGEND seasons in a row in your squad), its
+    best eleven by match mark and its top scorers, over the finished seasons of ``state``.
+    Like /record, the page asks with the state up to the last season it has watched."""
+    seasons, done = _finished(state)
+    out = legacy_out(seasons, dy.careers_of(done))
+    pure(response)
+    return out
+
+
+def _moment_out(m: review_rules.Moment | None) -> dict | None:
+    if m is None:
+        return None
+    f = m.fixture
+    return {"season": m.season, "stage": f.stage, "label": f.label, "home": side_out(f.home),
+            "away": side_out(f.away), "hg": f.result.home_goals, "ag": f.result.away_goals,
+            "pens": list(f.result.pens) if f.result.pens else None, "extra_time": f.result.extra_time,
+            "you_home": m.side_index == 0}
+
+
+def _run_out(r: review_rules.Run | None) -> dict | None:
+    return None if r is None else {"length": r.length, "first": _moment_out(r.first), "last": _moment_out(r.last)}
+
+
+def _opponent_out(o: review_rules.Opponent | None) -> dict | None:
+    return None if o is None else {**side_out(o.side), "club": o.club, "p": o.played, "w": o.won,
+                                   "d": o.drawn, "l": o.lost, "gf": o.scored, "ga": o.conceded}
+
+
+def _totals_out(p) -> dict | None:
+    return None if p is None else {"name": p.card.name, "crest": crest_url(p.card.crest), "pos": p.card.pos,
+                                   "goals": p.goals, "assists": p.assists, "apps": p.apps, "mark": p.mark}
+
+
+def review_out(rv: review_rules.Review, states: list[str]) -> dict:
+    """The end of a dynasty (C76): every season side by side, its records and its men."""
+    def season(s: review_rules.SeasonLine, st: str) -> dict:
+        r = s.ratings
+        return {"number": s.number, "state": st, "formation": FORMATIONS[s.formation].label,
+                "reached": s.reached, "position": s.position, "points": s.points,
+                "w": s.won, "d": s.drawn, "l": s.lost, "gf": s.scored, "ga": s.conceded,
+                "clean_sheets": s.clean_sheets,
+                "ratings": {k: None if v is None else round(v, 1) for k, v in r.as_dict().items()
+                            if not k.startswith("engine")},
+                "better_than": s.better_than, "top_scorer": _totals_out(s.top_scorer), "star": _totals_out(s.star),
+                "out_by": None if s.out_by is None else side_out(s.out_by), "champion": side_out(s.champion),
+                "kept": s.kept, "released": s.released, "left": s.left, "signed": s.signed,
+                "originals": s.originals}
+
+    lines = rv.seasons
+    best, worst = review_rules.best_season(lines), review_rules.worst_season(lines)
+    return {
+        "seasons": [season(s, st) for s, st in zip(lines, states)],
+        "totals": {"seasons": len(lines), "matches": len(rv.matches),
+                   "w": sum(s.won for s in lines), "d": sum(s.drawn for s in lines), "l": sum(s.lost for s in lines),
+                   "gf": sum(s.scored for s in lines), "ga": sum(s.conceded for s in lines),
+                   "clean_sheets": sum(s.clean_sheets for s in lines),
+                   "titles": sum(s.reached == "Champions" for s in lines),
+                   "finals": sum(s.reached in ("Champions", "Runners-up") for s in lines),
+                   "players": rv.players, "clubs": rv.clubs_total, "met": rv.met},
+        "best": best.number, "worst": worst.number,
+        "records": {"biggest_win": _moment_out(rv.biggest_win), "heaviest_defeat": _moment_out(rv.heaviest_defeat),
+                    "most_goals": _moment_out(rv.most_goals), "unbeaten": _run_out(rv.unbeaten),
+                    "winning": _run_out(rv.winning), "nemesis": _opponent_out(rv.nemesis),
+                    "favourite": _opponent_out(rv.favourite)},
+        "min_apps": rv.min_apps,
+        "boards": {k: [{**career_out(c), "value": v} for c, v in rows] for k, rows in rv.boards.items()},
+        "clubs": [{"club": c.club_name, "crest": crest_url(c.crest), "men": n} for c, n in rv.clubs],
+    }
+
+
+@app.get("/api/dynasty/{state}/review")
+def dynasty_review(state: str, response: Response) -> dict:
+    """The end of a dynasty (C76) over the finished seasons of ``state``: each season side by
+    side, the dynasty's records, its men and the legacy (C66). The page asks with the state
+    up to the last season watched to the end, as for /record and /legacy."""
+    seasons, done = _finished(state)
+    rv = review_rules.review(load_deck(), seasons, done)
+    out = review_out(rv, dy.season_states(state)[:len(done)])
+    out["legacy"] = legacy_out(seasons, rv.careers)
+    out["length"] = dy.LENGTH
+    out["seed"] = state.split("-")[0][1:]
+    pure(response)
+    return out
 
 
 @app.get("/api/dynasty/{state}/record")
@@ -2441,7 +2529,7 @@ PAGES = (("/", "index"), ("/start", "start"), ("/draft", "draft"), ("/cup", "cup
          ("/friends", "friends"), ("/room", "room"), ("/about", "about"), ("/faq", "faq"),
          ("/privacy", "privacy"), ("/terms", "terms"), ("/offline", "offline"), ("/admin", "admin"),
          ("/analysis", "analysis"), ("/daily", "daily"), ("/profile", "profile"), ("/squad", "squad"),
-         ("/dynasty", "dynasty"))
+         ("/dynasty", "dynasty"), ("/legacy", "legacy"))
 for _path, _name in PAGES:
     app.add_api_route(_path, _page(_name), methods=["GET"], include_in_schema=False)
 

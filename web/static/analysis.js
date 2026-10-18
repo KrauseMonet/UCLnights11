@@ -5,16 +5,14 @@
    validator against the panel colour (#11131f since the redesign; re-run then, all
    checks still pass): gold #c08a1e and blue #4a86d8 for two series,
    with a neutral grey as the midpoint (a draw) or the field's average. Every chart
-   carries its numbers as labels or a table, so nothing is told by colour alone. */
+   carries its numbers as labels or a table, so nothing is told by colour alone. The colours
+   and the column chart live in common.js, shared with the end of a dynasty (C76). */
 
 const AN_ROOM = new URLSearchParams(location.search).get("room");
 shell(AN_ROOM ? "friends" : "draft");
 const AN_STATE = location.hash.slice(1);
-const AC = { you: "#c08a1e", other: "#4a86d8", mid: "#56637f", grid: "rgba(255,255,255,.08)", ink2: "#aab1c6", ink3: "#7c839c" };
 let AN = null, YOU = null, SCOPE = "all";
 
-const fmt1 = (v) => v == null ? "–" : v.toFixed(1);       // a rate: always one decimal, so 3.0 sits under 3.3
-const pctOr = (v) => v == null ? "–" : `${v}%`;
 const sideTag = (s) => s.you ? "Your XI" : s.human ? s.club : `${s.club} ${s.season.slice(2)}`;
 
 // ---------------------------------------------------------------- hero and honours
@@ -69,39 +67,6 @@ function section(n, title, sub, body, extra = "") {
 }
 
 // ---------------------------------------------------------------- when the goals came
-
-/* Columns from one baseline, 4px rounded tops, value on each cap. One or two series. */
-function columnsSvg(labels, series) {
-  const W = 720, H = 260, padL = 34, padB = 34, padT = 26, inner = W - padL - 10;
-  const max = Math.max(1, ...series.flatMap((s) => s.values));
-  const step = max <= 5 ? 1 : max <= 12 ? 2 : max <= 30 ? 5 : max <= 60 ? 10 : 20;
-  const top = Math.ceil(max / step) * step;
-  const y = (v) => padT + (H - padT - padB) * (1 - v / top);
-  const band = inner / labels.length, barW = Math.min(24, (band - 16) / series.length);
-  let out = "";
-  for (let v = 0; v <= top; v += step) {
-    out += `<line x1="${padL}" x2="${W - 10}" y1="${y(v)}" y2="${y(v)}" stroke="${AC.grid}" stroke-width="1"/>
-      <text x="${padL - 8}" y="${y(v) + 4}" text-anchor="end" class="an-axis">${v}</text>`;
-  }
-  labels.forEach((lab, i) => {
-    const cx = padL + band * i + band / 2, groupW = barW * series.length + 2 * (series.length - 1);
-    series.forEach((s, k) => {
-      const v = s.values[i], x = cx - groupW / 2 + k * (barW + 2), yy = y(v), h = y(0) - yy;
-      const r = Math.min(4, h);
-      const path = h > 0 ? `M${x},${y(0)} V${yy + r} Q${x},${yy} ${x + r},${yy} H${x + barW - r} Q${x + barW},${yy} ${x + barW},${yy + r} V${y(0)} Z` : "";
-      out += `<g class="an-bar"><title>${esc(lab)}: ${v} ${esc(s.name)}</title>
-        <rect x="${x - 4}" y="${padT}" width="${barW + 8}" height="${H - padT - padB}" fill="transparent"/>
-        ${path ? `<path d="${path}" fill="${s.colour}"/>` : ""}
-        <text x="${x + barW / 2}" y="${yy - 6}" text-anchor="middle" class="an-val-lab">${v}</text></g>`;
-    });
-    out += `<text x="${cx}" y="${H - 10}" text-anchor="middle" class="an-axis">${esc(lab)}</text>`;
-  });
-  return `<svg viewBox="0 0 ${W} ${H}" class="an-svg" role="img" aria-label="${esc(series.map((s) => s.name).join(" and "))} by minute">${out}</svg>`;
-}
-
-function legend(items) {
-  return `<div class="an-legend">${items.map(([c, l]) => `<span><i style="background:${c}"></i>${esc(l)}</span>`).join("")}</div>`;
-}
 
 function minutesHtml() {
   const mine = AN.your_minutes;

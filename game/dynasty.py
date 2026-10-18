@@ -362,17 +362,19 @@ class Career:
     goals: int = 0
     assists: int = 0
     marks: list[float] = field(default_factory=list)
+    clean_sheets: int = 0
 
     @property
     def mark(self) -> float | None:
         return round(sum(self.marks) / len(self.marks), 2) if self.marks else None
 
 
-def careers_of(tournaments: list[Tournament]) -> dict[str, Career]:
-    """Each man who played for you, by person, over these seasons' tournaments."""
+def careers_of(tournaments: list[Tournament], journeys: list | None = None) -> dict[str, Career]:
+    """Each man who played for you, by person, over these seasons' tournaments (or their
+    journeys, when the caller already has them)."""
     out: dict[str, Career] = {}
-    for t in tournaments:
-        for p in journey(t, t.you()).players:      # only men who played: an unused substitute has no line
+    for j in journeys if journeys is not None else (journey(t, t.you()) for t in tournaments):
+        for p in j.players:      # only men who played: an unused substitute has no line
             c = out.get(p.card.id)
             if c is None:
                 c = out[p.card.id] = Career(p.card, set())
@@ -382,6 +384,7 @@ def careers_of(tournaments: list[Tournament]) -> dict[str, Career]:
             c.apps += p.apps
             c.goals += p.goals
             c.assists += p.assists
+            c.clean_sheets += p.clean_sheets
             c.marks += p.marks
     return out
 

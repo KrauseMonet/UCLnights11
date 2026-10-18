@@ -654,13 +654,6 @@ function drawMyBids(A) {
     el.innerHTML = `<div class="panel-h"><span class="label">Your bid</span></div><p class="empty">Your squad is full: you're watching the rest buy.</p>`;
     return;
   }
-  // A price typed but not yet confirmed survives a poll's redraw.
-  el.querySelectorAll("input[data-key]").forEach((i) => {
-    const x = Math.max(A.min_bid, Math.min(A.max_bid, Math.round(+i.value) || 0));
-    if (!x) return;
-    if (i.dataset.key === "first" && myFirst) myFirst.amount = x;
-    else if (myBackups[+i.dataset.key.slice(1)]) myBackups[+i.dataset.key.slice(1)].amount = x;
-  });
   const man = (lot) => lotCard(A, lot) || { name: "?", positions: [] };
   const who = (c) => `<div class="who"><b>${esc(c.name)}</b><small>${(c.positions || []).map(posChip).join("")} ${esc(c.short || "")} ${esc((c.season || "").slice(2))}</small></div>`;
   const sent = A.bid == null ? "" : A.bid.length ? `Sent: ${[...A.bid].sort((x, y) => y[1] - x[1]).map(([l, x]) => `${esc(man(l).name)} €${x}m`).join(", then ")}.` : "You passed this round.";
@@ -682,7 +675,11 @@ function drawMyBids(A) {
   el.querySelectorAll(".auc-stepper").forEach((s) => {
     const key = s.dataset.key;
     s.querySelectorAll("[data-step]").forEach((b) => b.onclick = () => { setAmount(key, amountOf(key) + +b.dataset.step); drawMyBids(A); });
-    s.querySelector("input").onchange = (e) => { setAmount(key, e.target.value); drawMyBids(A); };
+    // Kept as it is typed, so a poll's redraw keeps it (C74: reading the boxes back before a
+    // redraw undid every step button, since the box still held the old price).
+    const box = s.querySelector("input");
+    box.oninput = () => { if (+box.value) setAmount(key, box.value); };
+    box.onchange = () => { setAmount(key, box.value); drawMyBids(A); };
   });
   el.querySelectorAll("[data-drop]").forEach((b) => b.onclick = () => {
     if (b.dataset.drop === "first") { myFirst = myBackups.length ? myBackups.shift() : null; }

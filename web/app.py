@@ -1286,7 +1286,8 @@ def auction_out(room: rooms.Room, a, mine) -> dict:
         return club_season_out(cs, cards)
 
     def sale(s):
-        return {"seat": s.seat, "card": card(s.card), "price": s.price,
+        # A closed round's bids are all revealed (C68), the winner's own included.
+        return {"seat": s.seat, "card": card(s.card), "price": s.price, "bid": s.bid,
                 "others": [{"seat": x, "amount": v} for x, v in s.others]}
 
     out = {

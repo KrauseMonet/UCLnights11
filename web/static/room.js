@@ -465,7 +465,6 @@ function startTicker() {
 
 let shownAuction = null;   // what the auction panel on screen belongs to: a sealed round, or an open lot
 let heardSale = null;      // the latest sale this page has rung the gavel for (C72)
-let myBids = new Map();    // a sealed round's bids as written here, lot -> amount, until they are sent
 const eur = (x) => `€${x}m`;
 const seatOf = (k) => R.seats[k] || { username: "?" };
 
@@ -478,6 +477,7 @@ function renderAuction() {
       <div class="draft-top">${d ? `<h2 class="h2 tight" id="formname"></h2>` : ""}
         <div class="progress"><span class="label" id="aprog"></span><div class="bar"><i id="bar" style="width:0"></i></div></div>
         ${d ? `<div class="linechips" id="lines" aria-label="Places filled in each line"></div>` : ""}</div>
+      <div id="aresult"></div>
       <div class="draft-grid auc-grid">
         <section class="panel deal auc-main" id="amain" aria-live="polite"></section>
         <aside class="cup-stack">
@@ -558,77 +558,170 @@ function renderSales(A) {
 
 // -- sealed rounds
 
-function renderSealed(A, d, fresh) {
-  const me = A.you, seat = me == null ? null : A.seats[me];
-  const buying = seat && seat.places > 0;
-  const sent = A.bid != null;
-  auctionBar(A, `<div class="tb-who"><b>${!buying ? "Watching the round" : sent ? "Your bids are in" : "Your bids, in secret"}</b>
-    <small>Round ${A.round} · ${A.has_bid.filter(Boolean).length} of ${A.seats.filter((s) => s.places > 0).length} have bid${buying ? ` · you have ${eur(seat.money)}, up to ${eur(A.max_bid)} a man` : ""}</small></div>`, buying && !sent);
-  if (fresh) {
-    myBids = new Map(A.bid || []);
-    let k = 0;
-    $("amain").style.cssText = "";
-    $("amain").innerHTML = `<div class="panel-h"><span class="label">Round ${A.round} · the market</span>
-        <span class="label"><b>${A.market.reduce((n, cs) => n + cs.cards.filter((c) => c.takeable).length, 0)}</b> you can buy</span></div>
-      ${A.market.map((cs) => `<details class="mkt" ${k++ < 3 ? "open" : ""} style="${teamStyle(cs)}">
-        <summary class="mkt-h">${crest(cs.crest, 36, cs.name)}<span><b>${esc(cs.name)}</b><small>${esc(cs.season)}</small></span>
-          <span class="label">${cs.cards.filter((c) => c.takeable).length} of ${cs.cards.length}</span></summary>
-        ${cs.cards.map((c) => `<div class="row ${c.takeable ? "" : "off"}">${positionsHtml(c)}
-          <div class="who"><b>${esc(c.name)}</b><small>${altPositions(c)}${esc(c.nation || "")}</small></div>
-          ${c.rating == null ? "" : rate(c.rating)}
-          ${c.takeable && buying ? `<button class="take" data-lot="${c.i}" aria-pressed="false">Bid</button>` : c.takeable ? "" : `<span class="why">${whyHtml(c.reason)}</span>`}
-        </div>`).join("")}</details>`).join("")}`;
-    $("amain").querySelectorAll("[data-lot]").forEach((b) => b.onclick = () => {
-      const lot = +b.dataset.lot;
-      if (myBids.has(lot)) myBids.delete(lot);
-      else if (myBids.size >= A.max_bids) return toast(`At most ${A.max_bids} bids a round`);
-      else myBids.set(lot, A.min_bid);
-      drawMyBids(A);
-    });
-  }
-  drawMyBids(A);
-}
+/* A sealed round (C73, after the user found the first page confusing): one market list,
+   one bid with optional back-ups, a price control, and the last round's result on top.
+   Your bids are settled highest first, so your amounts ARE your order of preference: a
+   back-up must be bid lower than the one above it, or it would be tried first. */
+const BACKUPS = 2;
+let myFirst = null;        // { lot, amount }: the man you want this round
+let myBackups = [];        // [{ lot, amount }], in order, each lower than the one before
+let pickingBackup = false; // the market's buttons add a back-up instead of choosing your bid
 
 function lotCard(A, lot) {
   for (const cs of A.market) for (const c of cs.cards) if (c.i === lot) return c;
   return null;
 }
 
-/* Your bids for the round: each man you've chosen, an amount for each, and send or pass.
-   They are sent as a whole and replace what you sent before, until the round closes. */
+/* Your money per place left: a fair share to start a bid from, never above what you may bid. */
+function startPrice(A) {
+  const s = A.seats[A.you];
+  return Math.max(A.min_bid, Math.min(A.max_bid, Math.floor(s.money / Math.max(1, s.places))));
+}
+
+function renderSealed(A, d, fresh) {
+  const me = A.you, seat = me == null ? null : A.seats[me];
+  const buying = seat && seat.places > 0;
+  const sent = A.bid != null;
+  auctionBar(A, `<div class="tb-who"><b>${!buying ? "Watching the round" : sent ? "Your bid is in" : "Choose one man and your price"}</b>
+    <small>Round ${A.round} · ${A.has_bid.filter(Boolean).length} of ${A.seats.filter((s) => s.places > 0).length} have bid · bids are secret until the round closes</small></div>`, buying && !sent);
+  $("aresult").innerHTML = resultHtml(A);
+  if (fresh) {
+    // A new round starts from what you sent for it, if anything (highest first is your choice).
+    const mine = [...(A.bid || [])].sort((x, y) => y[1] - x[1]);
+    myFirst = mine.length ? { lot: mine[0][0], amount: mine[0][1] } : null;
+    myBackups = mine.slice(1).map(([lot, amount]) => ({ lot, amount }));
+    pickingBackup = false;
+  }
+  drawMarket(A, buying);
+  drawMyBids(A);
+}
+
+/* The round's market as one list: every man of its squads, by line, each with his club. */
+function drawMarket(A, buying) {
+  const cards = A.market.flatMap((cs) => cs.cards);
+  const byLine = { GK: [], DF: [], MF: [], FW: [] };
+  cards.forEach((c) => byLine[c.pos].push(c));
+  const order = (x, y) => (y.rating ?? 0) - (x.rating ?? 0) || x.name.localeCompare(y.name);
+  const squads = A.market.map((cs) => `${esc(cs.name)} ${esc(cs.season)}`);
+  const named = squads.length > 1 ? `${squads.slice(0, -1).join(", ")} and ${squads[squads.length - 1]}` : squads[0];
+  const role = (c) => myFirst && myFirst.lot === c.i ? "first" : myBackups.findIndex((b) => b.lot === c.i);
+  $("amain").style.cssText = "";
+  $("amain").innerHTML = `<div class="panel-h"><span class="label">Round ${A.round} · ${cards.length} players from ${named}</span>
+      <span class="label"><b>${cards.filter((c) => c.takeable).length}</b> you can buy</span></div>
+    ${pickingBackup ? `<p class="auc-mode">Choosing a back-up: tap the man you'd take if you lose ${esc((lotCard(A, myFirst.lot) || {}).name || "your first choice")}. <button class="linkish" id="cancelbk">Cancel</button></p>` : ""}
+    ${Object.entries(byLine).filter(([, cs]) => cs.length).map(([line, cs]) => `<div class="line-h">${LINES[line]}</div>
+      ${cs.sort(order).map((c) => {
+        const r = role(c);
+        const tag = r === "first" ? `<span class="auc-tag first">Your bid</span>` : r >= 0 ? `<span class="auc-tag">Back-up ${r + 1}</span>` : "";
+        const act = tag || (c.takeable && buying
+          ? `<button class="take" data-lot="${c.i}">${pickingBackup ? "Back-up" : myFirst ? "Bid instead" : "Bid"}</button>`
+          : c.takeable ? "" : `<span class="why">${whyHtml(c.reason)}</span>`);
+        return `<div class="row ${c.takeable ? "" : "off"} ${tag ? "chosen" : ""}">${positionsHtml(c)}
+          <div class="who"><b>${esc(c.name)}</b><small>${crest(c.crest, 18, c.club)} ${esc(c.club)} ${esc(c.season)}${c.nation ? ` · ${esc(c.nation)}` : ""}</small></div>
+          ${c.rating == null ? "" : rate(c.rating)}${act}</div>`;
+      }).join("")}`).join("")}`;
+  $("amain").querySelectorAll("[data-lot]").forEach((b) => b.onclick = () => {
+    const lot = +b.dataset.lot;
+    if (pickingBackup) {
+      const below = myBackups.length ? myBackups[myBackups.length - 1].amount : myFirst.amount;
+      myBackups.push({ lot, amount: Math.max(A.min_bid, Math.min(below - 1, Math.floor(below / 2))) });
+      pickingBackup = false;
+    } else {
+      myFirst = { lot, amount: myFirst ? myFirst.amount : startPrice(A) };
+      myBackups = myBackups.filter((x) => x.lot !== lot);
+    }
+    drawMarket(A, buying);
+    drawMyBids(A);
+  });
+  if ($("cancelbk")) $("cancelbk").onclick = () => { pickingBackup = false; drawMarket(A, buying); drawMyBids(A); };
+}
+
+/* One price: a number with steps, never below the minimum or above what you may bid. */
+function priceHtml(key, amount, A) {
+  return `<div class="auc-stepper" data-key="${key}">
+    <button class="chip" data-step="-1" aria-label="€1m less">−1</button>
+    <label class="auc-amt">€<input type="number" inputmode="numeric" min="${A.min_bid}" max="${A.max_bid}" value="${amount}" data-key="${key}" aria-label="Price, in millions">m</label>
+    ${[1, 5, 10].map((n) => `<button class="chip" data-step="${n}" aria-label="€${n}m more">+${n}</button>`).join("")}</div>`;
+}
+
+/* Your bid for the round: the man you want, your price, and optional back-ups, sent as a
+   whole and replacing what you sent, until the round closes. */
 function drawMyBids(A) {
   const el = $("amine");
   if (!el) return;
   const me = A.you, seat = me == null ? null : A.seats[me];
-  $("amain").querySelectorAll("[data-lot]").forEach((b) => {
-    const on = myBids.has(+b.dataset.lot);
-    b.setAttribute("aria-pressed", on);
-    b.textContent = on ? "✓ Bidding" : "Bid";
-  });
   if (!seat || seat.places <= 0) {
-    el.innerHTML = `<div class="panel-h"><span class="label">Your bids</span></div><p class="empty">Your squad is full: you're watching the rest buy.</p>`;
+    el.innerHTML = `<div class="panel-h"><span class="label">Your bid</span></div><p class="empty">Your squad is full: you're watching the rest buy.</p>`;
     return;
   }
-  const keep = [...el.querySelectorAll("input[data-amt]")].map((i) => [+i.dataset.amt, +i.value]);
-  keep.forEach(([lot, x]) => { if (myBids.has(lot) && x) myBids.set(lot, x); });
-  const sentText = A.bid == null ? "" : A.bid.length ? `Sent: ${A.bid.map(([l, x]) => `${esc((lotCard(A, l) || {}).name || "?")} ${eur(x)}`).join(", ")}` : "You passed this round";
-  el.innerHTML = `<div class="panel-h"><span class="label">Your bids</span><span class="label">${myBids.size} of ${A.max_bids}</span></div>
-    <div class="auc-bids">${myBids.size ? [...myBids].map(([lot, x]) => {
-      const c = lotCard(A, lot) || { name: "?", positions: [] };
-      return `<div class="auc-bid"><div class="who"><b>${esc(c.name)}</b><small>${(c.positions || []).map(posChip).join("")} ${esc(c.short || "")} ${esc((c.season || "").slice(2))}</small></div>
-        <label class="auc-amt">€<input type="number" inputmode="numeric" min="${A.min_bid}" max="${A.max_bid}" value="${x}" data-amt="${lot}" aria-label="Bid for ${esc(c.name)}, in millions">m</label>
-        <button class="kick" data-drop="${lot}" aria-label="Drop ${esc(c.name)}">✕</button></div>`;
-    }).join("") : `<p class="empty">Tap <b>Bid</b> on up to ${A.max_bids} men in the market.</p>`}</div>
-    <div class="plan-foot"><button class="btn primary" id="sendbids" ${myBids.size ? "" : "disabled"}>${A.bid != null ? "Change my bids" : "Send my bids"}</button>
+  // A price typed but not yet confirmed survives a poll's redraw.
+  el.querySelectorAll("input[data-key]").forEach((i) => {
+    const x = Math.max(A.min_bid, Math.min(A.max_bid, Math.round(+i.value) || 0));
+    if (!x) return;
+    if (i.dataset.key === "first" && myFirst) myFirst.amount = x;
+    else if (myBackups[+i.dataset.key.slice(1)]) myBackups[+i.dataset.key.slice(1)].amount = x;
+  });
+  const man = (lot) => lotCard(A, lot) || { name: "?", positions: [] };
+  const who = (c) => `<div class="who"><b>${esc(c.name)}</b><small>${(c.positions || []).map(posChip).join("")} ${esc(c.short || "")} ${esc((c.season || "").slice(2))}</small></div>`;
+  const sent = A.bid == null ? "" : A.bid.length ? `Sent: ${[...A.bid].sort((x, y) => y[1] - x[1]).map(([l, x]) => `${esc(man(l).name)} €${x}m`).join(", then ")}.` : "You passed this round.";
+  el.innerHTML = `<div class="panel-h"><span class="label">Your bid</span><span class="label">the most you can bid: ${eur(A.max_bid)}</span></div>
+    ${myFirst ? `<div class="auc-bids"><div class="auc-bid first">${who(man(myFirst.lot))}<button class="kick" data-drop="first" aria-label="Clear your bid">✕</button></div>
+        ${priceHtml("first", myFirst.amount, A)}
+        <p class="auc-hint">Starts at your money per place left. You pay ${eur(A.min_bid)} more than the next bid on him, never more than this.</p></div>`
+      : `<p class="empty">Tap <b>Bid</b> on the man you want most.</p>`}
+    ${myFirst ? `<div class="auc-backups">${myBackups.map((b, k) => `<div class="auc-bids"><div class="auc-bid"><span class="auc-tag">Back-up ${k + 1}</span>${who(man(b.lot))}
+          <button class="kick" data-drop="${k}" aria-label="Drop this back-up">✕</button></div>${priceHtml(`b${k}`, b.amount, A)}</div>`).join("")}
+        ${myBackups.length < BACKUPS ? `<button class="linkish auc-add" id="addbk">+ Add a back-up in case you're outbid</button>` : ""}
+        <p class="auc-hint">You win at most one man a round. A back-up only counts if you lose the man above it, so bid it lower: your bids are tried highest first.</p></div>` : ""}
+    <div class="plan-foot"><button class="btn primary" id="sendbids" ${myFirst ? "" : "disabled"}>${A.bid != null ? "Change my bid" : "Send my bid"}</button>
       <button class="btn ghost" id="passb" ${A.passes_left > 0 ? "" : "disabled"}>Pass (${A.passes_left} left)</button>
-      <p class="label">Up to ${eur(A.max_bid)} a man: you keep ${eur(A.min_bid)} for each other place. You win one man a round at most, your highest bid first, and pay ${eur(1)} more than the next bid on him, never more than you bid.${sentText ? `<br><b>${sentText}</b>` : ""}</p></div>`;
-  el.querySelectorAll("[data-drop]").forEach((b) => b.onclick = () => { myBids.delete(+b.dataset.drop); drawMyBids(A); });
-  el.querySelectorAll("input[data-amt]").forEach((i) => i.onchange = () => myBids.set(+i.dataset.amt, Math.max(A.min_bid, Math.min(A.max_bid, Math.round(+i.value) || A.min_bid))));
+      ${sent ? `<p class="label"><b>${sent}</b> You can change it until the round closes.</p>` : ""}</div>`;
+  const clamp = (x) => Math.max(A.min_bid, Math.min(A.max_bid, Math.round(+x) || A.min_bid));
+  const setAmount = (key, x) => { if (key === "first") myFirst.amount = clamp(x); else myBackups[+key.slice(1)].amount = clamp(x); };
+  const amountOf = (key) => key === "first" ? myFirst.amount : myBackups[+key.slice(1)].amount;
+  el.querySelectorAll(".auc-stepper").forEach((s) => {
+    const key = s.dataset.key;
+    s.querySelectorAll("[data-step]").forEach((b) => b.onclick = () => { setAmount(key, amountOf(key) + +b.dataset.step); drawMyBids(A); });
+    s.querySelector("input").onchange = (e) => { setAmount(key, e.target.value); drawMyBids(A); };
+  });
+  el.querySelectorAll("[data-drop]").forEach((b) => b.onclick = () => {
+    if (b.dataset.drop === "first") { myFirst = myBackups.length ? myBackups.shift() : null; }
+    else myBackups.splice(+b.dataset.drop, 1);
+    drawMarket(A, true); drawMyBids(A);
+  });
+  if ($("addbk")) $("addbk").onclick = () => { pickingBackup = true; drawMarket(A, true); $("amain").scrollIntoView({ behavior: "smooth", block: "start" }); };
   $("sendbids").onclick = () => {
-    const bids = [...myBids].map(([lot, x]) => [lot, Math.max(A.min_bid, Math.min(A.max_bid, Math.round(x)))]);
-    act("bids", { round: A.round, bids });
+    const bids = [myFirst, ...myBackups];
+    for (let k = 1; k < bids.length; k++) {
+      if (bids[k].amount >= bids[k - 1].amount) {
+        return toast(`Bid ${man(bids[k].lot).name} lower than ${man(bids[k - 1].lot).name}: your bids are tried highest first, so a back-up must come lower.`);
+      }
+    }
+    act("bids", { round: A.round, bids: bids.map((b) => [b.lot, b.amount]) });
   };
   $("passb").onclick = () => act("bids", { round: A.round, bids: [] });
+}
+
+/* How the last round went for you, from its sales (every bid is revealed once a round
+   closes): the man you won and why, or who outbid you and by how much. */
+function resultHtml(A) {
+  const me = A.you;
+  if (me == null || A.round <= 1 || !A.last_round) return "";
+  const won = A.last_round.find((s) => s.seat === me);
+  const lost = A.last_round.filter((s) => s.seat !== me && s.others.some((o) => o.seat === me));
+  const next = (s) => s.others.length ? Math.max(...s.others.map((o) => o.amount)) : null;
+  const lines = [];
+  for (const s of lost) {
+    const mine = s.others.find((o) => o.seat === me).amount;
+    lines.push(`Outbid on <b>${esc(s.card.name)}</b> by ${esc(seatOf(s.seat).username)}: ${eur(s.bid)} against your ${eur(mine)}.`);
+  }
+  if (won) {
+    const n = next(won);
+    lines.unshift(`You won <b>${esc(won.card.name)}</b> for ${eur(won.price)}: you bid ${eur(won.bid)}, ${n == null ? "and nobody else bid on him" : `and the next bid was ${eur(n)}`}.`);
+  } else if (!lost.length) {
+    lines.push("You won nobody last round.");
+  }
+  return `<div class="auc-result ${won ? "won" : "lost"}"><span class="label">Round ${A.round - 1}</span><p>${lines.join(" ")}</p></div>`;
 }
 
 // -- open lots

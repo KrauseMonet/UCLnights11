@@ -1494,3 +1494,24 @@ a.dyn-year:hover{border-color:rgba(124,196,255,.55);background:var(--panel-2)}
 .sq-auc .who b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sq-auc .who small{color:var(--ink-3);font-size:12.5px}
 .sq-man .auc-price{margin-right:6px}
+/* the sealed round, simplified (C73): one market list, one bid with back-ups, the last result */
+.auc-result{display:flex;align-items:baseline;gap:12px;margin:0 0 18px;padding:14px 18px;border-radius:var(--r-md);border:1px solid var(--line);background:var(--panel)}
+.auc-result p{margin:0;color:var(--ink-2);line-height:1.5}
+.auc-result p b{color:var(--ink)}
+.auc-result.won{border-color:color-mix(in srgb,var(--win) 45%,transparent)}
+.auc-result.lost{border-color:color-mix(in srgb,var(--loss) 35%,transparent)}
+.auc-mode{margin:0;padding:10px 20px;background:var(--ice-wash);color:var(--ice-2);font-size:13.5px;border-bottom:1px solid var(--line)}
+.row.chosen{background:var(--ice-wash)}
+.row .who small .crest{vertical-align:-4px;margin-right:2px}
+.deal .row .who .crest{position:static;display:inline-grid}   /* not the deal panel's corner crest */
+.deal .row .who .crest.c18{width:18px;height:18px}             /* nor its phone-sized one */
+.auc-backups .auc-hint{padding:0 16px 8px}
+.auc-tag{flex:none;font:650 10.5px var(--sans);font-stretch:85%;letter-spacing:.1em;text-transform:uppercase;color:var(--ice-2);
+  border:1px solid rgba(124,196,255,.4);border-radius:999px;padding:4px 9px}
+.auc-tag.first{background:var(--ice);color:#06101e;border-color:var(--ice)}
+.auc-bid.first{border-color:var(--ice)}
+.auc-stepper{display:flex;align-items:center;flex-wrap:wrap;gap:6px}
+.auc-stepper .chip{border:1px solid var(--line-strong);padding:6px 10px}
+.auc-hint{margin:0;color:var(--ink-3);font-size:12.5px;line-height:1.45}
+.auc-backups{display:grid;gap:4px;padding:0 0 4px}
+.auc-add{justify-self:start;margin:4px 16px}

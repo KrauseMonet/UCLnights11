@@ -19,14 +19,40 @@ if (!FORMATS.some((f) => f.size === size)) size = 8;    // a size remembered fro
 let formation = store.get("formation") || "433";
 let memory = store.get("memory") === "1";
 const RATINGS = [{ code: "0", label: "Shown" }, { code: "1", label: "Hidden · Memory" }];
-const STYLES = [{ code: "turns", label: "Take turns · shared pool" }, { code: "own", label: "Own pace" }];
-const TIMERS = [15, 30, 45].map((t) => ({ code: String(t), label: `${t}s a pick` }));
+const STYLES = [{ code: "turns", label: "Take turns · shared pool" }, { code: "own", label: "Own pace" },
+  { code: "sealed", label: "Auction · sealed bids" }, { code: "open", label: "Auction · open" }];
+// The clock each style runs (C70): a pick, a sealed round's market, an open auction's nomination.
+const CLOCKS = { turns: [[15, 30, 45], "a pick", 30], open: [[15, 30, 45], "to nominate", 30], sealed: [[30, 45, 60], "a round", 45] };
+const OPEN_SIZES = [2, 4, 8];   // game.open_auction.ROOM_SIZES: a bigger room would take well over an hour
 let style = store.get("room-style") || "turns";
 let timer = +(store.get("room-timer") || 30);
+if (!STYLES.some((s) => s.code === style)) style = "turns";
 
 function chips(el, items, current, pick) {
   el.innerHTML = items.map((x) => `<button class="chip" role="radio" aria-checked="${x.code === current}" data-c="${x.code}">${esc(x.label)}</button>`).join("");
   el.querySelectorAll(".chip").forEach((b) => b.onclick = () => { pick(b.dataset.c); chips(el, items, b.dataset.c, pick); });
+}
+
+/* How the room drafts, and its clock. An open auction is offered to rooms of up to eight;
+   chosen for a bigger room, it falls back to sealed bids. */
+function renderStyles() {
+  if (style === "open" && !OPEN_SIZES.includes(size)) style = "sealed";
+  const offered = STYLES.map((s) => s.code === "open" && !OPEN_SIZES.includes(size)
+    ? { ...s, label: "Auction · open (8 players at most)", off: true } : s);
+  chips($("styles"), offered, style, (c) => {
+    if (offered.find((s) => s.code === c).off) { toast("An open auction is for rooms of up to 8: a bigger room would take well over an hour. Sealed bids work for any size."); return renderStyles(); }
+    style = c; store.set("room-style", c); renderStyles();
+  });
+  $("styles").querySelectorAll(".chip").forEach((b, k) => { if (offered[k].off) b.classList.add("off"); });
+  const clock = CLOCKS[style];
+  $("timerrow").hidden = !clock;
+  if (!clock) {
+    if (![15, 30, 45].includes(timer)) timer = 30;     // own pace keeps a pick clock's choices
+    return;
+  }
+  if (!clock[0].includes(timer)) timer = clock[2];
+  chips($("timers"), clock[0].map((t) => ({ code: String(t), label: `${t}s ${clock[1]}` })), String(timer),
+    (c) => { timer = +c; store.set("room-timer", c); });
 }
 
 function renderFormats() {
@@ -34,7 +60,7 @@ function renderFormats() {
     <button class="fmt" role="radio" aria-checked="${f.size === size}" data-s="${f.size}">
       <b>${f.size}</b><span>${esc(f.name)}</span><small>${esc(f.rounds)}</small></button>`).join("");
   $("formats").querySelectorAll(".fmt").forEach((b) => b.onclick = () => {
-    size = +b.dataset.s; store.set("room-size", size); renderFormats();
+    size = +b.dataset.s; store.set("room-size", size); renderFormats(); renderStyles();
   });
   const f = FORMATS.find((x) => x.size === size);
   $("fmtnote").textContent = `up to ${size} players`;
@@ -96,9 +122,6 @@ $("code").oninput = () => { $("code").value = $("code").value.toUpperCase(); };
     show(by[formation]);
   }
   chips($("ratings"), RATINGS, memory ? "1" : "0", (c) => { memory = c === "1"; store.set("memory", c); });
-  const showTimers = () => { $("timerrow").hidden = style !== "turns"; };
-  chips($("styles"), STYLES, style, (c) => { style = c; store.set("room-style", c); showTimers(); });
-  chips($("timers"), TIMERS, String(timer), (c) => { timer = +c; store.set("room-timer", c); });
-  showTimers();
+  renderStyles();
   onAuth(render);
 })();

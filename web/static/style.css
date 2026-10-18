@@ -1443,3 +1443,45 @@ a.dyn-year:hover{border-color:rgba(124,196,255,.55);background:var(--panel-2)}
 .pf-dyn-h{display:flex;align-items:center;gap:8px 16px;flex-wrap:wrap;margin:0 0 14px}
 .pf-dyn-h h3{margin:0;font:700 20px/1.2 var(--display);letter-spacing:-.015em}
 .pf-dyn-h .btn{margin-left:auto}
+
+/* --- auctions (C70): a sealed round's market and bids, an open lot --- */
+.chip.off{opacity:.45}
+.mkt{border-top:1px solid var(--line)}
+.mkt-h{display:flex;align-items:center;gap:12px;padding:12px 20px;cursor:pointer;list-style:none;
+  background:linear-gradient(90deg,color-mix(in srgb,var(--team-deep) 70%,transparent),transparent 70%)}
+.mkt-h::-webkit-details-marker{display:none}
+.deal .mkt-h .crest{position:static}          /* the deal panel pins its own crest to a corner */
+.mkt-h span:nth-child(2){flex:1;min-width:0}
+.mkt-h b{display:block;font:700 15px/1.2 var(--display)}
+.mkt-h small{color:var(--team-ink);font:650 11px var(--sans);letter-spacing:.12em;text-transform:uppercase}
+.take[aria-pressed="true"]{background:var(--ice);color:#06101e;border-color:var(--ice)}
+.auc-bids{display:grid;gap:8px;padding:12px 16px}
+.auc-bid{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--panel-2)}
+.auc-bid .who{flex:1;min-width:0}
+.auc-bid .who b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14px}
+.auc-bid .who small{display:flex;flex-wrap:wrap;gap:3px;align-items:center;color:var(--ink-3);font-size:12px;margin-top:2px}
+.auc-amt{display:flex;align-items:center;gap:2px;font:700 14px var(--display);color:var(--ink-2)}
+.auc-amt input,.auc-own input{width:64px;background:var(--bg-2);color:var(--ink);border:1px solid var(--line-strong);border-radius:9px;
+  padding:7px 8px;font:700 14px var(--display);text-align:right}
+.auc-price{font:700 13px var(--display);color:var(--trophy-2);white-space:nowrap}
+.auc-lot{padding:24px 26px 22px;min-height:200px;display:flex;flex-direction:column;justify-content:flex-end;position:relative}
+.auc-lot .crest{position:absolute;right:22px;top:22px}
+.auc-man{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-top:14px}
+.auc-man b{font:700 22px/1.15 var(--display);color:#fff;letter-spacing:-.015em}
+.auc-live{display:grid;grid-template-columns:auto 1fr;gap:12px 18px;align-items:center;padding:18px 20px;border-top:1px solid var(--line)}
+.auc-now b{display:block;font:800 34px/1 var(--display);color:var(--trophy-2);letter-spacing:-.02em;margin-top:4px}
+.auc-now small{color:var(--ink-2);font-size:13px}
+.auc-raise{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}
+.auc-own{grid-column:1/-1;display:flex;align-items:center;gap:8px;justify-content:flex-end}
+.auc-own label{display:flex;align-items:center;gap:2px;font:700 14px var(--display);color:var(--ink-2)}
+.auc-live > .label{grid-column:1/-1;margin:0;text-align:right}
+.auc-hist{max-height:220px;overflow:auto}
+/* On one column your bids come before the market: they are what you act on, and a market
+   is several squads long. */
+@media (max-width:980px){.auc-grid > aside{display:contents}.auc-grid #amine{order:-1}}
+@media (max-width:480px){
+  .auc-live{grid-template-columns:1fr}
+  .auc-raise,.auc-own{justify-content:flex-start}
+  .auc-live > .label{text-align:left}
+  .mkt-h{padding:12px 14px}
+}

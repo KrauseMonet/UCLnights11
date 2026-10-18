@@ -40,6 +40,13 @@ function sampleClock(t0, t1, serverTime) {
   CLOCK.offset = serverTime + rtt / 2 - t1 / 1000;
 }
 const takingTurns = () => R && R.style === "turns" && R.status === "drafting";
+// An auction's clock (C70) is the room's business every second: an open lot can close
+// eight seconds after a raise, and a sealed round closes the moment the last bid is in.
+const auctioning = () => R && R.auction && R.status === "drafting" && !R.auction.complete;
+const AUCTION_POLL_MS = { open: 700, sealed: 1000 };
+const STYLE_NAME = { turns: "take turns", own: "own pace", sealed: "sealed-bid auction", open: "open auction" };
+const CLOCKS = { turns: [[15, 30, 45], "a pick", 30], open: [[15, 30, 45], "to nominate", 30], sealed: [[30, 45, 60], "a round", 45] };
+const OPEN_SIZES = [2, 4, 8];   // game.open_auction.ROOM_SIZES
 
 const movesIn = (state) => { const p = state.split("-"); return p.length === 3 && p[2] ? p[2].split(".").length : 0; };
 const inviteUrl = () => `${location.origin}/room?join=1#${CODE}`;
@@ -54,7 +61,7 @@ function apply(room) {
   maybeJoin();
 }
 
-function schedule(ms = takingTurns() ? TURN_POLL_MS : POLL_MS) {
+function schedule(ms = auctioning() ? AUCTION_POLL_MS[R.style] : takingTurns() ? TURN_POLL_MS : POLL_MS) {
   clearTimeout(timer);
   if (!dead && !document.hidden) timer = setTimeout(poll, ms);
 }
@@ -72,7 +79,8 @@ async function pollOnce() {
   const path = R ? `/api/rooms/${CODE}?v=${R.version}` : `/api/rooms/${CODE}`;
   try {
     room = await api(path, { timeout: POLL_TIMEOUT_MS });
-    sampleClock(t0, Date.now(), room.unchanged ? room.server_now : room.turns && room.turns.server_now);
+    sampleClock(t0, Date.now(), room.unchanged ? room.server_now
+      : room.turns ? room.turns.server_now : room.auction && room.auction.server_now);
   }
   catch (e) {
     if (e.status === 404) return gone(e.message);
@@ -129,7 +137,7 @@ async function maybeJoin() {
 function render() {
   const you = R.seats.find((s) => s.you);
   $("top").innerHTML = `
-    <div><div class="kicker">${esc(R.format)} · ${esc(STATUS[R.status] || R.status)}${R.style === "turns" ? ` · take turns, ${R.timer}s` : " · own pace"}${R.bench ? " · bench" : ""}${R.together ? " · watch together" : ""}${R.memory ? " · Memory" : ""}</div>
+    <div><div class="kicker">${esc(R.format)} · ${esc(STATUS[R.status] || R.status)}${R.style === "own" ? " · own pace" : ` · ${STYLE_NAME[R.style]}, ${R.timer}s`}${R.bench ? " · bench" : ""}${R.together ? " · watch together" : ""}${R.memory ? " · Memory" : ""}</div>
       <h1 class="room-code" aria-label="Room code ${esc(R.code)}">${esc(R.code)}</h1>
       <p class="sub">${R.seats.length} of ${R.size} players${R.fillers ? ` · ${R.fillers} place${R.fillers === 1 ? "" : "s"} for real sides` : ""}${you ? "" : " · watching"}</p></div>
     <div class="room-acts">${R.status === "lobby" ? `<button class="btn ghost small" id="invite">Copy invite link</button>` : ""}
@@ -140,17 +148,18 @@ function render() {
   if (R.status === "lobby") renderLobby();
   else if (R.status === "failed") renderFailed();
   else if (planning()) renderPlanning();
+  else if (R.auction) renderAuction();
   else if (R.style === "turns") renderTurns();
   else renderDrafting();
 }
 
 function renderStrip() {
   const kick = R.is_host && R.status === "lobby";
-  $("strip").innerHTML = R.seats.map((s) => `
+  $("strip").innerHTML = R.seats.map((s, k) => `
     <div class="seatcard ${s.you ? "me" : ""} ${s.complete && s.ready ? "done" : ""} ${R.turns && R.turns.turn && R.turns.turn.id === s.id ? "on" : ""}" style="${teamStyle(s)}">
       ${sideCrest({ human: true, name: s.username, ...s }, 36)}
       <div class="who"><b>${esc(s.username)}${s.host ? ' <span class="host" title="Host">host</span>' : ""}</b>
-        <small>${esc(s.formation)}${R.status === "lobby" ? "" : !s.complete ? ` · ${s.picks}/${R.picks_each}` : !R.bench ? " · eleven in" : s.ready ? " · ready" : " · planning"}</small>
+        <small>${esc(s.formation)}${R.status === "lobby" ? "" : R.auction && !s.complete ? ` · €${R.auction.seats[k].money}m · ${R.auction.seats[k].places} to buy${R.auction.has_bid && R.auction.has_bid[k] ? " · bid in" : ""}` : !s.complete ? ` · ${s.picks}/${R.picks_each}` : !R.bench ? " · eleven in" : s.ready ? " · ready" : " · planning"}</small>
         ${R.status === "drafting" ? `<div class="mini"><i style="width:${(s.picks / R.picks_each) * 100}%"></i></div>` : ""}</div>
       ${kick && !s.you ? `<button class="kick" data-id="${s.id}" aria-label="Remove ${esc(s.username)}">✕</button>` : ""}
     </div>`).join("") + (R.fillers ? `<div class="seatcard ghosted"><span class="crest c36" aria-hidden="true">★</span>
@@ -182,10 +191,13 @@ function renderLobby() {
       <div class="room-form">${R.is_host
         ? `<div class="chips" role="radiogroup" aria-label="Draft style">
              <button class="chip" role="radio" aria-checked="${R.style === "turns"}" data-style="turns">Take turns · shared pool</button>
-             <button class="chip" role="radio" aria-checked="${R.style === "own"}" data-style="own">Own pace</button></div>
-           ${R.style === "turns" ? `<div class="chips" role="radiogroup" aria-label="Pick clock">${[15, 30, 45].map((t) =>
-             `<button class="chip" role="radio" aria-checked="${R.timer === t}" data-timer="${t}">${t}s a pick</button>`).join("")}</div>` : ""}`
-        : `<p class="note">${R.style === "turns" ? `<b>Taking turns</b>, ${R.timer} seconds a pick.` : "<b>Own pace:</b> everyone drafts at once."}</p>`}</div>
+             <button class="chip" role="radio" aria-checked="${R.style === "own"}" data-style="own">Own pace</button>
+             <button class="chip" role="radio" aria-checked="${R.style === "sealed"}" data-style="sealed">Auction · sealed bids</button>
+             <button class="chip ${OPEN_SIZES.includes(R.size) ? "" : "off"}" role="radio" aria-checked="${R.style === "open"}" data-style="open">Auction · open${OPEN_SIZES.includes(R.size) ? "" : " (8 at most)"}</button></div>
+           ${CLOCKS[R.style] ? `<div class="chips" role="radiogroup" aria-label="Clock">${CLOCKS[R.style][0].map((t) =>
+             `<button class="chip" role="radio" aria-checked="${R.timer === t}" data-timer="${t}">${t}s ${CLOCKS[R.style][1]}</button>`).join("")}</div>` : ""}`
+        : `<p class="note">${{ turns: `<b>Taking turns</b>, ${R.timer} seconds a pick.`, own: "<b>Own pace:</b> everyone drafts at once.",
+             sealed: `<b>A sealed-bid auction</b>, ${R.timer} seconds a round.`, open: `<b>An open auction</b>, ${R.timer} seconds to nominate.` }[R.style]}</p>`}</div>
       <div class="panel-h"><span class="label">The bench</span><span class="label">${R.is_host ? "your call as host" : "the host's call"}</span></div>
       <div class="room-form">${R.is_host
         ? `<div class="chips" role="radiogroup" aria-label="Bench">
@@ -213,7 +225,15 @@ function renderLobby() {
     <section class="panel">
       <div class="panel-h"><span class="label">How a room plays</span></div>
       <ol class="howto">
-        ${R.style === "turns"
+        ${R.style === "sealed"
+          ? `<li><b>Everyone has €200m.</b> Each round a market of real squads is dealt to the whole room, and everyone bids in secret on up to five men.</li>
+             <li>A round closes when everyone has bid, or after ${R.timer} seconds. <b>Each of you wins at most one man a round</b>, the highest bids first, and pays €1m more than the next bid on him, never more than you bid.</li>
+             <li>You always keep €1m for every place you still have to fill. Send nothing and a €1m bid is made for you.</li>`
+          : R.style === "open"
+          ? `<li><b>Everyone has €200m.</b> You take turns to nominate: you're dealt a real squad, put one man up, and open the bidding at €1m yourself.</li>
+             <li>Anyone who can play him raises. A lot closes 12 seconds after it goes up or 8 after the last bid. The winner pays his bid.</li>
+             <li>You always keep €1m for every place you still have to fill. ${R.timer} seconds to nominate, or a man is put up for you.</li>`
+          : R.style === "turns"
           ? `<li><b>Take turns</b> in a snake: first in one round, last in the next. Each turn deals one real squad to whoever is picking.</li>
              <li><b>A player taken is gone for everyone</b>, in every season. You have ${R.timer} seconds a pick, or one is made for you.</li>
              <li>${R.picks_each === 11 ? "Eleven" : "Fourteen"} rounds: at most about ${Math.ceil((R.seats.length * R.picks_each * R.timer) / 60)} minutes with ${R.seats.length} ${R.seats.length === 1 ? "player" : "players"}.</li>`
@@ -239,7 +259,14 @@ function renderLobby() {
   $("view").querySelectorAll("[data-m]").forEach((b) => b.onclick = () => act("memory", { memory: b.dataset.m === "1" }));
   $("view").querySelectorAll("[data-b]").forEach((b) => b.onclick = () => act("bench", { bench: b.dataset.b === "1" }));
   $("view").querySelectorAll("[data-w]").forEach((b) => b.onclick = () => act("together", { together: b.dataset.w === "1" }));
-  $("view").querySelectorAll("[data-style]").forEach((b) => b.onclick = () => act("style", { style: b.dataset.style, timer: R.timer }));
+  $("view").querySelectorAll("[data-style]").forEach((b) => b.onclick = () => {
+    const s = b.dataset.style;
+    if (s === "open" && !OPEN_SIZES.includes(R.size)) return toast("An open auction is for rooms of up to 8: a bigger room would take well over an hour. Sealed bids work for any size.");
+    const c = CLOCKS[s];
+    // Own pace keeps a pick clock's choices, so a sealed round's 60 s goes back to 30.
+    const choices = c ? c[0] : CLOCKS.turns[0];
+    act("style", { style: s, timer: choices.includes(R.timer) ? R.timer : c ? c[2] : 30 });
+  });
   $("view").querySelectorAll("[data-timer]").forEach((b) => b.onclick = () => act("style", { style: R.style, timer: +b.dataset.timer }));
   if ($("startb")) $("startb").onclick = () => act("start");
   $("leaveb").onclick = async () => {
@@ -432,6 +459,231 @@ function startTicker() {
   };
   tick();
   ticker = setInterval(tick, 250);
+}
+
+// ------------------------------------------------------------------ auctions (C70)
+
+let shownAuction = null;   // what the auction panel on screen belongs to: a sealed round, or an open lot
+let myBids = new Map();    // a sealed round's bids as written here, lot -> amount, until they are sent
+const eur = (x) => `€${x}m`;
+const seatOf = (k) => R.seats[k] || { username: "?" };
+
+function renderAuction() {
+  const A = R.auction, d = R.draft;
+  const key = A.kind === "sealed" ? `s${A.round}` : `o${A.lots_done}:${A.lot ? A.lot.number : "-"}`;
+  if (!$("amain")) {
+    shownAuction = null;
+    $("view").innerHTML = `<div class="turnbar" id="abar"></div>
+      <div class="draft-top">${d ? `<h2 class="h2 tight" id="formname"></h2>` : ""}
+        <div class="progress"><span class="label" id="aprog"></span><div class="bar"><i id="bar" style="width:0"></i></div></div>
+        ${d ? `<div class="linechips" id="lines" aria-label="Places filled in each line"></div>` : ""}</div>
+      <div class="draft-grid auc-grid">
+        <section class="panel deal auc-main" id="amain" aria-live="polite"></section>
+        <aside class="cup-stack">
+          ${A.kind === "sealed" && d ? `<section class="panel" id="amine"></section>` : ""}
+          ${d ? `<section class="panel"><div class="panel-h"><span class="label">Your squad</span><span class="label" id="xisub"></span></div>
+            <div class="pitch" id="pitch"></div><div class="bench-row" id="bench" hidden></div></section>` : ""}
+          <section class="panel"><div class="panel-h"><span class="label">Sales</span><span class="label" id="salecount"></span></div>
+            <ol class="feed-list auc-sales" id="asales"></ol></section>
+          ${R.is_host ? `<section class="panel"><div class="room-form"><button class="btn ghost small" id="afinish">Finish the auction</button>
+            <p class="note">Someone wandered off? Every place left is filled with a random man each seat can take, at ${eur(A.min_bid)}${A.kind === "open" ? ", and the man up now goes to whoever leads" : ", after this round closes with the bids sent"}.</p></div></section>` : ""}
+        </aside></div>`;
+    if ($("afinish")) $("afinish").onclick = () => {
+      if (confirm(`Finish the auction for everyone? Every place left is filled with a random man at ${eur(R.auction.min_bid)}.`)) act("finish");
+    };
+  }
+  const bought = A.seats.reduce((n, s) => n + (R.picks_each - s.places), 0), all = R.picks_each * A.seats.length;
+  $("aprog").innerHTML = A.kind === "sealed" ? `Round <b>${A.round}</b> · ${bought} of ${all} bought${R.memory ? ` · <span class="memtag">Memory</span>` : ""}`
+    : `Lot <b>${A.lot ? A.lot.number : A.lots_done + 1}</b> · ${bought} of ${all} bought${R.memory ? ` · <span class="memtag">Memory</span>` : ""}`;
+  $("bar").style.width = `${(bought / all) * 100}%`;
+  if (d) {
+    $("formname").textContent = d.formation.label;
+    lineChips($("lines"), d.formation, d.xi);
+    renderPitch($("pitch"), d.formation.slots, d.xi, null);
+    renderBench($("bench"), d.bench, d.bench_size);
+    $("xisub").textContent = d.bench_size ? `${d.xi.length} / 11 · bench ${d.bench.length} / ${d.bench_size}` : `${d.picks.length} / 11`;
+  }
+  const fresh = shownAuction !== key;
+  shownAuction = key;
+  if (A.kind === "sealed") renderSealed(A, d, fresh); else renderOpen(A, d, fresh);
+  renderSales(A);
+  startAuctionTicker();
+}
+
+/* What the seat bar says: whose move it is and the clock, in the room's own words. */
+function auctionBar(A, html, mine) {
+  $("abar").innerHTML = `<div class="turnbar-in ${mine ? "mine" : ""}">${html}
+    <div class="tb-clock"><span id="asecs">–</span><div class="tb-gauge"><i id="agauge"></i></div></div></div>`;
+}
+
+function renderSales(A) {
+  $("salecount").textContent = A.sales.length ? `latest ${A.sales.length}` : "";
+  $("asales").innerHTML = A.sales.length ? A.sales.map((s) => {
+    const who = seatOf(s.seat);
+    const others = s.others.length ? ` · beat ${s.others.map((o) => `${esc(seatOf(o.seat).username)} ${eur(o.amount)}`).join(", ")}` : "";
+    return `<li style="${teamStyle(A.seats[s.seat])}"><span class="dot" aria-hidden="true"></span><b>${esc(who.username)}</b>
+      <span class="pick-name">${esc(s.card.name)}</span><span class="auc-price">${eur(s.price)}</span>
+      <small>${esc(s.card.short)} ${esc(s.card.season.slice(2))}${s.card.rating == null ? "" : ` · ${s.card.rating}`}${others}</small></li>`;
+  }).join("") : `<li class="empty">Nothing sold yet.</li>`;
+}
+
+// -- sealed rounds
+
+function renderSealed(A, d, fresh) {
+  const me = A.you, seat = me == null ? null : A.seats[me];
+  const buying = seat && seat.places > 0;
+  const sent = A.bid != null;
+  auctionBar(A, `<div class="tb-who"><b>${!buying ? "Watching the round" : sent ? "Your bids are in" : "Your bids, in secret"}</b>
+    <small>Round ${A.round} · ${A.has_bid.filter(Boolean).length} of ${A.seats.filter((s) => s.places > 0).length} have bid${buying ? ` · you have ${eur(seat.money)}, up to ${eur(A.max_bid)} a man` : ""}</small></div>`, buying && !sent);
+  if (fresh) {
+    myBids = new Map(A.bid || []);
+    let k = 0;
+    $("amain").style.cssText = "";
+    $("amain").innerHTML = `<div class="panel-h"><span class="label">Round ${A.round} · the market</span>
+        <span class="label"><b>${A.market.reduce((n, cs) => n + cs.cards.filter((c) => c.takeable).length, 0)}</b> you can buy</span></div>
+      ${A.market.map((cs) => `<details class="mkt" ${k++ < 3 ? "open" : ""} style="${teamStyle(cs)}">
+        <summary class="mkt-h">${crest(cs.crest, 36, cs.name)}<span><b>${esc(cs.name)}</b><small>${esc(cs.season)}</small></span>
+          <span class="label">${cs.cards.filter((c) => c.takeable).length} of ${cs.cards.length}</span></summary>
+        ${cs.cards.map((c) => `<div class="row ${c.takeable ? "" : "off"}">${positionsHtml(c)}
+          <div class="who"><b>${esc(c.name)}</b><small>${altPositions(c)}${esc(c.nation || "")}</small></div>
+          ${c.rating == null ? "" : rate(c.rating)}
+          ${c.takeable && buying ? `<button class="take" data-lot="${c.i}" aria-pressed="false">Bid</button>` : c.takeable ? "" : `<span class="why">${whyHtml(c.reason)}</span>`}
+        </div>`).join("")}</details>`).join("")}`;
+    $("amain").querySelectorAll("[data-lot]").forEach((b) => b.onclick = () => {
+      const lot = +b.dataset.lot;
+      if (myBids.has(lot)) myBids.delete(lot);
+      else if (myBids.size >= A.max_bids) return toast(`At most ${A.max_bids} bids a round`);
+      else myBids.set(lot, A.min_bid);
+      drawMyBids(A);
+    });
+  }
+  drawMyBids(A);
+}
+
+function lotCard(A, lot) {
+  for (const cs of A.market) for (const c of cs.cards) if (c.i === lot) return c;
+  return null;
+}
+
+/* Your bids for the round: each man you've chosen, an amount for each, and send or pass.
+   They are sent as a whole and replace what you sent before, until the round closes. */
+function drawMyBids(A) {
+  const el = $("amine");
+  if (!el) return;
+  const me = A.you, seat = me == null ? null : A.seats[me];
+  $("amain").querySelectorAll("[data-lot]").forEach((b) => {
+    const on = myBids.has(+b.dataset.lot);
+    b.setAttribute("aria-pressed", on);
+    b.textContent = on ? "✓ Bidding" : "Bid";
+  });
+  if (!seat || seat.places <= 0) {
+    el.innerHTML = `<div class="panel-h"><span class="label">Your bids</span></div><p class="empty">Your squad is full: you're watching the rest buy.</p>`;
+    return;
+  }
+  const keep = [...el.querySelectorAll("input[data-amt]")].map((i) => [+i.dataset.amt, +i.value]);
+  keep.forEach(([lot, x]) => { if (myBids.has(lot) && x) myBids.set(lot, x); });
+  const sentText = A.bid == null ? "" : A.bid.length ? `Sent: ${A.bid.map(([l, x]) => `${esc((lotCard(A, l) || {}).name || "?")} ${eur(x)}`).join(", ")}` : "You passed this round";
+  el.innerHTML = `<div class="panel-h"><span class="label">Your bids</span><span class="label">${myBids.size} of ${A.max_bids}</span></div>
+    <div class="auc-bids">${myBids.size ? [...myBids].map(([lot, x]) => {
+      const c = lotCard(A, lot) || { name: "?", positions: [] };
+      return `<div class="auc-bid"><div class="who"><b>${esc(c.name)}</b><small>${(c.positions || []).map(posChip).join("")} ${esc(c.short || "")} ${esc((c.season || "").slice(2))}</small></div>
+        <label class="auc-amt">€<input type="number" inputmode="numeric" min="${A.min_bid}" max="${A.max_bid}" value="${x}" data-amt="${lot}" aria-label="Bid for ${esc(c.name)}, in millions">m</label>
+        <button class="kick" data-drop="${lot}" aria-label="Drop ${esc(c.name)}">✕</button></div>`;
+    }).join("") : `<p class="empty">Tap <b>Bid</b> on up to ${A.max_bids} men in the market.</p>`}</div>
+    <div class="plan-foot"><button class="btn primary" id="sendbids" ${myBids.size ? "" : "disabled"}>${A.bid != null ? "Change my bids" : "Send my bids"}</button>
+      <button class="btn ghost" id="passb" ${A.passes_left > 0 ? "" : "disabled"}>Pass (${A.passes_left} left)</button>
+      <p class="label">Up to ${eur(A.max_bid)} a man: you keep ${eur(A.min_bid)} for each other place. You win one man a round at most, your highest bid first, and pay ${eur(1)} more than the next bid on him, never more than you bid.${sentText ? `<br><b>${sentText}</b>` : ""}</p></div>`;
+  el.querySelectorAll("[data-drop]").forEach((b) => b.onclick = () => { myBids.delete(+b.dataset.drop); drawMyBids(A); });
+  el.querySelectorAll("input[data-amt]").forEach((i) => i.onchange = () => myBids.set(+i.dataset.amt, Math.max(A.min_bid, Math.min(A.max_bid, Math.round(+i.value) || A.min_bid))));
+  $("sendbids").onclick = () => {
+    const bids = [...myBids].map(([lot, x]) => [lot, Math.max(A.min_bid, Math.min(A.max_bid, Math.round(x)))]);
+    act("bids", { round: A.round, bids });
+  };
+  $("passb").onclick = () => act("bids", { round: A.round, bids: [] });
+}
+
+// -- open lots
+
+function renderOpen(A, d, fresh) {
+  const me = A.you, seat = me == null ? null : A.seats[me];
+  const lot = A.lot;
+  if (!lot) {
+    const nominating = A.nominator === me;
+    const who = seatOf(A.nominator);
+    auctionBar(A, `${sideCrest({ human: true, name: who.username, ...A.seats[A.nominator] }, 36)}
+      <div class="tb-who"><b>${nominating ? "Your turn to put a man up" : `${esc(who.username)} is choosing who goes up`}</b>
+        <small>Lot ${A.lots_done + 1} · ${nominating ? "you open the bidding at €1m, so pick someone you'd buy" : "anyone who can play him can bid"}</small></div>`, nominating);
+    if (fresh && A.deal) {
+      renderDeal($("amain"), A.deal, {
+        headingHtml: nominating ? "Dealt to you · put one man up" : `Dealt to ${esc(who.username)}`,
+        takeLabel: "Put up", fresh: true, readOnly: !nominating,
+        onTake: (i) => act("nominate", { lot: A.lots_done + 1, index: i }),
+      });
+      if (nominating && navigator.vibrate) navigator.vibrate(120);
+    }
+    return;
+  }
+  if (fresh) dropFlight();          // a nomination's "Put up" lifted him off the deal: he's on the block, not your pitch
+  const leader = seatOf(lot.leader), c = lot.card;
+  const leading = lot.leader === me;
+  auctionBar(A, `${crest(c.crest, 36, c.club)}<div class="tb-who"><b>${esc(c.name)} · ${eur(lot.price)}</b>
+    <small>Lot ${lot.number} · ${leading ? "you lead" : `${esc(leader.username)} leads`} · <span id="agoing"></span></small></div>`, !leading && !lot.why_not);
+  if (fresh) {
+    $("amain").style.cssText = teamStyle({ team: "#7cc4ff", deep: "#10233f", ink: "#c4e5ff", ...A.seats[lot.nominator] });
+    $("amain").innerHTML = `<div class="panel-h"><span class="label">Lot ${lot.number} · put up by ${esc(seatOf(lot.nominator).username)}</span><span class="label" id="lotstate"></span></div>
+      <div class="band auc-lot">${crest(c.crest, 104, c.club)}
+        <div class="deal-year">${esc(c.season)}</div><div class="deal-club">${esc(c.club)}</div>
+        <div class="auc-man"><b>${esc(c.name)}</b> ${positionsHtml(c)} ${c.rating == null ? "" : rate(c.rating)}</div></div>
+      <div class="auc-live"><div class="auc-now"><span class="label">Price</span><b id="lotprice"></b><small id="lotleader"></small></div>
+        <div class="auc-raise" id="raises"></div>
+        <form class="auc-own" id="ownbid"><label>€<input type="number" inputmode="numeric" id="ownamt" aria-label="Your bid, in millions">m</label>
+          <button class="btn ghost small" type="submit">Bid</button></form>
+        <p class="label" id="lotwhy"></p></div>
+      <ol class="feed-list auc-hist" id="lothist"></ol>`;
+    $("ownbid").onsubmit = (e) => { e.preventDefault(); const x = Math.round(+$("ownamt").value); if (x) act("bid", { lot: R.auction.lot.number, amount: x }); };
+  }
+  $("lotprice").textContent = eur(lot.price);
+  $("lotleader").textContent = leading ? "You lead" : `${leader.username} leads`;
+  const why = lot.why_not;
+  const top = A.max_bid == null ? 0 : A.max_bid;
+  $("raises").innerHTML = [1, 5, 10].map((n) => {
+    const x = lot.price + n;
+    return `<button class="btn ${n === 1 ? "primary" : "ghost"}" data-raise="${x}" ${why || x > top ? "disabled" : ""}>${eur(x)}</button>`;
+  }).join("");
+  $("raises").querySelectorAll("[data-raise]").forEach((b) => b.onclick = () => act("bid", { lot: lot.number, amount: +b.dataset.raise }));
+  const own = $("ownamt");
+  own.min = lot.price + lot.min_raise; own.max = top;
+  if (!own.value || +own.value <= lot.price) own.placeholder = String(lot.price + lot.min_raise);
+  $("ownbid").querySelector("button").disabled = !!why;
+  $("lotwhy").textContent = why ? (why === "you lead the bidding" ? "You lead: wait to be outbid." : `You can't bid: ${why}.`) : `You can bid up to ${eur(top)}.`;
+  $("lothist").innerHTML = lot.bids.length ? [...lot.bids].reverse().map((b) => `<li style="${teamStyle(A.seats[b.seat])}"><span class="dot"></span><b>${esc(seatOf(b.seat).username)}</b> <span class="auc-price">${eur(b.amount)}</span></li>`).join("")
+    : `<li class="empty">${esc(seatOf(lot.nominator).username)} opened at ${eur(lot.price)}.</li>`;
+}
+
+/* The auction's clock, from the synced server clock four times a second: a sealed round's,
+   an open lot's (with its "going once, going twice"), or a nomination's. */
+let aticker = null;
+function startAuctionTicker() {
+  clearInterval(aticker);
+  const tick = () => {
+    const A = R && R.auction;
+    if (!A || !$("asecs") || A.complete) return clearInterval(aticker);
+    let end, span;
+    if (A.kind === "sealed") { end = A.closes_at; span = A.timer; }
+    else if (A.lot) { end = A.lot.ends_at; span = 12; }
+    else { end = A.nominate_by; span = A.timer; }
+    const left = Math.max(0, end - serverNow());
+    $("asecs").textContent = Math.ceil(left);
+    $("agauge").style.width = `${Math.min(100, (left / span) * 100)}%`;
+    $("abar").firstElementChild && $("abar").firstElementChild.classList.toggle("urgent", left <= 5);
+    if (A.lot && $("agoing")) {
+      const words = left > 5 ? "bidding open" : left > 2.5 ? "going once…" : left > 0 ? "going twice…" : "sold?";
+      $("agoing").textContent = words;
+      if ($("lotstate")) $("lotstate").textContent = words;
+    }
+  };
+  tick();
+  aticker = setInterval(tick, 250);
 }
 
 // ------------------------------------------------------------------ boot
